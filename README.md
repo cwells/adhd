@@ -169,8 +169,8 @@ plugins:
 
 jobs:
   <identifier>:
-      command: str | list[str]           # the command(s) to be run
-      depends: Optional[str | list[str]] # jobs that this job depends upon
+      run: str | list[str]               # the command(s) to be run
+      after: Optional[str | list[str]]   # jobs that this job depends upon
       env: Optional[dict[str, Any]]      # define job-specific env vars
       help: Optional[str]                # help text for this job
       home: Optional[str]                # ff not set defaults to global value
