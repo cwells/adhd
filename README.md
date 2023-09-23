@@ -228,7 +228,7 @@ Example use:
 ARCHIVE: !env ../../staging_dataset_${__DATE__}.tar.gz
 ```
 
-## !shell
+## !shell_eq_0, !shell_neq_0, !shell_stdout
 
 > Execute arbitrary shell commands and use their results. There are a handful of variants:
 
