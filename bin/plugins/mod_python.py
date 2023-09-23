@@ -1,5 +1,5 @@
 """
-Configures Python virtual environment.
+[bold cyan]Configures Python virtual environment.[/]
 
 plugins:
   python:

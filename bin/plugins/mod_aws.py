@@ -1,5 +1,5 @@
 """
-Configures AWS session, including prompting for MFA code.
+[bold cyan]Configures AWS session, including prompting for MFA code.[/]
 
 plugins:
   aws:
@@ -94,7 +94,7 @@ class CachedSession(dict):
 
         sts: boto3.client.STS = session.client("sts")  # type: ignore
         tmp: Path = Path(tmpdir).expanduser().resolve()
-        cache_file: Path = tmp / f"stage-{profile}.cache"
+        cache_file: Path = tmp / f"adhd-aws-{profile}.cache"
 
         os.umask(0o0077)  # 0600
 

@@ -5,6 +5,7 @@ from typing import Any, Callable, cast
 
 from lib.util import Style, console
 
+
 # ==============================================================================
 
 
@@ -42,3 +43,15 @@ def load_plugins(
             if verbose:
                 console.print(f"{Style.FINISH_LOAD}plugin {plugin_name}")
     return env
+
+
+# ==============================================================================
+
+
+def list_plugins() -> None:
+    for mod in Path("bin/plugins/").glob("mod_*.py"):
+        module = importlib.import_module(f"plugins.{mod.stem}")
+        console.print(f"\n[bold white]:black_circle:[/][bold yellow]{mod.stem}")
+        if module.__doc__:
+            console.print(module.__doc__.strip())
+    console.print()

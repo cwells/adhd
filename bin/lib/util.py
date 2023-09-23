@@ -189,11 +189,11 @@ def config_is_secure(home: Path, config: Path) -> bool:
 
     # fmt: off
     paths: dict[Path, str] = {
-        config:               "0600",
-        home:                 "0700",
-        home / "projects":    "0700",
-        home / "bin":         "0700",
-        home / "bin"/"stage": "0700",
+        config:              "0600",
+        home:                "0700",
+        home / "projects":   "0700",
+        home / "bin":        "0700",
+        home / "bin"/"adhd": "0700",
     }
     # fmt: on
 

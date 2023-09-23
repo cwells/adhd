@@ -24,7 +24,7 @@ except ImportError:
 
 from lib.jobs import get_jobs
 from lib.shell import shell
-from lib.plugins import load_plugins
+from lib.plugins import load_plugins, list_plugins
 from lib.util import (
     ConfigBox,
     EnvParamType,
@@ -49,6 +49,7 @@ from lib.util import (
 )
 @click.option("--dry-run", is_flag=True, default=False, help="Don't actually execute anything")
 @click.option("--help-jobs", is_flag=True, default=False, help="Display available jobs and help text")
+@click.option("--help-plugins", is_flag=True, default=False, help="Display available plugins and help text")
 @click.option("--explain", is_flag=True, default=False, help="Display help text from job and its dependencies")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="Send stdout of all jobs to console")
 @click.option("-f", "--force", is_flag=True, default=False, help="Bypass skip checks")
@@ -62,6 +63,7 @@ def main(
     command: tuple[str] | list[str],
     dry_run: bool,
     help_jobs: bool,
+    help_plugins: bool,
     explain: bool,
     verbose: bool,
     force: bool,
@@ -84,6 +86,10 @@ def main(
         _width = max(len(j) for j in project_config["jobs"]) + 1
         for job, config in project_config["jobs"].items():
             console.print(f"[bold]{job:>{_width}}[/] {config.get('help', '')}")
+        raise SystemExit
+
+    if help_plugins:
+        list_plugins()
         raise SystemExit
 
     if explain:

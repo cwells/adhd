@@ -10,34 +10,34 @@ plugins:
 jobs:
   django/up:
     help: Start the Django server
-    command: ./manage.py runserver &
-    skip: !shell=0 fuser -s 8000/tcp
+    run: ./manage.py runserver &
+    skip: !shell_eq_0 fuser -s 8000/tcp
     open: [ http://localhost:8000/, http://localhost:8000/admin/ ]
     interactive: true
-    depends:
+    after:
     - django/bootstrap
     - django/migrate
 
   django/down:
     help: Stops the Django web server
-    command: fuser -sk 8000/tcp
+    run: fuser -sk 8000/tcp
 
   django/migrate:
     help: Run Django database migrations
-    command: ./manage.py migrate
-    skip: !shell=0 ./manage.py migrate --check
-    depends:
+    run: ./manage.py migrate
+    skip: !shell_eq_0 ./manage.py migrate --check
+    after:
     - django/bootstrap
 
   django/bootstrap:
     help: Bootstrap the Django project
-    command: django-admin startproject example_django_app .
+    run: django-admin startproject example_django_app .
     skip: !exists manage.py
 
   django/destroy:
     help: Removes entire installation
-    command: !cat [ rm -rf, *home ]
-    depends:
+    run: !cat [ rm -rf, *home ]
+    after:
     - django/down
 
 env:
