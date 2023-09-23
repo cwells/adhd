@@ -96,7 +96,9 @@ def main(
         console.print("\n[bold]The following jobs would be run, in this order:[/]\n")
     else:
         # load plugins
-        process_env.update(load_plugins(project_config, plugins_enabled, process_env, verbose))
+        _conf, _env = load_plugins(project_config, plugins_enabled, process_env, verbose)
+        project_config.update(_conf)
+        process_env.update(_env)
 
     #
     # main loop - get_jobs() returns topologically-sorted list of jobs

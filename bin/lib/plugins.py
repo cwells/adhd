@@ -20,14 +20,15 @@ def load_plugins(
     enabled: dict[str, bool],
     process_env: dict,
     verbose: bool = False,
-) -> dict[str, str]:
+) -> tuple[dict[str, str], ...]:
     "Locate plugins, import them, and run plugin.load() for each."
 
     plugin_dir: Path = get_program_home() / "bin/plugins"
     plugin_name: str
     plugin: Plugin
-    env: dict = {}
     plugins: dict[str, Plugin] = {}
+    env: dict = {}  # target == "env"
+    conf: dict = {}  # target == "conf"
 
     for mod in plugin_dir.glob("mod_*.py"):
         module = importlib.import_module(f"plugins.{mod.stem}")
@@ -38,15 +39,20 @@ def load_plugins(
         if (
             enabled.get(plugin.key, True)
             and plugin.key
-            and (config := project_config.get(f"plugins.{plugin.key}"))
+            and (plugin_config := project_config.get(f"plugins.{plugin.key}"))
         ):
             if verbose:
                 console.print(f"{Style.START_LOAD}plugin {plugin_name}")
+            data = plugin.load(config=plugin_config, env=process_env)
+            if plugin.target == "env":
+                env.update(data)
+            elif plugin.target == "conf":
+                conf.update(data)
 
-            env.update(plugin.load(config=config, env=process_env))
             if verbose:
                 console.print(f"{Style.FINISH_LOAD}plugin {plugin_name}")
-    return env
+
+    return conf, env
 
 
 # ==============================================================================

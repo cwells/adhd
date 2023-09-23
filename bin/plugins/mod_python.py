@@ -138,4 +138,5 @@ def install_requirements(venv: Path, requirements: Path, venv_env: dict[str, str
 # ==============================================================================
 
 key: str | None = "python"
+target: str = "env"
 load: Callable = activate_virtual_env

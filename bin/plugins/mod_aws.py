@@ -126,6 +126,7 @@ class CachedSession(dict):
 # ==============================================================================
 key: str | None
 load: Callable
+target: str = "env"
 
 if boto3 is not None:
     key = "aws"
