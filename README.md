@@ -1,4 +1,4 @@
-# What is this?
+# adhd
 
 `adhd` is a small Python script for managing development environments for
 multiple Python projects (it can reasonably be used for most anything, but it
@@ -14,7 +14,7 @@ you have ADHD), this tool can be indispensible.
 jobs in turn can define dependent tasks that will also be run. Tasks can be
 conditionally run depending on the return codes of user-defined shell commands.
 
-It is important to note that `adhd` is not meant to replace `make` or other
+> It is important to note that `adhd` is not meant to replace `make` or other
 tools, and it's not expected that your `adhd` config will live in the project
 directory to be shared with others. Rather `adhd` is a way to personalize and
 simplify _your_ workflow without impacting other people working on the same
@@ -143,9 +143,7 @@ An example config dir will look something like this:
             ├── ...
             └── projectX.yaml
 
-The reason for this approach is to allow you to maintain multiple versions of
-`adhd` under different names alongside the relevant project configs without
-needing to worry about an update breaking your config.
+> The reason for this approach is to allow you to maintain multiple versions of `adhd` under different names alongside the relevant project configs without needing to worry about an update breaking your config.
 
 # A working example
 
@@ -204,19 +202,11 @@ assuming the subshell will be able to resolve it.
 ARCHIVE: !env ${USER}-archive.tgz
 ```
 
-Note that there are two phases for variable substitution: assembly-time (while
-evaluating the YAML source) and run-time (in the shell environment), so
-`FOO: ${BAR}` would simply evaluate to the literal string `"${BAR}"`, which is
-generally what you want, as `$BAR` will presumably be in the environment.
-
-On the other hand, `FOO: !env ${BAR}` causes the program to attempt to resolve
-the value of `${BAR}` as soon as possible so that it can be used in other parts
-of the configuration. As such, a dependency-resolution tree is maintained to
-ensure required values are present when the variable is evaluated.
-
-This is why you can use variables with other tags such as `!shell`: the shell
-just ends up using the unevaluated string, but it doesn't matter since the value
-will be present in the environment.
+> Note that there are two phases for variable substitution: assembly-time (while evaluating the YAML source) and run-time (in the shell environment), so `FOO: ${BAR}` would simply evaluate to the literal string `"${BAR}"`, which is generally what you want, as `$BAR` will presumably be in the environment when it's needed.
+>
+> On the other hand, `FOO: !env ${BAR}` causes the program to attempt to resolve the value of `${BAR}` as soon as possible so that it can be used in other parts of the configuration. As such, a dependency-resolution tree is maintained to ensure required values are present when the variable is evaluated.
+>
+> This is why you can use variables with other tags such as `!shell`: the shell just ends up using the unevaluated string, but it doesn't matter since the value will be present in the environment.
 
 One reason to use `!env` is that environment variables are not passed through
 from the parent shell by default (`$PATH` being a notable exception).
@@ -362,4 +352,4 @@ adhd example --plugin aws:off bash
 
 # TODO
 
-- additional plugins: `mod_git`, `mod_asdf`, `mod_ngrok`
+- additional planned plugins: `mod_git`, `mod_asdf`, `mod_ngrok`
