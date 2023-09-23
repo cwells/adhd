@@ -152,8 +152,6 @@ home: [str]                   # path to project directory
 venv: Optional[str]           # path to virtual environment
 tmp: Optional[str]            # path to store temporary files
 
-include: Optional[list[str]]  # optional paths to include files
-
 plugins:
   python:
     venv: [str]                 # path to project's virtual env
