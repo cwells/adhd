@@ -51,13 +51,13 @@ $ adhd example django/up
 To stop:
 
 ```sh
-$ adhd example/down
+$ adhd example django/down
 ```
 
 To destroy (removes entire directory with example app):
 
 ```sh
-$ adhd example/destroy
+$ adhd example django/destroy
 ```
 
 To see the example config:
@@ -295,25 +295,17 @@ the primary project file. Dictionaries will be recursively merged.
 You can see available jobs using the `--help-jobs` option:
 
 ```bash
-$ adhd myproject --help-jobs
+$ adhd example --help-jobs
 ```
 
 which would output
 
 ```
-           world Opens relevant tabs in broswer, and project directory in vscode.
-        stack/up Brings up all required services.
-      stack/down Stops (but doesn't destroy) entire stack.
-   stack/destroy Destroys all stack containers as well as its virtual env.
-       django/up Starts the Django web server at http://localhost:8000/
-     django/down Stops the Django web server.
-  django/destroy Deletes the Python virtual env.
-     django/seed Seeds the database with test data.
-    django/shell Start an interactive Django shell.
-       docker/up Start Docker services. Mailpit is at http://localhost:8025.
-     docker/down Stops Docker services.
-  docker/destroy Stops Docker services, and destroys all containers.
-            test Run the test suite.
+        django/up Start the Django server
+      django/down Stops the Django web server
+   django/migrate Run Django database migrations
+ django/bootstrap Bootstrap the Django project
+   django/destroy Removes entire installation
 ```
 
 And don't forget that you can run arbitrary shell commands. Assuming you have
