@@ -1,0 +1,50 @@
+---
+home: &home ~/Work/example_django_app/
+
+plugins:
+  python:
+    venv: !path [ *home, venv ]
+    packages:
+    - Django
+
+jobs:
+  django/up:
+    help: Start the Django server
+    command: ./manage.py runserver &
+    skip: !shell=0 fuser -s 8000/tcp
+    open: [ http://localhost:8000/, http://localhost:8000/admin/ ]
+    interactive: true
+    depends:
+    - django/bootstrap
+    - django/migrate
+
+  django/down:
+    help: Stops the Django web server
+    command: fuser -sk 8000/tcp
+
+  django/migrate:
+    help: Run Django database migrations
+    command: ./manage.py migrate
+    skip: !shell=0 ./manage.py migrate --check
+    depends:
+    - django/bootstrap
+
+  django/bootstrap:
+    help: Bootstrap the Django project
+    command: django-admin startproject example_django_app .
+    skip: !exists manage.py
+
+  django/destroy:
+    help: Removes entire installation
+    command: !cat [ rm -rf, *home ]
+    depends:
+    - django/down
+
+env:
+  DISPLAY: !env ${DISPLAY}
+  HOME: !env ${HOME}
+  PATH: !env ${PATH}
+  TERM: !env ${TERM}
+  USER: !env ${USER}
+  DJANGO_LOG_LEVEL: INFO
+  DJANGO_SECRET_KEY: abc123def456ghi789

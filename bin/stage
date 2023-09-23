@@ -1,0 +1,184 @@
+#!/bin/env python
+
+"Much of this code was intentional."
+
+import contextlib
+import os
+import sys
+import time
+import webbrowser
+from pathlib import Path
+from typing import Any
+
+try:  # Check for basic dependencies. Plugin deps are checked by plugins.
+    import click
+    import rich.console
+    import rich.prompt
+    import yaml
+    from box import Box
+    from toposort import CircularDependencyError, toposort_flatten
+    from yarl import URL
+except ImportError:
+    print("You need to install this program's dependencies, e.g. `python -m pip install -r requirements.txt")
+    sys.exit(1)
+
+from lib.jobs import get_jobs
+from lib.shell import shell
+from lib.plugins import load_plugins
+from lib.util import (
+    ConfigBox,
+    EnvParamType,
+    PluginParamType,
+    ProjectParamType,
+    Style,
+    _exit,
+    console,
+    get_local_env,
+    read_project_config,
+)
+
+
+# ==============================================================================
+
+
+@click.command()
+@click.option("--home/--no-home", default=True, help="Change to project HOME directory")
+@click.option("-e", "--env", type=EnvParamType(), multiple=True, help="Define env var(s) from CLI")
+@click.option(
+    "-p", "--plugin", type=PluginParamType(), multiple=True, help="Manage plugins using `<plugin>:[on|off]`"
+)
+@click.option("--dry-run", is_flag=True, default=False, help="Don't actually execute anything")
+@click.option("--help-jobs", is_flag=True, default=False, help="Display available jobs and help text")
+@click.option("--explain", is_flag=True, default=False, help="Display help text from job and its dependencies")
+@click.option("-v", "--verbose", is_flag=True, default=False, help="Send stdout of all jobs to console")
+@click.option("-f", "--force", is_flag=True, default=False, help="Bypass skip checks")
+@click.argument("project", type=ProjectParamType())
+@click.argument("command", nargs=-1)
+def main(
+    home: bool,
+    env: list[tuple[str, str]],
+    plugin: list[tuple[str, bool]],
+    project: str,
+    command: tuple[str] | list[str],
+    dry_run: bool,
+    help_jobs: bool,
+    explain: bool,
+    verbose: bool,
+    force: bool,
+) -> None:
+    returncode: int = 0
+    options_env: dict[str, str] = ConfigBox(env)
+    process_env: dict[str, str] = ConfigBox()
+    project_config: dict[str, Any] = ConfigBox()
+    plugins_enabled: dict[str, bool] = dict(plugin)
+
+    # read configuration
+    try:
+        project_config.update(read_project_config(project))
+        process_env.update(get_local_env(project_config, options_env))
+    except Exception as e:
+        _exit(f"[red]Error loading configuration {project}: {e}")
+
+    # display list of possible jobs
+    if help_jobs:
+        _width = max(len(j) for j in project_config["jobs"]) + 1
+        for job, config in project_config["jobs"].items():
+            console.print(f"[bold]{job:>{_width}}[/] {config.get('help', '')}")
+        raise SystemExit
+
+    if explain:
+        console.print("\n[bold]The following jobs would be run, in this order:[/]\n")
+    else:
+        # load plugins
+        process_env.update(load_plugins(project_config, plugins_enabled, process_env, verbose))
+
+    #
+    # main loop - get_jobs() returns topologically-sorted list of jobs
+    #
+    for job in get_jobs(command, project_config, process_env):
+        if explain:
+            skip: bool = job.get("skip") and force is False
+            style: Style = (Style.RUN, Style.SKIP)[skip]
+            text: str = job.get("help", "No description.")
+            console.print(f"{style} [bold cyan]{job['name']}[/]: [cyan]{text}")
+            if verbose:
+                style = (Style.TASK_RUN, Style.TASK_SKIP)[skip]
+                for task in job.get("tasks", []):
+                    for idx, line in enumerate(task.split("\n")):
+                        if _l := line.rstrip():
+                            _style = style if idx == 0 else f"     [{('white', 'grey50')[skip]}]"
+                            console.print(f"{_style}{_l}", highlight=False)
+                console.print()
+            continue
+
+        capture: bool = job.get("capture", False)
+        interactive: bool = job.get("interactive", False) or verbose
+        silent: bool = job.get("silent", False)
+        workdir: Path = Path(job.get("workdir", ".")).expanduser().resolve()
+
+        # go to workdir, if defined and not overridden by cli
+        if home:
+            try:
+                os.chdir(workdir)
+            except Exception as e:
+                _exit(f"{Style.ERROR}Error changing working dir to project home: {e}")
+
+        # check skip condition
+        if job.get("skip") and force is False:
+            console.print(f'{Style.SKIPPED}[bold blue]{job["name"]}[/]')
+            continue
+        else:
+            if not silent:
+                console.print(f"{Style.STARTING}[bold blue]{job['name']}[/]")
+
+        # each job can be composed of multiple tasks
+        for task in job["tasks"]:
+            # don't use console.status unless capturing output
+            ctx: contextlib.AbstractContextManager = (
+                console.status(f"Running [yellow]{task}[/]")  # type: ignore
+                if capture or not (interactive or silent)
+                else contextlib.nullcontext()  # do-nothing context manager
+            )
+
+            with ctx:
+                try:
+                    returncode = shell(
+                        f"# {task}" if dry_run else task,
+                        workdir=workdir,
+                        env=job["env"],
+                        capture=capture,
+                        interactive=interactive and not capture,
+                    ).returncode
+                except Exception as e:
+                    _exit(f"{Style.ERROR}Error executing process: {e}")
+                else:
+                    if not silent:
+                        console.print(f"{Style.TASK_FINISHED}[yellow]{task}[/]", highlight=False)
+
+            if returncode == 0:
+                if tts := job.get("sleep", 0):
+                    if verbose:
+                        console.print(f"[bold]Sleeping for {tts} seconds.")
+                    time.sleep(tts)
+
+        # finally, open any uris specified in job config
+        if (uri := job.get("open")) and not dry_run:
+            if isinstance(uri, str):
+                uri = [uri]
+            for _u in uri:
+                webbrowser.open_new_tab(_u)
+
+        if not silent:
+            console.print(f"{Style.FINISHED}[bold blue]{job['name']}[/]")
+
+    if explain:
+        console.print()
+    else:
+        console.print(f"{Style.FINISHED}Finished all jobs.")
+    sys.exit(returncode)
+
+
+# ==============================================================================
+
+if __name__ == "__main__":
+    main()  # type: ignore
