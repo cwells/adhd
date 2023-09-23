@@ -358,7 +358,7 @@ You may disable plugins on the command line. For example, if you want to run a
 shell but not be prompted for an MFA code, you can use:
 
 ```
-adhd exam-le --plugin aws:off bash
+adhd example --plugin aws:off bash
 ```
 
 # TODO
