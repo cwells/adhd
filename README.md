@@ -100,6 +100,10 @@ An example config dir will look something like this:
             ├── ...
             └── projectX.yaml
 
+The reason for this approach is to allow you to maintain multiple versions of
+`adhd` under different names alongside the relevant project configs without
+needing to worry about an update breaking your config.
+
 # Configuration
 
 ```yaml
