@@ -22,7 +22,7 @@ from typing import Any, Callable
 import rich.prompt
 import yaml
 
-from lib.util import console, Style
+from lib.util import console, Style, check_permissions
 
 try:
     import boto3
@@ -48,7 +48,11 @@ def activate_aws_session(config: dict[str, Any], env: dict[str, Any]) -> dict[st
     mfa: dict[str, Any] = config.get("mfa", {})
     mfa_device: str | None = mfa.get("device")
     mfa_expiry: int = int(mfa.get("expiry", 86400))
-    tmpdir: str = config.get("tmp", "/tmp")
+    tmpdir: Path = Path(config.get("tmp", "/tmp")).expanduser().resolve()
+    secure_paths: dict[Path, str] = {tmpdir: "0700"}
+
+    if not check_permissions(secure_paths):
+        sys.exit(2)
 
     if not mfa_device:
         console.print(f"{Style.ERROR}Missing MFA device.")
@@ -86,7 +90,7 @@ class CachedSession(dict):
         profile: str,
         device_arn: str,
         expiry: int = 86400,
-        tmpdir: str = "/tmp",
+        tmpdir: Path = Path("/tmp"),
     ) -> None:
         if boto3 is None:  # we were unable to import module
             console.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
@@ -100,6 +104,7 @@ class CachedSession(dict):
 
         with open(cache_file, "a+") as cached_data:
             cached_data.seek(0)
+
             data: dict[str, Any] = yaml.load(cached_data, Loader=yaml.FullLoader)
 
             if not data or datetime.utcnow().replace(tzinfo=timezone.utc) > data["Credentials"]["Expiration"]:

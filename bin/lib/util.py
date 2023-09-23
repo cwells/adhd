@@ -66,16 +66,26 @@ class ProjectParamType(click.ParamType):
         param: click.Parameter | None,
         ctx: click.Context | None,
     ) -> Path:
-        config_dir: Path = get_program_home()
-        path: Path = config_dir / "projects" / f"{value}.yaml"
+        home: Path = get_program_home()
+        config: Path = home / "projects" / f"{value}.yaml"
 
-        if not config_is_secure(config_dir, path):
+        # fmt: off
+        if not check_permissions(
+            {
+                config:            "0600",
+                home:              "0700",
+                home / "projects": "0700",
+                home / "bin":      "0700",
+                home / "bin/adhd": "0700",
+            }
+        ):
             sys.exit(1)
+        # fmt: on
 
-        if not path.is_file():
+        if not config.is_file():
             self.fail(f"{value} is not a valid project.", param, ctx)
 
-        return path
+        return config
 
 
 class EnvParamType(click.ParamType):
@@ -179,33 +189,22 @@ def get_sorted_deps(command: str, commands: dict, workdir: Path, env: dict[str, 
 # ==============================================================================
 
 
-def config_is_secure(home: Path, config: Path) -> bool:
+def check_permissions(paths: dict[Path, str]) -> bool:
     "Validate permissions on program directories and files."
 
     def perm(p: Path) -> str:
         "Return a string with the octal representation of Unix file permissions."
         return oct(p.stat().st_mode)[-4:]
 
-    # fmt: off
-    paths: dict[Path, str] = {
-        config:              "0600",
-        home:                "0700",
-        home / "projects":   "0700",
-        home / "bin":        "0700",
-        home / "bin"/"adhd": "0700",
-    }
-    # fmt: on
-
     insecure: list[str] = [
-        f"- {p} has mode {actual} should be {required}"
-        for p, required in paths.items()
-        if not (actual := perm(p)) == required
+        f"- chmod {required} {p}" for p, required in paths.items() if not (actual := perm(p)) == required
     ]
 
     if insecure:
-        console.print(f"{Style.ERROR}Insecure configuration. Please check the following file permissions:")
+        console.print(f"\nInsecure configuration. Please run the following commands:\n")
         for issue in insecure:
             console.print(issue)
+        console.print()
 
     return not insecure
 

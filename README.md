@@ -38,7 +38,7 @@ Install:
 ```sh
 $ git clone git@github.com:cwells/adhd.git ~/.adhd
 $ pip install -r ~/.adhd/requirements.txt
-$ chmod +x ~/.adhd/bin/adhd # just in case
+$ chmod +x ~/.adhd/bin/adhd
 $ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
 ```
 
