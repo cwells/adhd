@@ -98,13 +98,13 @@ Options:
 Enter a virtual environment:
 
 ```bash
-$ adhd myproject -- bash
+$ adhd example -- bash
 ```
 
 Run a predefined job to start `./manage.py shell`:
 
 ```bash
-$ adhd myproject django/shell
+$ adhd example django/shell
 ```
 
 > If you run arbitrary shell commands, remember to put `--` before the command so
@@ -308,7 +308,7 @@ And don't forget that you can run arbitrary shell commands. Assuming you have
 configured AWS, you can try something like:
 
 ```bash
-$ adhd myproject -- aws s3 ls
+$ adhd example -- aws s3 ls
 ```
 
 which would output
@@ -323,7 +323,7 @@ Starting aws s3 ls
 You can also enter the virtual environment just by spawning a subshell:
 
 ```bash
-$ adhd myproject bash
+$ adhd example bash
 Finished installing Python requirements
 Starting bash
 $ python
