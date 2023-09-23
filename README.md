@@ -33,14 +33,18 @@ conditionally run depending on the return codes of user-defined shell commands.
 
 # Quickstart / tldr;
 
-To start the included example Django app:
-
+Install:
 
 ```sh
 $ git clone git@github.com:cwells/adhd.git ~/.adhd
 $ pip install -r ~/.adhd/requirements.txt
 $ chmod +x ~/.adhd/bin/adhd # just in case
 $ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
+```
+
+Start the included Django app:
+
+```sh
 $ adhd example django/up
 ```
 
