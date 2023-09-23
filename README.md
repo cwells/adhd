@@ -348,11 +348,17 @@ Type "help", "copyright", "credits" or "license" for more information.
 
 # Plugins
 
+You can get a list of available plugins and their help with:
+
+```
+adhd example --help-plugins
+```
+
 You may disable plugins on the command line. For example, if you want to run a
 shell but not be prompted for an MFA code, you can use:
 
 ```
-ombu va --plugin aws:off bash
+adhd exam-le --plugin aws:off bash
 ```
 
 # TODO
