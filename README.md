@@ -354,3 +354,7 @@ shell but not be prompted for an MFA code, you can use:
 ```
 ombu va --plugin aws:off bash
 ```
+
+# TODO
+
+- additional plugins: `mod_git`, `mod_asdf`, `mod_ngrok`
