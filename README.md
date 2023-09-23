@@ -38,8 +38,9 @@ To start the included example Django app:
 
 ```sh
 $ git clone git@github.com:cwells/adhd.git ~/.adhd
-$ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
+$ pip install -r ~/.adhd/requirements.txt
 $ chmod +x ~/.adhd/bin/adhd # just in case
+$ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
 $ adhd example django/up
 ```
 
@@ -53,6 +54,12 @@ To destroy (removes entire directory with example app):
 
 ```sh
 $ adhd example/destroy
+```
+
+To see the example config:
+
+```sh
+$ cat ~/.adhd/projects/example.yaml
 ```
 
 # CLI
