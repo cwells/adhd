@@ -39,6 +39,7 @@ To start the included example Django app:
 ```sh
 $ git clone git@github.com:cwells/adhd.git ~/.adhd
 $ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
+$ chmod +x ~/.adhd/bin/adhd # just in case
 $ adhd example django/up
 ```
 
