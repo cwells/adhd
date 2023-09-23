@@ -3,7 +3,7 @@
 
 plugins:
   aws:
-    profile: foo          # from .aws/credentials
+    profile: default      # profile name from .aws/credentials
     username: john.doe    # AWS username
     account: 123456789012 # AWS account ID
     region: eu-west-1     # AWS region
