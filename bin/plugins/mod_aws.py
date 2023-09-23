@@ -23,6 +23,7 @@ import rich.prompt
 import yaml
 
 from lib.util import console, Style, check_permissions
+from lib.plugins import PluginTarget
 
 try:
     import boto3
@@ -126,7 +127,7 @@ class CachedSession(dict):
 # ==============================================================================
 key: str | None
 load: Callable
-target: str = "env"
+target: PluginTarget = PluginTarget.ENV
 
 if boto3 is not None:
     key = "aws"

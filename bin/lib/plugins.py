@@ -1,5 +1,5 @@
 import importlib
-import sys
+from enum import Enum
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, cast
@@ -8,6 +8,13 @@ from lib.util import Style, console, get_program_home
 
 
 # ==============================================================================
+
+
+class PluginTarget(Enum):
+    "Plugins can update either environment or configuration."
+
+    ENV = "env"
+    CONF = "conf"
 
 
 class Plugin(ModuleType):
@@ -44,9 +51,9 @@ def load_plugins(
             if verbose:
                 console.print(f"{Style.START_LOAD}plugin {plugin_name}")
             data = plugin.load(config=plugin_config, env=process_env)
-            if plugin.target == "env":
+            if plugin.target == PluginTarget.ENV:
                 env.update(data)
-            elif plugin.target == "conf":
+            elif plugin.target == PluginTarget.CONF:
                 conf.update(data)
 
             if verbose:

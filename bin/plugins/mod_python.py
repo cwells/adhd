@@ -18,6 +18,7 @@ from typing import Any, Callable
 
 from lib.shell import shell
 from lib.util import console, Style
+from lib.plugins import PluginTarget
 
 try:
     import virtualenv
@@ -137,6 +138,7 @@ def install_requirements(venv: Path, requirements: Path, venv_env: dict[str, str
 
 # ==============================================================================
 
+
 key: str | None = "python"
-target: str = "env"
+target: PluginTarget = PluginTarget.ENV
 load: Callable = activate_virtual_env
