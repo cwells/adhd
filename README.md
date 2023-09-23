@@ -107,17 +107,18 @@ tmp: Optional[str]            # path to store temporary files
 
 include: Optional[list[str]]  # optional paths to include files
 
-python:
-  venv: [str]                 # path to project's virtual env
-  requirements: [str]         # path to requirements.txt
-
-aws:
-  profile: [str]              # AWS CLI profile (from ~/.aws/credentials)
-  username: [str]             # AWS username
-  account: [str]              # AWS account ID
-  mfa:
-    device: [str]             # last part of MFA device's ARN
-    expiry: [int]             # TTL in seconds for token expiry
+plugins:
+  python:
+    venv: [str]                 # path to project's virtual env
+    requirements: [str]         # path to requirements.txt
+  
+  aws:
+    profile: [str]              # AWS CLI profile (from ~/.aws/credentials)
+    username: [str]             # AWS username
+    account: [str]              # AWS account ID
+    mfa:
+      device: [str]             # last part of MFA device's ARN
+      expiry: [int]             # TTL in seconds for token expiry
 
 jobs:
   <identifier>:
