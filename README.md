@@ -79,10 +79,11 @@ Options:
   -p, --plugin PLUGIN  Manage plugins using `<plugin>:[on|off]`
   --dry-run            Don't actually execute anything
   --help-jobs          Display available jobs and help text
+  --help-plugins       Display available plugins and help text
   --explain            Display help text from job and its dependencies
-  -v, --verbose        Increase verbosity, send stdout of all jobs to console
+  -v, --verbose        Send stdout of all jobs to console
   -f, --force          Bypass skip checks
-  --help               Show this message and exit
+  --help               Show this message and exit.
 ```
 
 ## Examples
