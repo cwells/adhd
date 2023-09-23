@@ -7,6 +7,8 @@ has a Python-oriented focus on features).
 If you're the sort of person who works on a lot of individual development
 projects, each with its own unique build/run/deploy steps, `adhd` provides
 a way of managing that without needing to revisit the project's README.
+If you're the sort of person who also forgets details a lot (maybe because
+you have ADHD), this tool can be indispensible.
 
 `adhd` is similar to a `make` in that you can define jobs to be run, and those
 jobs in turn can define dependent tasks that will also be run. Tasks can be
@@ -111,7 +113,7 @@ plugins:
   python:
     venv: [str]                 # path to project's virtual env
     requirements: [str]         # path to requirements.txt
-  
+
   aws:
     profile: [str]              # AWS CLI profile (from ~/.aws/credentials)
     username: [str]             # AWS username
