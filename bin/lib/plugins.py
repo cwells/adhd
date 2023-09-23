@@ -1,4 +1,5 @@
 import importlib
+import sys
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, cast
@@ -49,7 +50,11 @@ def load_plugins(
 
 
 def list_plugins() -> None:
-    for mod in Path("bin/plugins/").glob("mod_*.py"):
+    bin_name: str = Path(sys.argv[0]).name
+    config_dir: Path = Path(f"~/.{bin_name}").expanduser().resolve()
+    plugins_dir: Path = config_dir / "bin/plugins"
+
+    for mod in plugins_dir.glob("mod_*.py"):
         module = importlib.import_module(f"plugins.{mod.stem}")
         console.print(f"\n[bold white]:black_circle:[/][bold yellow]{mod.stem}")
         if module.__doc__:
