@@ -135,6 +135,11 @@ The reason for this approach is to allow you to maintain multiple versions of
 `adhd` under different names alongside the relevant project configs without
 needing to worry about an update breaking your config.
 
+# A working example
+
+A working Django app is included in the `projects/` directory. It requires no
+setup, just run `adhd example django/up`.
+
 # Configuration
 
 ```yaml
@@ -270,16 +275,15 @@ API_ENDPOINT: !url [ https://domain.com/cust/, *cust_id, /api ]
 DATA_DIR: !path [ ~, foo, bar, data_dir ]
 ```
 
-# Include other YAML files
+## !include
 
 It may be useful to load other YAML files (e.g. for common env variables in
 project home directory). The format of the included file is exactly the same as
 the primary project file. Dictionaries will be recursively merged.
 
-# A working example
-
-A working Django app is included in the `projects/` directory. It requires no
-setup, just run `adhd example django/up`.
+```yaml
+!include more.yaml
+```
 
 # Jobs
 
