@@ -66,8 +66,7 @@ class ProjectParamType(click.ParamType):
         param: click.Parameter | None,
         ctx: click.Context | None,
     ) -> Path:
-        bin_name: str = Path(sys.argv[0]).name
-        config_dir: Path = Path(f"~/.{bin_name}").expanduser().resolve()
+        config_dir: Path = get_program_home()
         path: Path = config_dir / "projects" / f"{value}.yaml"
 
         if not config_is_secure(config_dir, path):
@@ -264,3 +263,13 @@ def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> dict[
     env = resolve_dependencies(project_config["env"], workdir)
 
     return env
+
+
+# ==============================================================================
+
+
+def get_program_home():
+    bin_name: str = Path(sys.argv[0]).name
+    config_dir: Path = Path(f"~/.{bin_name}").expanduser().resolve()
+
+    return config_dir

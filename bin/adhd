@@ -125,6 +125,7 @@ def main(
         # go to workdir, if defined and not overridden by cli
         if home:
             try:
+                workdir.mkdir(parents=True, exist_ok=True)
                 os.chdir(workdir)
             except Exception as e:
                 _exit(f"{Style.ERROR}Error changing working dir to project home: {e}")
