@@ -77,7 +77,7 @@ $ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
 
 The adhd configuration is dynamic, based upon the name of the executable (by
 default `adhd`). If your executable is named `adhd`, then the config directory
-will be `~./adhd`. If you create a symlink
+will be `~/.adhd`. If you create a symlink
 
 ```bash
 $ ln -s ~/.adhd/bin/adhd ~/.local/bin/woot
