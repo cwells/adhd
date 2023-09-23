@@ -71,6 +71,10 @@ def get_jobs(command: list[str] | tuple[str, ...], project_config: dict, process
     jobs: dict[str, Any] = project_config.get("jobs", {})
     workdir: Path = Path(project_config.get("home", "."))
 
+    if not command:
+        console.print(f"No command given.")
+        sys.exit(1)
+
     if command[0] in jobs:  # pre-defined jobs
         for _cmd in command:  # somehow this keeps the dep order. i don't trust it.
             for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
