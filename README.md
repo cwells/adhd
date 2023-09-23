@@ -1,6 +1,6 @@
 # adhd
 
-`adhd` is a small Python script for managing development environments for
+`adhd` is a small Python program for managing development environments for
 multiple Python projects (it can reasonably be used for most anything, but it
 has a Python-oriented focus on features).
 
@@ -107,9 +107,8 @@ Run a predefined job to start `./manage.py shell`:
 $ adhd myproject django/shell
 ```
 
-> If you run arbitrary shell commands, remember to put `--` before the command
-so that your shell knows which options are for `adhd` and which are for the
-command.
+> If you run arbitrary shell commands, remember to put `--` before the command so
+that your shell knows which options are for `adhd` and which are for the command.
 
 # Installation
 
