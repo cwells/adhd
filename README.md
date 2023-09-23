@@ -31,6 +31,29 @@ conditionally run depending on the return codes of user-defined shell commands.
 - Manages multiple projects, and allows creating a common interface for varied
   development environments.
 
+# Quickstart / tldr;
+
+To start the included example Django app:
+
+
+```sh
+$ git clone git@github.com:cwells/adhd.git ~/.adhd
+$ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
+$ adhd example django/up
+```
+
+To stop:
+
+```sh
+$ adhd example/down
+```
+
+To destroy (removes entire directory with example app):
+
+```sh
+$ adhd example/destroy
+```
+
 # CLI
 
 The `adhd` CLI has the following interface:
