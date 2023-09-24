@@ -26,7 +26,7 @@ class Style(Enum):
     FINISHED = "[bold green]:black_circle:Finished[/] "
     SKIPPED = "[bold yellow]:white_circle:Skipped[/] "
     ERROR = "[red]:black_circle:Error[/] "
-    WARNING = "[bold orange]:black_circle:Warning[/] "
+    WARNING = "[bold orange4]:black_circle:Warning[/] "
     INFO = "[bold blue]:black_circle:[/] "
     TASK_RUN = "  [white]:arrow_right_hook:  "
     TASK_SKIP = "  [white]:arrow_right_hook:[grey50]  "
