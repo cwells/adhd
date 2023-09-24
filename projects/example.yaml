@@ -4,6 +4,7 @@ tmp: !path [ "~", .tmp ]
 
 plugins:
   python:
+    always: false
     venv: !path [ *home, venv ]
     packages:
     - Django
@@ -16,6 +17,17 @@ jobs:
     open: [ http://localhost:8000/, http://localhost:8000/admin/ ]
     interactive: true
     after:
+    - plugin:python
+    - django/bootstrap
+    - django/migrate
+
+  django/shell:
+    help: Start an interactive Django Python REPL.
+    run: ./manage.py shell
+    interactive: true
+    silent: true
+    after:
+    - plugin:python
     - django/bootstrap
     - django/migrate
 
@@ -24,31 +36,26 @@ jobs:
     run: fuser -sk 8000/tcp
     skip: !shell_neq_0 fuser -s 8000/tcp
 
-  django/shell:
-    help: Start an interactive Django Python REPL.
-    run: ./manage.py shell
-    interactive: true
-    silent: true
-    after:
-    - django/bootstrap
-    - django/migrate
-
   django/migrate:
     help: Run Django database migrations
     run: ./manage.py migrate
     skip: !shell_eq_0 ./manage.py migrate --check
     after:
+    - plugin:python
     - django/bootstrap
 
   django/bootstrap:
     help: Bootstrap the Django project
     run: django-admin startproject example_django_app .
     skip: !exists [ *home, manage.py ]
+    after:
+    - plugin:python
 
   django/destroy:
-    help: Removes entire installation
+    help: Removes installation directory
     run: !cats [ rm -rf, *home ]
     confirm: !cat [ "\n[bold yellow]:warning:[/] Delete [bold cyan]", *home, "[/]?" ]
+    skip: !not_exists [ *home ]
     after:
     - django/down
 
