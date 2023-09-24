@@ -278,6 +278,18 @@ DATA_DIR: !path [ "~", foo, bar, data_dir ]
 binary: !exists [ "~/.bin", *bin_name  ]
 ```
 
+> CAVEAT: `!exists` and `!path` tags will not have the project home as their working
+> directory due to the fact that this information isn't available when they
+> are evaluated. This means you must prefix any paths with `*home`, e.g.:
+>
+>    ```yaml
+>    skip: !exists [ *home, "/tmp/process.pid" ]
+>    ```
+> This is unlike `run` directives, which will have the project home as their
+> current working directory. This is a bug and will be addressed in a future
+> release.
+
+
 ## !include
 
 It may be useful to load other YAML files (e.g. for common env variables in
@@ -304,16 +316,6 @@ If `django/up` is run, it will first run `django/bootstrap` and `django/migrate`
 (and these in turn may have other dependencies). If you don't always want a job
 to run, you can add the `skip` directive, followed by a test that evaluates the
 output of a shell command.
-
-> Note: `skip` commands will not have the project home as their working directory
-> due to the fact that this information isn't yet available. This means you must
-> prefix any paths with `*home`, e.g.:
->
->    ```yaml
->    skip: !exists [ *home, "/tmp/process.pid" ]
->    ```
-> This is unlike `run` directives, which will have the project home as their
-> current working directory.
 
 # The CLI
 
@@ -384,5 +386,5 @@ adhd example --plugin aws:off bash
   - `mod_git` - clone a project git repo.
   - `mod_asdf` - select Python version.
   - `mod_ngrok` - manage ngrok tunnels.
-- get `skip` to operate in project home.
+- get `!exists` and `!path` to operate in project home.
 - more verbosity when verbose.
