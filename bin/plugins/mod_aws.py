@@ -10,6 +10,9 @@
       device: MyDevice    # last part of ARN "arn:aws:iam::123456789012:mfa/MyDevice"
       expiry: 86400       # TTL for token (will prompt for MFA code upon expiry)
     tmp: ~/.tmp/          # tmp dir to cache session token (must be secure)
+
+Session will be cached in `tmp` for `expiry` seconds and you won't be prompted
+for MFA code until that time, even in multiple shells.
 """
 
 import os
