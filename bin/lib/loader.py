@@ -214,9 +214,7 @@ def construct_exists(loader: yaml.FullLoader, node: yaml.SequenceNode) -> bool:
 
     path: Path = Path("/".join(paths)).expanduser().resolve()
 
-    if not path.exists():
-        return False
-    return True
+    return path.exists()
 
 
 def get_loader() -> type[yaml.FullLoader]:
