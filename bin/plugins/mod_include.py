@@ -9,16 +9,22 @@ the plugins section.
   - !path [ "~", projects/file2.yaml ]
 """
 
-from typing import Any, Callable
+from typing import Any
 
 import yaml
 from lib.plugins import PluginTarget
 from lib.util import ConfigBox, console
 
+
 # ==============================================================================
 
 
-def include_files(
+key: str | None = None
+target: PluginTarget = PluginTarget.CONF
+has_run: bool = False
+
+
+def load(
     config: ConfigBox,
     env: dict[str, Any],
     verbose: bool = False,
@@ -34,11 +40,3 @@ def include_files(
             console.print(f"Included {_include}")
 
     return conf
-
-
-# ==============================================================================
-
-
-key: str = None  # "include" # this isn't ready yet
-target: PluginTarget = PluginTarget.CONF
-load: Callable = include_files

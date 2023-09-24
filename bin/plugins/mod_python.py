@@ -13,23 +13,26 @@ virtual environment, but won't be able to create a new one.
 import os
 import sys
 from pathlib import Path
-from typing import Callable
 
 from lib.shell import shell
 from lib.util import console, Style, ConfigBox
 from lib.plugins import PluginTarget
 
+key: str | None = "python"
+target: PluginTarget = PluginTarget.ENV
+has_run: bool = False
+
 try:
     import virtualenv
 except ImportError:
-    console.print("virtualenv module not found: Python venv creation disabled.")
+    console.print(f"{Style.WARNING}virtualenv module not found:[/] Python venv creation disabled.")
     virtualenv = None
 
 
 # ==============================================================================
 
 
-def activate_virtual_env(config: ConfigBox, env: dict[str, str]) -> dict[str, str]:
+def load(config: ConfigBox, env: dict[str, str]) -> dict[str, str]:
     "Activate Python virtualenv."
 
     if venv := config.get("venv"):
@@ -138,11 +141,3 @@ def install_requirements(
         return True
 
     return False
-
-
-# ==============================================================================
-
-
-key: str | None = "python"
-target: PluginTarget = PluginTarget.ENV
-load: Callable = activate_virtual_env

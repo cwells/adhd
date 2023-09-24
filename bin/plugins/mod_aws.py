@@ -18,24 +18,30 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import rich.prompt
 import yaml
 from lib.plugins import PluginTarget
 from lib.util import ConfigBox, Style, check_permissions, console
 
+key: str | None
+target: PluginTarget = PluginTarget.ENV
+has_run: bool = False
+
 try:
     import boto3
 except ImportError:
     print("boto3 not found: AWS support disabled.")
-    boto3 = None
+    key = None
+else:
+    key = "aws"
 
 
 # ==============================================================================
 
 
-def activate_aws_session(
+def load(
     config: ConfigBox,
     env: dict[str, Any],
     verbose: bool = False,
@@ -44,7 +50,7 @@ def activate_aws_session(
     If aws configured, prompt for 2fa code, authenticate with AWS, then
     store auth token and temp credentials in cache.
     """
-    if boto3 is None:  # we were unable to import module
+    if key is None:  # we were unable to import module
         console.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
         sys.exit(1)
 
@@ -97,7 +103,7 @@ class CachedSession(dict):
         expiry: int = 86400,
         tmpdir: Path = Path("/tmp"),
     ) -> None:
-        if boto3 is None:  # we were unable to import module
+        if key is None:  # we were unable to import module
             console.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
             sys.exit(1)
 
@@ -126,11 +132,3 @@ class CachedSession(dict):
                 cached_data.write(yaml.dump(data))
 
         self.update(data)
-
-
-# ==============================================================================
-
-
-key: str | None = "aws" if boto3 is not None else None
-load: Callable = activate_aws_session
-target: PluginTarget = PluginTarget.ENV
