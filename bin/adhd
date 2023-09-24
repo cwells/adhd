@@ -105,7 +105,6 @@ def main(
             project_config=project_config,
             process_env=process_env,
             enabled=plugins_enabled,
-            workdir=project_config["home"],
             verbose=verbose,
         )
 
