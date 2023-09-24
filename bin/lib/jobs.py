@@ -7,15 +7,13 @@ from lib.util import ConfigBox, Style, console, get_sorted_deps, resolve_depende
 
 def get_job(
     command: str,
-    job_config: ConfigBox,
-    project_config: ConfigBox,
+    job_config: dict[str, Any],
+    project_config: dict[str, Any],
     process_env: dict[str, str],
-) -> ConfigBox:
+) -> dict[str, Any]:
     "Build a job structure from configuration."
 
     env: dict[str, Any] = {**process_env, **job_config.get("env", {})}
-
-    job_config = ConfigBox({**project_config, **job_config})
 
     def _eval(v: Any, *args, **kwargs) -> Any:
         if not v:
@@ -42,22 +40,19 @@ def get_job(
     )
     _env: dict[str, str] = resolve_dependencies(job_config.get("env", ConfigBox()), workdir)
 
-    job: ConfigBox = ConfigBox(
-        {
-            "name": command,
-            "env": {**env, **_env},
-            "workdir": str(workdir),
-            "tmp": _eval(job_config.get("tmp", lambda *_, **__: False), workdir=workdir, env=env),
-            "tasks": tasks,
-            "skip": _eval(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
-            "open": _open,
-            "capture": _eval(job_config.get("capture", False), env=env),
-            "interactive": _eval(job_config.get("interactive", False), workdir=workdir, env=env),
-            "silent": job_config.get("silent"),
-            "sleep": job_config.get("sleep", 0),
-            "help": job_config.get("help", "No help available."),
-        }
-    )
+    job: dict[str, Any] = {
+        "name": command,
+        "env": {**env, **_env},
+        "workdir": str(workdir),
+        "tasks": tasks,
+        "skip": _eval(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
+        "open": _open,
+        "capture": _eval(job_config.get("capture", False), env=env),
+        "interactive": _eval(job_config.get("interactive", False), workdir=workdir, env=env),
+        "silent": job_config.get("silent"),
+        "sleep": job_config.get("sleep", 0),
+        "help": job_config.get("help", "No help available."),
+    }
 
     if not (job["tasks"] or job_config.get("after") or job_config.get("open")):
         console.print(f"{Style.ERROR}{command}: must have at least one command, dependency, or open directive.")
@@ -66,9 +61,7 @@ def get_job(
     return job
 
 
-def get_jobs(
-    command: list[str] | tuple[str, ...], project_config: dict, process_env: dict
-) -> Generator[ConfigBox, None, None]:
+def get_jobs(command: list[str] | tuple[str, ...], project_config: dict, process_env: dict) -> Generator:
     """
     Determine whether we're going to use a pre-defined job from configuration, or
     if we're console.print a cli command and generate a list of job structures with
@@ -83,24 +76,22 @@ def get_jobs(
         sys.exit(1)
 
     if command[0] in jobs:  # pre-defined jobs
-        for _cmd in command:
+        for _cmd in command:  # somehow this keeps the dep order. i don't trust it.
             for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
                 job_config: dict[str, Any] = jobs.get(dep, {})
                 yield get_job(dep, job_config, project_config, process_env)
 
     else:  # cli command
         cmd: str = " ".join(command)
-        yield ConfigBox(
-            {
-                "name": cmd,
-                "env": process_env,
-                "workdir": workdir,
-                "tasks": [cmd],
-                "sleep": 0,
-                "capture": False,
-                "interactive": True,
-                "silent": False,
-                "skip": False,
-                "help": "I can't explain this.",
-            }
-        )
+        yield {
+            "name": cmd,
+            "env": process_env,
+            "workdir": workdir,
+            "tasks": [cmd],
+            "sleep": 0,
+            "capture": False,
+            "interactive": True,
+            "silent": False,
+            "skip": False,
+            "help": "I can't explain this.",
+        }
