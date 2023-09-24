@@ -158,10 +158,12 @@ tmp: Optional[str]            # path to store temporary files
 
 plugins:
   python:
+    always: [bool]              # always load this plugin on startup
     venv: [str]                 # path to project's virtual env
     requirements: [str]         # path to requirements.txt
 
   aws:
+    always: [bool]              # always load this plugin on startup
     profile: [str]              # AWS CLI profile (from ~/.aws/credentials)
     username: [str]             # AWS username
     account: [str]              # AWS account ID
@@ -172,7 +174,7 @@ plugins:
 jobs:
   <identifier>:
       run: str | list[str]               # the command(s) to be run
-      after: Optional[str | list[str]]   # jobs that this job depends upon
+      after: Optional[str | list[str]]   # jobs or plugins that this job depends upon
       env: Optional[dict[str, Any]]      # define job-specific env vars
       help: Optional[str]                # help text for this job
       home: Optional[str]                # ff not set defaults to global value
@@ -306,19 +308,19 @@ the primary project file. Dictionaries will be recursively merged.
 # Jobs
 
 You may define jobs in the `jobs` section of the YAML config file. A job can
-depend on other jobs, indicated by the key `after`:
+depend on other jobs or plugins, indicated by the key `after`:
 
 ```yaml
     django/up:
       run: ./manage.py runserver &
       skip: !shell_eq_0 fuser -s 8000/tcp
-      after: [ django/bootstrap, django/migrate ]
+      after: [ plugin:python, django/bootstrap, django/migrate ]
 ```
 
-If `django/up` is run, it will first run `django/bootstrap` and `django/migrate`
-(and these in turn may have other dependencies). If you don't always want a job
-to run, you can add the `skip` directive, followed by a test that evaluates the
-output of a shell command.
+If `django/up` is run, it will first load the `python` plugin, then run
+`django/bootstrap` and `django/migrate` (and these in turn may have other
+dependencies). If you don't always want a job to run, you can add the `skip`
+directive, followed by a test that evaluates the output of a shell command.
 
 # The CLI
 
