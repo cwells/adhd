@@ -68,6 +68,8 @@ def list_plugins() -> None:
 
     for mod in plugins_dir.glob("mod_*.py"):
         module = importlib.import_module(f"plugins.{mod.stem}")
+        if module.key is None:
+            continue
         console.print(f"\n[bold white]:black_circle:[/][bold yellow]{mod.stem}")
         if module.__doc__:
             console.print(module.__doc__.strip())
