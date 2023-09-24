@@ -147,7 +147,7 @@ def resolve_dependencies(env: dict[str, Any], workdir: Path) -> dict[str, Any]:
                 if callable(_v):
                     env[k] = str(_v(env=env, workdir=workdir))
                 else:
-                    env[k] = str(_v)
+                    env[k] = _v
     except CircularDependencyError as e:
         return _exit(f"[red]Error: {e}[/]")
 
@@ -243,10 +243,9 @@ def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> dict[
     another variable will be reified _after_ its dependencies.
     """
 
+    home: str | Callable = project_config.get("home", ".")
     env: dict[str, str] = ConfigBox()
     workdir: Path = Path(project_config.get("home", "."))
-    venv: Path | None
-    # deps: dict[str, set] = {k: set() for k in project_config["env"]}
 
     if "env" not in project_config:
         project_config["env"] = ConfigBox()

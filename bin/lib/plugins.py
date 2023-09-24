@@ -4,7 +4,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, cast
 
-from lib.util import Style, console, get_program_home
+from lib.util import Style, console, get_program_home, resolve_dependencies
 
 
 # ==============================================================================
@@ -26,6 +26,7 @@ def load_plugins(
     project_config: dict[str, Any],
     process_env: dict,
     enabled: dict[str, bool],
+    workdir: Path,
     verbose: bool = False,
 ) -> None:
     "Locate plugins, import them, and run plugin.load() for each."
@@ -50,6 +51,7 @@ def load_plugins(
                 console.print(f"{Style.START_LOAD}plugin {plugin_name}")
 
             plugin_config["tmp"] = project_config.get("tmp", "/tmp")
+            plugin_config.update(resolve_dependencies(plugin_config, workdir))
             data = plugin.load(config=plugin_config, env=process_env)
 
             if plugin.target == PluginTarget.ENV:

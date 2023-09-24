@@ -72,8 +72,11 @@ def get_jobs(command: list[str] | tuple[str, ...], project_config: ConfigBox, pr
     their associated env and other configuration.
     """
 
-    jobs: dict[str, Any] = project_config.get("jobs", {})
     workdir: Path = Path(project_config.get("home", "."))
+
+    project_config.update(resolve_dependencies(project_config, workdir))
+
+    jobs: dict[str, Any] = project_config.get("jobs", {})
     tmpdir: Path = Path(project_config.get("tmp", "/tmp"))
 
     if not command:
