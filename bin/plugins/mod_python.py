@@ -1,7 +1,6 @@
 """
 [bold cyan]Configure Python virtual environment.[/]
 
-plugins:
   python:
     venv: ~/myproject/.venv                    # location venv will be created
     requirements: ~/myproject/requirements.txt # optional requirements.txt to be installed

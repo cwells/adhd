@@ -4,7 +4,6 @@
 Note that inclusion happens relative to the document root, _not_ in-place within
 the plugins section.
 
-plugins:
   include:
   - file1.yaml
   - !path [ "~", projects/file2.yaml ]

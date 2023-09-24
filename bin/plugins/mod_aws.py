@@ -1,7 +1,6 @@
 """
 [bold cyan]Configure AWS session with MFA.[/]
 
-plugins:
   aws:
     profile: default      # profile name from .aws/credentials
     username: john.doe    # AWS username
