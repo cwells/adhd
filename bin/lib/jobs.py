@@ -2,6 +2,7 @@ import sys
 from pathlib import Path
 from typing import Any, Generator
 
+from lib.plugins import Plugin, load_plugin
 from lib.util import ConfigBox, Style, console, get_sorted_deps, resolve_dependencies
 
 
@@ -66,7 +67,12 @@ def get_job(
     return job
 
 
-def get_jobs(command: list[str] | tuple[str, ...], project_config: ConfigBox, process_env: dict) -> Generator:
+def get_jobs(
+    command: list[str] | tuple[str, ...],
+    project_config: ConfigBox,
+    process_env: dict,
+    plugins: dict[str, Plugin],
+) -> Generator:
     """
     Determine whether we're going to use a pre-defined job from configuration, or
     if we're console.print a cli command and generate a list of job structures with
@@ -85,7 +91,21 @@ def get_jobs(command: list[str] | tuple[str, ...], project_config: ConfigBox, pr
         for _cmd in command:  # somehow this keeps the dep order. i don't trust it.
             for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
                 job_config: ConfigBox = jobs.get(dep, {})
-                yield get_job(dep, job_config, project_config, process_env)
+                if dep.startswith("plugin:"):
+                    _, _plugin_name = dep.split(":", 1)
+                    _plugin_key = f"mod_{_plugin_name}"
+                    _plugin: Plugin | None = plugins.get(_plugin_key)
+                    if _plugin:
+                        load_plugin(_plugin, project_config, process_env)
+                    continue
+
+                try:
+                    yield get_job(dep, job_config, project_config, process_env)
+                except Exception as e:
+                    _err, _code = e.args
+                    console.print(f"{Style.ERROR} job [bold cyan]{_cmd}[/] failed: {_err}")
+                    raise
+                    sys.exit(_code)
 
     else:  # cli command
         cmd: str = " ".join(command)
