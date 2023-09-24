@@ -255,7 +255,7 @@ EXTERNAL_ROUTE: !shell_stdout ip -json route get 1 | jq -r '.[0].prefsrc'
 In the above example, `EXTERNAL_ROUTE` would be the IP address of the machine's
 external interface.
 
-## !cat, !path, !url
+## !cat, !path, !url, !exists
 
 > string concatenation
 
@@ -263,6 +263,7 @@ external interface.
 - `!path` concatenates a list of strings into a path and returns a normalized
 path (`~` and `..` will be substituted and collapsed).
 - `!url` concatenates a list of strings into a URL.
+- `!exists` concatenates list of strings into a path and returns True if path exists.
 
 ```yaml
 SECRET: !cat [ because, is, hat ]
@@ -271,7 +272,10 @@ SECRET: !cat [ because, is, hat ]
 API_ENDPOINT: !url [ https://domain.com/cust/, *cust_id, /api ]
 ```
 ```yaml
-DATA_DIR: !path [ ~, foo, bar, data_dir ]
+DATA_DIR: !path [ "~", foo, bar, data_dir ]
+```
+```yaml
+binary: !exists [ "~/.bin", *bin_name  ]
 ```
 
 ## !include
@@ -285,6 +289,33 @@ the primary project file. Dictionaries will be recursively merged.
 ```
 
 # Jobs
+
+You may define jobs in the `jobs` section of the YAML config file. A job can
+depend on other jobs, indicated by the key `after`:
+
+```yaml
+    django/up:
+      run: ./manage.py runserver &
+      skip: !shell_eq_0 fuser -s 8000/tcp
+      after: [ django/bootstrap, django/migrate ]
+```
+
+If `django/up` is run, it will first run `django/bootstrap` and `django/migrate`
+(and these in turn may have other dependencies). If you don't always want a job
+to run, you can add the `skip` directive, followed by a test that evaluates the
+output of a shell command.
+
+> Note: `skip` commands will not have the project home as their working directory
+> due to the fact that this information isn't yet available. This means you must
+> prefix any paths with `*home`, e.g.:
+>
+>    ```yaml
+>    skip: !exists [ *home, "/tmp/process.pid" ]
+>    ```
+> This is unlike `run` directives, which will have the project home as their
+> current working directory.
+
+# The CLI
 
 You can see available jobs using the `--help-jobs` option:
 
@@ -349,4 +380,8 @@ adhd example --plugin aws:off bash
 
 # TODO
 
-- additional planned plugins: `mod_git`, `mod_asdf`, `mod_ngrok`
+- additional planned plugins:
+  - `mod_git` - clone a git repo
+  - `mod_asdf` - use asdf to select Python version
+  - `mod_ngrok` - automatically start/stop ngrok tunnels
+- get `skip` to operate in project home.

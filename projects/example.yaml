@@ -32,7 +32,7 @@ jobs:
   django/bootstrap:
     help: Bootstrap the Django project
     run: django-admin startproject example_django_app .
-    skip: !exists manage.py
+    skip: !exists [ *home, manage.py ]
 
   django/destroy:
     help: Removes entire installation

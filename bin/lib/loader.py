@@ -212,9 +212,10 @@ def construct_exists(loader: yaml.FullLoader, node: yaml.SequenceNode) -> bool:
     else:
         paths = [str(loader.construct_scalar(node))]
 
-    for path in paths:
-        if not Path(str(path)).exists():
-            return False
+    path: Path = Path("/".join(paths)).expanduser().resolve()
+
+    if not path.exists():
+        return False
     return True
 
 
