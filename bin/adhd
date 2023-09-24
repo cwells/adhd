@@ -23,8 +23,8 @@ except ImportError:
     sys.exit(1)
 
 from lib.jobs import get_jobs
+from lib.plugins import Plugin, list_plugins, load_plugins
 from lib.shell import shell
-from lib.plugins import load_plugins, list_plugins
 from lib.util import (
     ConfigBox,
     EnvParamType,
@@ -36,7 +36,6 @@ from lib.util import (
     get_local_env,
     read_project_config,
 )
-
 
 # ==============================================================================
 
@@ -74,6 +73,7 @@ def main(
     process_env: dict[str, str] = ConfigBox()
     project_config: ConfigBox = ConfigBox()
     plugins_enabled: dict[str, bool] = dict(plugin)
+    plugins: dict[str, Plugin]
     job: ConfigBox
     task: str
     returncode: int = 0
@@ -100,8 +100,9 @@ def main(
 
     if explain:
         console.print("\n[bold]The following jobs would be run, in this order:[/]\n")
+        plugins = {}
     else:
-        load_plugins(
+        plugins = load_plugins(
             project_config=project_config,
             process_env=process_env,
             enabled=plugins_enabled,
@@ -111,7 +112,7 @@ def main(
     #
     # main loop - get_jobs() returns topologically-sorted list of jobs
     #
-    for job in get_jobs(command, project_config, process_env):
+    for job in get_jobs(command, project_config, process_env, plugins):
         if debug:
             console.print(job.to_dict())
 
@@ -138,19 +139,24 @@ def main(
         # go to workdir, if defined and not overridden by cli
         if home:
             try:
-                workdir.mkdir(parents=True, exist_ok=True)
-                os.chdir(workdir)
+                if workdir.exists():
+                    os.chdir(workdir)
             except Exception as e:
                 _exit(f"{Style.ERROR}Error changing working dir to project home: {e}")
 
-        if confirm := job.get("confirm"):
-            if not rich.prompt.Confirm.ask(confirm, default=False):
-                raise SystemExit("Aborted by user request.\n")
-
-        # check skip condition
+        # skip / confirm
         if job.get("skip") and force is False:
             console.print(f'{Style.SKIPPED}[bold blue]{job["name"]}[/]')
             continue
+        elif confirm := job.get("confirm"):
+            if not rich.prompt.Confirm.ask(confirm, default=False, console=console):
+                if not rich.prompt.Confirm.ask(
+                    "Would you like to continue?",
+                    console=console,
+                    choices=["continue", "abort"],
+                    default="abort",
+                ):
+                    raise SystemExit("Aborted by user request.\n")
         else:
             if not silent:
                 console.print(f"{Style.STARTING}[bold blue]{job['name']}[/]")
