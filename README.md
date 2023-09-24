@@ -180,10 +180,13 @@ jobs:
       open: Optional[str | list[str]]    # URI(s) to open after command
       skip: Optional[bool]               # skip dependency if value is True
       sleep: Optional[int]               # seconds to sleep after executing command
+      confirm: Optional[str]             # Ask user a y/n question and abort if no
 
 <identifier>:
   env: Optional[dict[str, Any]]  # define global environment variables
 ```
+
+> The `confirm` directive allows for the use of colors and emoji as described here: https://rich.readthedocs.io/en/stable/appendix/colors.html
 
 # Custom YAML tags
 
@@ -388,4 +391,3 @@ adhd example --plugin aws:off bash
   - `mod_ngrok` - manage ngrok tunnels.
 - get `!exists` and `!path` to operate in project home.
 - more verbosity when verbose.
-- add a `prompt` key to prompt "y/n" for jobs

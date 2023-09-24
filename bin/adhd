@@ -145,7 +145,7 @@ def main(
 
         if confirm := job.get("confirm"):
             if not rich.prompt.Confirm.ask(confirm, default=False):
-                raise SystemExit("Aborted by user request.")
+                raise SystemExit("Aborted by user request.\n")
 
         # check skip condition
         if job.get("skip") and force is False:
