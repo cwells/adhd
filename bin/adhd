@@ -78,7 +78,7 @@ def main(
     task: str
     returncode: int = 0
 
-    verbose = debug if debug else verbose
+    verbose = True if debug else verbose
 
     # read configuration
     try:
@@ -112,7 +112,7 @@ def main(
     #
     # main loop - get_jobs() returns topologically-sorted list of jobs
     #
-    for job in get_jobs(command, project_config, process_env, plugins):
+    for job in get_jobs(command, project_config, process_env, plugins, verbose=verbose):
         if debug:
             console.print(job.to_dict())
 
