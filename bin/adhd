@@ -143,6 +143,10 @@ def main(
             except Exception as e:
                 _exit(f"{Style.ERROR}Error changing working dir to project home: {e}")
 
+        if confirm := job.get("confirm"):
+            if not rich.prompt.Confirm.ask(confirm, default=False):
+                raise SystemExit("Aborted by user request.")
+
         # check skip condition
         if job.get("skip") and force is False:
             console.print(f'{Style.SKIPPED}[bold blue]{job["name"]}[/]')

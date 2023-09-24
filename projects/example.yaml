@@ -24,6 +24,15 @@ jobs:
     run: fuser -sk 8000/tcp
     skip: !shell_neq_0 fuser -s 8000/tcp
 
+  django/shell:
+    help: Start an interactive Django Python REPL.
+    run: ./manage.py shell
+    interactive: true
+    silent: true
+    after:
+    - django/bootstrap
+    - django/migrate
+
   django/migrate:
     help: Run Django database migrations
     run: ./manage.py migrate
@@ -39,6 +48,7 @@ jobs:
   django/destroy:
     help: Removes entire installation
     run: !cats [ rm -rf, *home ]
+    confirm: !cats [ "\nAre you sure you wish to remove[bold cyan]", *home, "[/]and all of its content?" ]
     after:
     - django/down
 

@@ -53,6 +53,7 @@ def get_job(
             "capture": _eval(job_config.get("capture", False), env=env),
             "interactive": _eval(job_config.get("interactive", False), workdir=workdir, env=env),
             "silent": job_config.get("silent"),
+            "confirm": job_config.get("confirm"),
             "sleep": job_config.get("sleep", 0),
             "help": job_config.get("help", "No help available."),
         }
