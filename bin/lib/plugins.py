@@ -49,6 +49,7 @@ def load_plugins(
             if verbose:
                 console.print(f"{Style.START_LOAD}plugin {plugin_name}")
 
+            plugin_config["tmp"] = project_config.get("tmp", "/tmp")
             data = plugin.load(config=plugin_config, env=process_env)
 
             if plugin.target == PluginTarget.ENV:
