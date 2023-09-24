@@ -381,7 +381,8 @@ adhd example --plugin aws:off bash
 # TODO
 
 - additional planned plugins:
-  - `mod_git` - clone a git repo
-  - `mod_asdf` - use asdf to select Python version
-  - `mod_ngrok` - automatically start/stop ngrok tunnels
+  - `mod_git` - clone a project git repo.
+  - `mod_asdf` - select Python version.
+  - `mod_ngrok` - manage ngrok tunnels.
 - get `skip` to operate in project home.
+- more verbosity when verbose.
