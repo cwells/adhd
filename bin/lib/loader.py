@@ -202,7 +202,7 @@ def construct_include(loader: yaml.FullLoader, node: yaml.ScalarNode) -> Any:
 # ==============================================================================
 
 
-def construct_exists(loader: yaml.FullLoader, node: yaml.SequenceNode) -> bool:
+def construct_exists(exists: bool, loader: yaml.FullLoader, node: yaml.SequenceNode) -> bool:
     "Check if all of a list of files exists."
 
     paths: list[str] = []
@@ -214,7 +214,7 @@ def construct_exists(loader: yaml.FullLoader, node: yaml.SequenceNode) -> bool:
 
     path: Path = Path("/".join(paths)).expanduser().resolve()
 
-    return path.exists()
+    return path.exists() == exists
 
 
 def get_loader() -> type[yaml.FullLoader]:
@@ -232,6 +232,7 @@ def get_loader() -> type[yaml.FullLoader]:
     loader.add_constructor("!url", construct_url)
     loader.add_constructor("!path", construct_path)
     loader.add_constructor("!include", construct_include)
-    loader.add_constructor("!exists", construct_exists)
+    loader.add_constructor("!exists", partial(construct_exists, True))
+    loader.add_constructor("!not_exists", partial(construct_exists, False))
 
     return loader
