@@ -31,9 +31,9 @@ class Style(Enum):
     TASK_RUN = "  [white]:arrow_right_hook:  "
     TASK_SKIP = "  [white]:arrow_right_hook:[grey50]  "
     TASK_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Finished "
-    START_LOAD = "[bold green]:white_circle:[/]loading "
-    FINISH_LOAD = "[bold green]:black_circle:[/]loaded "
-    SKIP_LOAD = "[bold yellow]:white_circle:[/]skipped "
+    START_LOAD = "[bold green]:white_circle:[/]Loading "
+    FINISH_LOAD = "[bold green]:black_circle:[/]Loaded "
+    SKIP_LOAD = "[bold yellow]:white_circle:[/]Skipped "
     OPEN_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Opened "
 
     def __str__(self):
