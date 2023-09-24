@@ -24,7 +24,7 @@ from lib.util import console, ConfigBox, Style
 try:
     import ngrok
 except ImportError:
-    console.print("ngrok module not found: ngrok support disabled.")
+    console.print(f"{Style.WARNING}ngrok-api module not found: ngrok support disabled.")
     ngrok = None
 
 # ==============================================================================
