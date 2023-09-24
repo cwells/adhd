@@ -12,7 +12,7 @@
     tmp: ~/.tmp/          # tmp dir to cache session token (must be secure)
 
 Session will be cached in `tmp` for `expiry` seconds and you won't be prompted
-for MFA code until that time, even in multiple shells.
+for MFA code until that time, even across multple invokations and multiple shells.
 """
 
 import os
