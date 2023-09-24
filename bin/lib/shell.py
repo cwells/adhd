@@ -14,6 +14,9 @@ def shell(
 ) -> subprocess.CompletedProcess[bytes]:
     "Executes command in subshell and return CompletedProcess object."
 
+    if workdir:
+        workdir = workdir.expanduser().resolve()
+
     result: subprocess.CompletedProcess[bytes]
     if env is not None:
         env = {k: str(v) for k, v in env.items()}
@@ -21,7 +24,7 @@ def shell(
         result = subprocess.run(
             args=command,
             shell=True,
-            cwd=workdir.expanduser().resolve() if workdir else None,
+            cwd=workdir if workdir and workdir.exists() else None,
             env=env or {},
             capture_output=capture and not interactive,
             stdout=subprocess.DEVNULL if not (interactive or capture) else None,
