@@ -72,6 +72,7 @@ def get_jobs(
     project_config: ConfigBox,
     process_env: dict,
     plugins: dict[str, Plugin],
+    verbose: bool = False,
 ) -> Generator:
     """
     Determine whether we're going to use a pre-defined job from configuration, or
@@ -96,7 +97,7 @@ def get_jobs(
                     _plugin_key = f"mod_{_plugin_name}"
                     _plugin: Plugin | None = plugins.get(_plugin_key)
                     if _plugin:
-                        load_plugin(_plugin, project_config, process_env)
+                        load_plugin(_plugin, project_config, process_env, verbose=verbose)
                     continue
 
                 try:
