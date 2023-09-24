@@ -36,7 +36,7 @@ jobs:
 
   django/destroy:
     help: Removes entire installation
-    run: !cat [ rm -rf, *home ]
+    run: !cats [ rm -rf, *home ]
     after:
     - django/down
 

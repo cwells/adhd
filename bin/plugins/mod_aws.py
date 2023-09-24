@@ -139,4 +139,4 @@ if boto3 is not None:
     load = activate_aws_session
 else:
     key = None
-    load = lambda *_, **__: console.print("Plugin is disabled.")
+    load = lambda *_, **__: console.print("AWS plugin is disabled.")
