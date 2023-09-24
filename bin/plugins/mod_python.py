@@ -1,5 +1,5 @@
 """
-[bold cyan]Configures Python virtual environment.[/]
+[bold cyan]Configure Python virtual environment.[/]
 
 plugins:
   python:
@@ -14,10 +14,10 @@ virtual environment, but won't be able to create a new one.
 import os
 import sys
 from pathlib import Path
-from typing import Any, Callable
+from typing import Callable
 
 from lib.shell import shell
-from lib.util import console, Style
+from lib.util import console, Style, ConfigBox
 from lib.plugins import PluginTarget
 
 try:
@@ -30,7 +30,7 @@ except ImportError:
 # ==============================================================================
 
 
-def activate_virtual_env(config: dict[str, Any], env: dict[str, str]) -> dict[str, str]:
+def activate_virtual_env(config: ConfigBox, env: dict[str, str]) -> dict[str, str]:
     "Activate Python virtualenv."
 
     if venv := config.get("venv"):
@@ -118,7 +118,12 @@ def install_packages(venv: Path, packages: list[str], venv_env: dict[str, str]) 
 # ==============================================================================
 
 
-def install_requirements(venv: Path, requirements: Path, venv_env: dict[str, str]) -> bool:
+def install_requirements(
+    venv: Path,
+    requirements: Path,
+    venv_env: dict[str, str],
+    verbose: bool = False,
+) -> bool:
     "Install requirements.txt into virtual env."
 
     bin_dir: Path = venv / "bin"

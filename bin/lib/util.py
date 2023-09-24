@@ -42,7 +42,7 @@ class Style(Enum):
 
 
 class ConfigBox(Box):
-    "Pre-configured Box."
+    "Preconfigured Box."
 
     def __init__(self, *args, **kwargs):
         kwargs["box_dots"] = True
@@ -229,16 +229,7 @@ def nested_update(dst: ConfigBox, src: ConfigBox) -> ConfigBox:
 
 def read_project_config(project: str) -> dict[str, Any]:
     with open(project) as config_file:
-        project_config = ConfigBox(yaml.load(config_file, Loader=get_loader()))
-
-        # process include files
-        if include := project_config.pop("include", None):
-            for _i in include:
-                with open(_i, "r") as _f:
-                    _y = ConfigBox(yaml.load(_f.read(), Loader=yaml.FullLoader))
-                    project_config.update(nested_update(dst=_y, src=project_config))
-
-        return project_config
+        return ConfigBox(yaml.load(config_file, Loader=get_loader()))
 
 
 # ==============================================================================

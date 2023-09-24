@@ -8,7 +8,6 @@ import sys
 import time
 import webbrowser
 from pathlib import Path
-from typing import Any
 
 try:  # Check for basic dependencies. Plugin deps are checked by plugins.
     import click
@@ -71,7 +70,7 @@ def main(
     returncode: int = 0
     options_env: dict[str, str] = ConfigBox(env)
     process_env: dict[str, str] = ConfigBox()
-    project_config: dict[str, Any] = ConfigBox()
+    project_config: ConfigBox = ConfigBox()
     plugins_enabled: dict[str, bool] = dict(plugin)
 
     # read configuration
@@ -95,10 +94,12 @@ def main(
     if explain:
         console.print("\n[bold]The following jobs would be run, in this order:[/]\n")
     else:
-        # load plugins
-        _conf, _env = load_plugins(project_config, plugins_enabled, process_env, verbose)
-        project_config.update(_conf)
-        process_env.update(_env)
+        load_plugins(
+            project_config=project_config,
+            process_env=process_env,
+            enabled=plugins_enabled,
+            verbose=verbose,
+        )
 
     #
     # main loop - get_jobs() returns topologically-sorted list of jobs

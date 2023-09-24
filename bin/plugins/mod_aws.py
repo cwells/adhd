@@ -1,5 +1,5 @@
 """
-[bold cyan]Configures AWS session, including prompting for MFA code.[/]
+[bold cyan]Configure AWS session with MFA.[/]
 
 plugins:
   aws:
@@ -21,9 +21,8 @@ from typing import Any, Callable
 
 import rich.prompt
 import yaml
-
-from lib.util import console, Style, check_permissions
 from lib.plugins import PluginTarget
+from lib.util import ConfigBox, Style, check_permissions, console
 
 try:
     import boto3
@@ -35,7 +34,11 @@ except ImportError:
 # ==============================================================================
 
 
-def activate_aws_session(config: dict[str, Any], env: dict[str, Any]) -> dict[str, str]:
+def activate_aws_session(
+    config: ConfigBox,
+    env: dict[str, Any],
+    verbose: bool = False,
+) -> dict[str, str]:
     """
     If aws configured, prompt for 2fa code, authenticate with AWS, then
     store auth token and temp credentials in cache.
