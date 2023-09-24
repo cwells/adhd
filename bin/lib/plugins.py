@@ -4,8 +4,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, cast
 
-from lib.util import Style, console, get_program_home
-
+from lib.util import ConfigBox, Style, console, get_program_home
 
 # ==============================================================================
 
@@ -23,7 +22,7 @@ class Plugin(ModuleType):
 
 
 def load_plugins(
-    project_config: dict[str, Any],
+    project_config: ConfigBox,
     process_env: dict,
     enabled: dict[str, bool],
     verbose: bool = False,
@@ -49,7 +48,10 @@ def load_plugins(
             if verbose:
                 console.print(f"{Style.START_LOAD}plugin {plugin_name}")
 
-            data = plugin.load(config=plugin_config, env=process_env)
+            data = plugin.load(
+                config=ConfigBox({**project_config, **plugin_config}),
+                env=process_env,
+            )
 
             if plugin.target == PluginTarget.ENV:
                 process_env.update(data)
