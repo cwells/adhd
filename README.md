@@ -388,3 +388,4 @@ adhd example --plugin aws:off bash
   - `mod_ngrok` - manage ngrok tunnels.
 - get `!exists` and `!path` to operate in project home.
 - more verbosity when verbose.
+- add a `prompt` key to prompt "y/n" for jobs
