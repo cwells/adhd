@@ -22,12 +22,32 @@ class Plugin(ModuleType):
     load: Callable
 
 
+def load_plugin(
+    plugin: Plugin,
+    project_config: dict[str, Any],
+    process_env: dict,
+    verbose: bool = False,
+) -> None:
+    plugin_config: dict[str, Any] | None = project_config.get(f"plugins.{plugin.key}")
+
+    if not plugin_config:
+        return
+
+    plugin_config["tmp"] = project_config.get("tmp", "/tmp")
+    data = plugin.load(config=plugin_config, env=process_env)
+
+    if plugin.target == PluginTarget.ENV:
+        process_env.update(data)
+    elif plugin.target == PluginTarget.CONF:
+        project_config.update(data)
+
+
 def load_plugins(
     project_config: dict[str, Any],
     process_env: dict,
     enabled: dict[str, bool],
     verbose: bool = False,
-) -> None:
+) -> dict[str, Plugin]:
     "Locate plugins, import them, and run plugin.load() for each."
 
     plugin_dir: Path = get_program_home() / "bin/plugins"
@@ -41,24 +61,27 @@ def load_plugins(
         plugins[(mod.stem)] = cast(Plugin, module)
 
     for plugin_name, plugin in plugins.items():
-        if (
+        if not (
             enabled.get(plugin.key, True)
             and plugin.key
             and (plugin_config := project_config.get(f"plugins.{plugin.key}"))
+            and plugin_config.get("always", True)
         ):
-            if verbose:
-                console.print(f"{Style.START_LOAD}plugin {plugin_name}")
+            continue
 
-            plugin_config["tmp"] = project_config.get("tmp", "/tmp")
-            data = plugin.load(config=plugin_config, env=process_env)
+        if verbose:
+            console.print(f"{Style.START_LOAD}plugin {plugin_name}")
 
-            if plugin.target == PluginTarget.ENV:
-                process_env.update(data)
-            elif plugin.target == PluginTarget.CONF:
-                project_config.update(data)
+        load_plugin(
+            plugin,
+            project_config=project_config,
+            process_env=process_env,
+        )
 
-            if verbose:
-                console.print(f"{Style.FINISH_LOAD}plugin {plugin_name}")
+        if verbose:
+            console.print(f"{Style.FINISH_LOAD}plugin {plugin_name}")
+
+    return plugins
 
 
 # ==============================================================================
