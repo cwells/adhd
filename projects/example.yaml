@@ -48,7 +48,7 @@ jobs:
   django/destroy:
     help: Removes entire installation
     run: !cats [ rm -rf, *home ]
-    confirm: !cat [ "\n[bold yellow]:warning:[/] Completely delete [bold cyan]", *home, "[/]?" ]
+    confirm: !cat [ "\n[bold yellow]:warning:[/] Delete [bold cyan]", *home, "[/]?" ]
     after:
     - django/down
 
