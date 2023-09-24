@@ -4,6 +4,7 @@
 
 import contextlib
 import os
+import subprocess
 import sys
 import time
 import webbrowser
@@ -51,6 +52,7 @@ from lib.util import (
 @click.option("--help-plugins", is_flag=True, default=False, help="Display available plugins and help text")
 @click.option("--explain", is_flag=True, default=False, help="Display help text from job and its dependencies")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="Send stdout of all jobs to console")
+@click.option("--debug", is_flag=True, default=False, help="Generate extremely verbose output")
 @click.option("-f", "--force", is_flag=True, default=False, help="Bypass skip checks")
 @click.argument("project", type=ProjectParamType())
 @click.argument("command", nargs=-1)
@@ -65,13 +67,18 @@ def main(
     help_plugins: bool,
     explain: bool,
     verbose: bool,
+    debug: bool,
     force: bool,
 ) -> None:
-    returncode: int = 0
     options_env: dict[str, str] = ConfigBox(env)
     process_env: dict[str, str] = ConfigBox()
     project_config: ConfigBox = ConfigBox()
     plugins_enabled: dict[str, bool] = dict(plugin)
+    job: ConfigBox
+    task: str
+    returncode: int = 0
+
+    verbose = debug if debug else verbose
 
     # read configuration
     try:
@@ -105,6 +112,9 @@ def main(
     # main loop - get_jobs() returns topologically-sorted list of jobs
     #
     for job in get_jobs(command, project_config, process_env):
+        if debug:
+            console.print(job.to_dict())
+
         if explain:
             skip: bool = job.get("skip") and force is False
             style: Style = (Style.RUN, Style.SKIP)[skip]
@@ -143,22 +153,25 @@ def main(
 
         # each job can be composed of multiple tasks
         for task in job["tasks"]:
+            process: subprocess.CompletedProcess | None = None
+            returncode = 0
+
             # don't use console.status unless capturing output
             ctx: contextlib.AbstractContextManager = (
                 console.status(f"Running [yellow]{task}[/]")  # type: ignore
                 if capture or not (interactive or silent)
                 else contextlib.nullcontext()  # do-nothing context manager
             )
-
             with ctx:
                 try:
-                    returncode = shell(
-                        f"# {task}" if dry_run else task,
+                    process = shell(
+                        command=f"# {task}" if dry_run else task,
                         workdir=workdir,
                         env=job["env"],
                         capture=capture,
                         interactive=interactive and not capture,
-                    ).returncode
+                    )
+                    returncode = process.returncode
                 except Exception as e:
                     _exit(f"{Style.ERROR}Error executing process: {e}")
                 else:
@@ -170,6 +183,10 @@ def main(
                     if verbose:
                         console.print(f"[bold]Sleeping for {tts} seconds.")
                     time.sleep(tts)
+            else:
+                console.print(f"{Style.ERROR}Error: {task} exited with non-zero status.")
+                if process is not None and process.stderr:
+                    console.print(f"{Style.ERROR}{process.stderr.decode('utf-8')}")
 
         # finally, open any uris specified in job config
         if (uri := job.get("open")) and not dry_run:
@@ -186,6 +203,7 @@ def main(
         console.print()
     else:
         console.print(f"{Style.FINISHED}Finished all jobs.")
+
     sys.exit(returncode)
 
 
