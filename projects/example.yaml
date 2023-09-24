@@ -1,5 +1,6 @@
 ---
 home: &home ~/Work/example_django_app/
+tmp: !path [ "~", .tmp ]
 
 plugins:
   python:
@@ -21,6 +22,7 @@ jobs:
   django/down:
     help: Stops the Django web server
     run: fuser -sk 8000/tcp
+    skip: !shell_neq_0 fuser -s 8000/tcp
 
   django/migrate:
     help: Run Django database migrations
