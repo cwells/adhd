@@ -20,6 +20,7 @@ class PluginTarget(Enum):
 class Plugin(ModuleType):
     key: str
     load: Callable
+    has_run: bool = False
 
 
 def load_plugin(
@@ -30,7 +31,9 @@ def load_plugin(
 ) -> None:
     plugin_config: dict[str, Any] | None = project_config.get(f"plugins.{plugin.key}")
 
-    if not plugin_config:
+    if not plugin_config or getattr(plugin, "has_run", False):
+        if verbose:
+            console.print(f"{Style.SKIP_LOAD}plugin [cyan]{plugin.key}[/] is already loaded")
         return
 
     plugin_config["tmp"] = project_config.get("tmp", "/tmp")
@@ -40,6 +43,11 @@ def load_plugin(
         process_env.update(data)
     elif plugin.target == PluginTarget.CONF:
         project_config.update(data)
+
+    plugin.has_run = True
+
+    if verbose:
+        console.print(f"{Style.FINISH_LOAD}plugin: [cyan]{plugin.key}[/]")
 
 
 def load_plugins(
@@ -51,7 +59,6 @@ def load_plugins(
     "Locate plugins, import them, and run plugin.load() for each."
 
     plugin_dir: Path = get_program_home() / "bin/plugins"
-    plugin_name: str
     plugin: Plugin
     plugins: dict[str, Plugin] = {}
 
@@ -60,7 +67,7 @@ def load_plugins(
         importlib.reload(module)
         plugins[(mod.stem)] = cast(Plugin, module)
 
-    for plugin_name, plugin in plugins.items():
+    for plugin in plugins.values():
         if not (
             enabled.get(plugin.key, True)
             and plugin.key
@@ -69,17 +76,12 @@ def load_plugins(
         ):
             continue
 
-        if verbose:
-            console.print(f"{Style.START_LOAD}plugin {plugin_name}")
-
         load_plugin(
             plugin,
             project_config=project_config,
             process_env=process_env,
+            verbose=verbose,
         )
-
-        if verbose:
-            console.print(f"{Style.FINISH_LOAD}plugin {plugin_name}")
 
     return plugins
 
