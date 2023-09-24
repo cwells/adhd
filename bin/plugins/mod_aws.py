@@ -130,13 +130,8 @@ class CachedSession(dict):
 
 
 # ==============================================================================
-key: str | None
-load: Callable
-target: PluginTarget = PluginTarget.ENV
 
-if boto3 is not None:
-    key = "aws"
-    load = activate_aws_session
-else:
-    key = None
-    load = lambda *_, **__: console.print("AWS plugin is disabled.")
+
+key: str | None = "aws" if boto3 is not None else None
+load: Callable = activate_aws_session
+target: PluginTarget = PluginTarget.ENV
