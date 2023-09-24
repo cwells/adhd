@@ -23,6 +23,9 @@ class Plugin(ModuleType):
     has_run: bool = False
 
 
+# ==============================================================================
+
+
 def load_plugin(
     plugin: Plugin,
     project_config: dict[str, Any],
@@ -48,6 +51,9 @@ def load_plugin(
 
     if verbose:
         console.print(f"{Style.FINISH_LOAD}plugin: [cyan]{plugin.key}[/]")
+
+
+# ==============================================================================
 
 
 def load_plugins(
