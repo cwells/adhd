@@ -177,6 +177,7 @@ def main(
                 uri = [uri]
             for _u in uri:
                 webbrowser.open_new_tab(_u)
+                console.print(f"{Style.OPEN_FINISHED}[yellow]{_u}[/]", highlight=False)
 
         if not silent:
             console.print(f"{Style.FINISHED}[bold blue]{job['name']}[/]")

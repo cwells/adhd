@@ -73,7 +73,7 @@ def initialize_venv(
             console.print(f"{Style.ERROR}Virtualenv creation is disabled. Please install virtualenv package.")
             sys.exit(1)
 
-        with console.status(f"[bold green]:black_circle:[/]Building Python virtual environment"):
+        with console.status(f"[bold green]:white_circle:[/]Building Python virtual environment"):
             virtualenv.cli_run(
                 [str(venv)],
                 options=None,
@@ -84,13 +84,13 @@ def initialize_venv(
 
     if requirements:
         _req: Path = Path(requirements).expanduser().resolve()
-        with console.status(f"[bold green]:black_circle:[/]Installing requirements from [yellow]{_req}[/]"):
+        with console.status(f"[bold green]:white_circle:[/]Installing requirements from [yellow]{_req}[/]"):
             installed: bool = install_requirements(venv, _req, env)
             style: Style = (Style.SKIPPED, Style.FINISHED)[installed]
             console.print(f"{style}installing Python requirements from [yellow]{_req}[/]")
 
     if packages:
-        with console.status(f"[bold green]:black_circle:[/]Installing additional packages"):
+        with console.status(f"[bold green]:white_circle:[/]Installing additional packages"):
             install_packages(venv, packages, env)
         console.print(f"{Style.FINISHED}installing Python packages")
 

@@ -33,6 +33,7 @@ class Style(Enum):
     TASK_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Finished "
     START_LOAD = "[bold green]:white_circle:[/]loading "
     FINISH_LOAD = "[bold green]:black_circle:[/]loaded "
+    OPEN_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Opened "
 
     def __str__(self):
         return self.value
