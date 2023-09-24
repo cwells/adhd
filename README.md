@@ -188,7 +188,7 @@ jobs:
   env: Optional[dict[str, Any]]  # define global environment variables
 ```
 
-> The `confirm` directive allows for the use of colors and emoji as described here: https://rich.readthedocs.io/en/stable/appendix/colors.html
+> The `confirm` directive allows for the use of colors and emoji as described in the [Rich documentation](https://rich.readthedocs.io/en/stable/appendix/colors.html).
 
 # Custom YAML tags
 
