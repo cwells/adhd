@@ -1,6 +1,9 @@
 """
 [bold cyan]Include external YAML files.[/]
 
+Note that inclusion happens relative to the document root, _not_ in-place within
+the plugins section.
+
 plugins:
   include:
   - file1.yaml
