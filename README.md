@@ -303,6 +303,38 @@ directive, followed by a test that evaluates the output of a shell command.
 Jobs and plugins are only run once, regardless of how many other jobs may depend
 on them.
 
+# Tasks
+
+Every job can have one or more tasks that compose it (it's possible to have no
+tasks and only have dependencies). Tasks are simply shell commands, run in sequence.
+
+A job with a single task:
+
+    django/up:
+      help: Start the Django web server.
+      run: "./manage.py runserver &"
+      skip: !shell_eq_0 fuser -s 8000/tcp
+      interactive: true
+      after: [ plugin:python, plugin:aws, docker/up, django/seed ]
+
+A job with no tasks:
+
+    stack/up:
+      help: Bring up all required services.
+      after: [ docker/up, django/up, ngrok/up ]
+
+Tasks each run in their own subprocess. If you want tasks to share a subprocess
+(similar to `make`'s `ONESHELL` option), use the following format:
+
+    db/sync:
+      help: Sync staging database to local database.
+      run: !env |
+        echo "Starting database sync."
+        pg_dumpall > db.out
+        psql -f db.out postgres
+        echo "Finished syncing database."
+      confirm: \nSync staging database to local?
+
 # The CLI
 
 You can see available jobs using the `--help-jobs` option:
