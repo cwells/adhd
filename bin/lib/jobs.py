@@ -38,6 +38,7 @@ def get_job(
     tmpdir: Path = get_resolved_path(tmp, env=env)
 
     cmd: Any = _eval(job_config.get("run", []), env)
+
     tasks: list = [_eval(t, workdir=workdir, env=env) for t in (cmd if isinstance(cmd, list) else [cmd])]
     _urls = _eval(job_config.get("open"), workdir=workdir, env=env)
     _open: list = (
@@ -58,8 +59,8 @@ def get_job(
             "open": _open,
             "capture": _eval(job_config.get("capture", False), env=env),
             "interactive": _eval(job_config.get("interactive", False), workdir=workdir, env=env),
+            "confirm": _eval(job_config.get("confirm"), workdir=workdir, env=env),
             "silent": job_config.get("silent"),
-            "confirm": job_config.get("confirm"),
             "sleep": job_config.get("sleep", 0),
             "help": job_config.get("help", "No help available."),
         }
@@ -81,6 +82,7 @@ def get_jobs(
     process_env: dict,
     plugins: dict[str, Plugin],
     verbose: bool = False,
+    debug: bool = False,
 ) -> Generator:
     """
     Determine whether we're going to use a pre-defined job from configuration, or
@@ -114,7 +116,9 @@ def get_jobs(
             try:
                 yield get_job(dep, job_config, project_config, process_env)
             except Exception as e:
-                console.print(f"{Style.ERROR} job [bold cyan]{_cmd}[/] failed: {e}")
+                console.print(f"{Style.ERROR} job [bold cyan]{_cmd}[/] failed: [bold white]{e}[/]")
+                if debug:
+                    raise
                 sys.exit(1)
 
     else:  # cli command

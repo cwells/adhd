@@ -121,7 +121,9 @@ def eval_cat(
     workdir: Path,
     env: dict[str, Any] | None = None,
 ) -> str:
-    return sep.join(value)
+    evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
+
+    return sep.join(evaled)
 
 
 def construct_cat(sep: str, loader: yaml.FullLoader, node: yaml.SequenceNode) -> LazyValue:
@@ -177,8 +179,8 @@ def eval_exists(
     workdir: Path,
     env: dict[str, Any],
 ) -> bool:
-    evaled: list[str] = [v(env) if isinstance(v, LazyValue) else v for v in value]
-    path: Path = get_resolved_path("/".join(evaled), env=env)
+    evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
+    path: Path = get_resolved_path("/".join(evaled), env=env, workdir=workdir)
 
     return path.exists() == exists
 

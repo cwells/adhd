@@ -115,7 +115,7 @@ def main(
     #
     # main loop - get_jobs() returns topologically-sorted list of jobs
     #
-    for job in get_jobs(command, project_config, process_env, plugins, verbose=verbose):
+    for job in get_jobs(command, project_config, process_env, plugins, verbose=verbose, debug=debug):
         if debug:
             console.print(job.to_dict())
 
