@@ -11,7 +11,7 @@ plugins:
 
 jobs:
   up:
-    help: Run [bold cyan]django/up[/] and open the front and admin pages.
+    help: Run [bold cyan]django/up[/] and open the front page.
     open: [ http://localhost:8000/ ]
     after: django/up
 
