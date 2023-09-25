@@ -370,7 +370,31 @@ and then run
 
 You can get a list of available plugins and their help with:
 
-    adhd example --help-plugins
+    $ adhd example --help-plugins
+
+    ⚫ mod_aws Configure AWS session with MFA.
+
+      aws:
+        profile: default      # profile name from .aws/credentials
+        username: john.doe    # AWS username
+        account: 123456789012 # AWS account ID
+        region: eu-west-1     # AWS region
+        mfa:
+          device: MyDevice    # last part of ARN "arn:aws:iam::123456789012:mfa/MyDevice"
+          expiry: 86400       # TTL for token (will prompt for MFA code upon expiry)
+
+    Session will be cached in "tmp" for "expiry" seconds and you wont be prompted
+    for MFA code until that time, even across multple invokations and multiple shells.
+
+    ⚫ mod_python Configure Python virtual environment.
+
+      python:
+        venv: ~/myproject/.venv                    # location venv will be created
+        requirements: ~/myproject/requirements.txt # optional requirements.txt to be installed
+        packages: [ requests, PyYAML==5.4.1 ]      # additional packages to install
+
+    If `virtualenv` package is missing, plugin will still work with an existing
+    virtual environment, but won't be able to create a new one.
 
 You may enable or disable individual plugins on the command line.
 
