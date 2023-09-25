@@ -90,7 +90,8 @@ def main(
         project_config.update(read_project_config(project))
         process_env.update(get_local_env(project_config, options_env))
     except Exception as e:
-        _exit(f"[red]Error loading configuration {project}: {e}")
+        console.print(f"{Style.ERROR}loading configuration {project}:\n")
+        _exit(e, verbose=verbose, debug=debug)
 
     # display list of possible jobs
     if help_jobs:
@@ -145,7 +146,8 @@ def main(
                 if workdir.exists():
                     os.chdir(workdir)
             except Exception as e:
-                _exit(f"{Style.ERROR}Error changing working dir to project home: {e}")
+                console.print(f"{Style.ERROR}changing to directory {workdir}:\n")
+                _exit(e, verbose=verbose, debug=debug)
 
         # skip / confirm
         if job.get("skip") and force is False:
@@ -186,7 +188,8 @@ def main(
                     )
                     returncode = process.returncode
                 except Exception as e:
-                    _exit(f"{Style.ERROR}Error executing process: {e}")
+                    console.print(f"{Style.ERROR}loading executing {task}:\n")
+                    _exit(e, verbose=verbose, debug=debug)
                 else:
                     if not silent:
                         console.print(f"{Style.TASK_FINISHED}[yellow]{task}[/]", highlight=False)

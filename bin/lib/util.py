@@ -156,12 +156,16 @@ class PluginParamType(click.ParamType):
 # ==============================================================================
 
 
-def _exit(msg: str, returncode: int = 1):
+def _exit(exc: Exception, returncode: int = 1, verbose: bool = False, debug: bool = False) -> None:
     "Print traceback to console, then exit program with returncode."
 
-    console.print(f"{Style.ERROR}{msg}")
-    exc = sys.exception()  # type: ignore
-    console.print("".join(traceback.format_exception(exc)))
+    console.print(exc)
+
+    if debug:
+        console.print("\n")
+        console.print("".join(traceback.format_exception(exc)))
+        console.print()
+
     sys.exit(returncode)
 
 
@@ -184,7 +188,7 @@ def resolve_dependencies(env: dict[str, Any], workdir: Path) -> dict[str, Any]:
                 else:
                     env[k] = str(_v)
     except CircularDependencyError as e:
-        return _exit(f"[red]Error: {e}[/]")
+        _exit(e)
 
     return env
 
@@ -219,7 +223,9 @@ def get_sorted_deps(command: str, commands: dict, workdir: Path, env: dict[str, 
     try:
         return toposort_flatten(get_deps(command))
     except CircularDependencyError as e:
-        return _exit(f"[red]Error: {e}[/]")
+        _exit(e)
+
+    return []  # never gets here, but makes mypy happy
 
 
 # ==============================================================================
