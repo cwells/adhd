@@ -327,13 +327,15 @@ Tasks each run in their own subprocess. If you want tasks to share a subprocess
 (similar to `make`'s `ONESHELL` option), use the following format:
 
     db/sync:
-      help: Sync staging database to local database.
+      help: Sync staging database to dev database.
       run: !env |
-        echo "Starting database sync."
-        pg_dumpall > db.out
-        psql -f db.out postgres
+        echo "Starting database sync..."
+        TMPFILE=db.sql
+        pg_dumpall staging > ${TMPFILE}
+        psql dev < ${TMPFILE}
+        rm -f ${TMPFILE}
         echo "Finished syncing database."
-      confirm: \nSync staging database to local?
+      confirm: \nSync staging database to dev?
 
 # The CLI
 
