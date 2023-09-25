@@ -10,17 +10,16 @@ import time
 import webbrowser
 from pathlib import Path
 
-try:  # Check for basic dependencies. Plugin deps are checked by plugins.
-    import click
-    import rich.console
-    import rich.prompt
-    import yaml
-    from box import Box
-    from toposort import CircularDependencyError, toposort_flatten
-    from yarl import URL
-except ImportError:
-    print("You need to install this program's dependencies, e.g. `python -m pip install -r requirements.txt")
+from lib.boot import missing_modules
+
+if missing := missing_modules(["box", "click", "rich", "toposort", "yaml", "yarl"]):
+    print("You need to install this program's dependencies, e.g. `python -m pip install -r requirements.txt\n")
+    print(f"Missing modules: {', '.join(missing)}\n")
     sys.exit(1)
+
+import click
+import rich.console
+import rich.prompt
 
 from lib.jobs import get_jobs
 from lib.plugins import Plugin, list_plugins, load_plugins

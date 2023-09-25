@@ -24,18 +24,18 @@ import rich.prompt
 import yaml
 from lib.plugins import PluginTarget
 from lib.util import ConfigBox, Style, check_permissions, console
+from lib.boot import missing_modules
 
-key: str | None
+
+key: str | None = "aws"
 target: PluginTarget = PluginTarget.ENV
 has_run: bool = False
 
-try:
-    import boto3
-except ImportError:
+if missing_modules(["boto3"]):
     print("boto3 not found: AWS support disabled.")
     key = None
 else:
-    key = "aws"
+    import boto3
 
 
 # ==============================================================================

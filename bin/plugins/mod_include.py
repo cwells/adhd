@@ -14,6 +14,7 @@ from typing import Any
 import yaml
 from lib.plugins import PluginTarget
 from lib.util import ConfigBox, console
+from lib.boot import missing_modules
 
 
 # ==============================================================================

@@ -17,16 +17,18 @@ from pathlib import Path
 from lib.shell import shell
 from lib.util import console, Style, ConfigBox
 from lib.plugins import PluginTarget
+from lib.boot import missing_modules
+
 
 key: str | None = "python"
 target: PluginTarget = PluginTarget.ENV
 has_run: bool = False
 
-try:
-    import virtualenv
-except ImportError:
+if missing_modules(["virtualenv"]):
     console.print(f"{Style.WARNING}virtualenv module not found:[/] Python venv creation disabled.")
     virtualenv = None
+else:
+    import virtualenv
 
 
 # ==============================================================================

@@ -16,23 +16,22 @@ https://ngrok.com/docs/secure-tunnels/ngrok-agent/reference/config/#tunnel-defin
 """
 
 import sys
-from typing import Any, Callable
+from typing import Any
 
 from lib.plugins import PluginTarget
 from lib.util import console, ConfigBox, Style
+from lib.boot import missing_modules
 
-key: str | None
+
+key: str | None = "ngrok"
 target: PluginTarget = PluginTarget.ENV
 has_run: bool = False
 
-
-try:
-    import ngrok
-except ImportError:
+if missing_modules(["ngrok"]):
     console.print(f"{Style.WARNING}ngrok-api module not found: ngrok support disabled.")
     key = None
 else:
-    key = "ngrok"
+    import ngrok
 
 
 # ==============================================================================
