@@ -1,5 +1,5 @@
 """
-[bold cyan]Configure Ngrok agent.[/]
+[bold cyan]Configure Ngrok agent.[/] [bold white]THIS PLUGIN IS CURRRENTLY NON-FUNCTIONAL.[/]
 
   ngrok:
     tunnels:
