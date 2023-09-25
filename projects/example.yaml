@@ -9,6 +9,15 @@ plugins:
     packages: [ Django ]
 
 jobs:
+  up:
+    help: Runs [bold cyan]django/up[/] and opens the front and admin pages.
+    open: [ http://localhost:8000/, http://localhost:8000/admin/ ]
+    after: django/up
+
+  down:
+    help: Alias for [bold cyan]django/down[/].
+    after: django/down
+
   shell:
     help: Enter the Python virtual environment for this project.
     run: !env ${SHELL}
@@ -20,8 +29,8 @@ jobs:
     help: Start the Django server
     run: ./manage.py runserver &
     skip: !shell_eq_0 fuser -s 8000/tcp
-    open: [ http://localhost:8000/, http://localhost:8000/admin/ ]
     interactive: true
+    sleep: 5
     after:
     - plugin:python
     - django/bootstrap
