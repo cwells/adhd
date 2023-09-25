@@ -317,7 +317,6 @@ You can see available jobs using the `--help-jobs` option:
 
 which would output
 
-  ```bash
     adhd example --help-jobs
 
     ⚪ up ................ Run django/up and open the front and admin pages.
@@ -329,7 +328,6 @@ which would output
     ⚪ django/migrate .... Run Django database migrations
     ⚪ django/bootstrap .. Bootstrap the Django project.
     ⚪ django/destroy .... Remove installation directory (you will be prompted first).
-  ```
 
 And don't forget that you can run arbitrary shell commands. Assuming you have
 configured the AWS plugin, you can try something like:
