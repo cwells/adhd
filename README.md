@@ -323,12 +323,28 @@ A job with no tasks:
       help: Bring up all required services.
       after: [ docker/up, django/up, ngrok/up ]
 
-Tasks each run in their own subprocess. If you want tasks to share a subprocess
-(similar to `make`'s `ONESHELL` option), use the following format:
+Tasks typically run in their own subprocess. Each item in the `run` list will
+be run in a separate process:
 
     db/sync:
       help: Sync staging database to dev database.
-      run: !env |
+      run:
+      - echo "Starting database sync..."
+      - pg_dumpall staging > db.sql
+      - psql dev < db.sql
+      - rm -f db.sql
+      - echo "Finished syncing database."
+      confirm: \nSync staging database to dev?
+
+This means that you cannot set an env variable in one line and then use it in
+the next.
+
+If you want tasks to share a subprocess (similar to `make`'s `ONESHELL` option),
+use the following format:
+
+    db/sync:
+      help: Sync staging database to dev database.
+      run: |
         echo "Starting database sync..."
         TMPFILE=db.sql
         pg_dumpall staging > ${TMPFILE}
