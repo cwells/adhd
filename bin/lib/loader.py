@@ -142,8 +142,9 @@ def eval_path(
     workdir: Path,
     env: dict[str, Any] | None = None,
 ) -> str:
-    _path: str = "/".join([p(workdir=workdir) if callable(p) else p for p in value])
-    path: Path = Path(_path).expanduser().resolve()
+    evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
+    path: Path = get_resolved_path("/".join(evaled), env=env, workdir=workdir)
+
     return str(path)
 
 
@@ -158,7 +159,7 @@ def construct_path(loader: yaml.FullLoader, node: yaml.SequenceNode) -> LazyValu
     else:
         _v = loader.construct_scalar(node)
         deps.update(find_deps(_v))
-        value = [value]
+        value = [_v]
 
     if not value:
         raise TypeError("!path requires at least one item")
