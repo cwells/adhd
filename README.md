@@ -108,11 +108,7 @@ will be `~/.adhd`. If you create a symlink
 
     $ ln -s ~/.adhd/bin/adhd ~/.local/bin/woot
 
-then the configuration will be looked for in `~/.woot`. This allows you to manage
-multiple versions of `adhd` and even customize the code on a per-installation
-basis. No need to pin the version of `adhd`.
-
-> The reason for this approach is to allow you to maintain multiple versions of `adhd` under different names alongside the relevant project configs without needing to worry about an update breaking your config.
+then the configuration will be looked for in `~/.woot` when you run `woot`. This allows you to simply manage multiple versions of `adhd` across disparate projects without involving packages.
 
 # A working example
 
