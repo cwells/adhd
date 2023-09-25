@@ -8,18 +8,13 @@ If you're the sort of person who works on a lot of individual development
 projects, each with its own unique build/run/deploy steps, `adhd` provides
 a way of managing that without needing to revisit the project's README.
 If you're the sort of person who also forgets details a lot (maybe because
-you have ADHD), this tool can be indispensible.
+you have ADHD), this tool can be quite helpful.
 
 `adhd` is similar to a `make` in that you can define jobs to be run, and those
 jobs in turn can define dependent jobs that will also be run. Jobs can be
 conditionally run depending on the return codes of user-defined shell commands.
 
-> It is important to note that `adhd` is not meant to replace `make` or other
-tools, and it's not expected that your `adhd` config will live in the project
-directory to be shared with others. Rather `adhd` is a way to personalize and
-simplify _your_ workflow without impacting other people working on the same
-project. In many cases an `adhd` project will be nothing more than a thin
-wrapper around `make`.
+> It is important to note that `adhd` is not meant to replace `make` or other tools, and it's not expected that your `adhd` config will live in the project directory to be shared with others. Rather `adhd` is a way to personalize and simplify _your_ workflow without impacting other people working on the same project. In many cases an `adhd` project will be nothing more than a thin wrapper around `make`.
 
 `adhd` has the following features:
 
@@ -67,20 +62,19 @@ wrapper around `make`.
 
 The `adhd` CLI has the following interface:
 
-        $ adhd example --help
-        Usage: adhd [OPTIONS] PROJECT [COMMAND]...
-
-        Options:
-          --home / --no-home   Change to project HOME directory
-          -e, --env ENV        Define env var(s) from CLI
-          -p, --plugin PLUGIN  Manage plugins using plugin:[on|off]
-          --help-jobs          Display available jobs and help text
-          --help-plugins       Display available plugins and help text
-          --explain            Display help text from job and its dependencies
-          -v, --verbose        Send stdout of all jobs to console
-          --debug              Generate extremely verbose output
-          -f, --force          Bypass skip checks
-          --help               Show this message and exit
+    $ adhd example --help
+    Usage: adhd [OPTIONS] PROJECT [COMMAND]..
+    Options:
+      --home / --no-home   Change to project HOME directory
+      -e, --env ENV        Define env var(s) from CLI
+      -p, --plugin PLUGIN  Manage plugins using plugin:[on|off]
+      --help-jobs          Display available jobs and help text
+      --help-plugins       Display available plugins and help text
+      --explain            Display help text from job and its dependencies
+      -v, --verbose        Send stdout of all jobs to console
+      --debug              Generate extremely verbose output
+      -f, --force          Bypass skip checks
+      --help               Show this message and exit
 
 ## Examples
 
@@ -256,7 +250,7 @@ external interface.
 - `!cat` concatenates a list of strings with no space between each item.
 - `!cats` concatenates a list of strings with a single space between each item.
 - `!path` concatenates a list of strings with '/' and returns a normalized path (`~` and `..` will be substituted and collapsed).
-- `!url` concatenates a list of strings into a URL.
+- `!url` concatenates a list of strings with '/' into a URL.
 - `!exists` concatenates list of strings into a path and returns True if path exists.
 - `!not_exists` concatenates list of strings into a path and returns False if path exists.
 
@@ -271,9 +265,9 @@ external interface.
 > directory due to the fact that this information isn't available when they
 > are evaluated. This means you must prefix any paths with `*home`, e.g.:
 >
->    ```yaml
+> ```yaml
 >    skip: !exists [ *home, "/tmp/process.pid" ]
->    ```
+> ```
 > This is unlike `run` directives, which will have the project home as their
 > current working directory. This is a bug and will be addressed in a future
 > release.
@@ -342,7 +336,6 @@ which would output something like:
 
 You can also enter the virtual environment just by spawning a subshell:
 
-  ```bash
     $ adhd example bash -p python:on
     ⚫ Finished installing Python packages
     $ python
@@ -351,7 +344,6 @@ You can also enter the virtual environment just by spawning a subshell:
     >>> import django
     >>> django.setup()
     >>>
-  ```
 
 If you have `always: false` for the `python` plugin, then the virtual env won't be started.
 You can forcibly load the plugin from the cli, which will cause the virtual env to be activated:
@@ -360,6 +352,7 @@ You can forcibly load the plugin from the cli, which will cause the virtual env 
 
 Alternately, you can just add another command to make this automatic:
 
+  ```yaml
     jobs:
       shell:
         help: Enter the Python virtual environment for this project.
@@ -367,6 +360,7 @@ Alternately, you can just add another command to make this automatic:
         interactive: true
         silent: true
         after: plugin:python
+  ```
 
 and then run
 
