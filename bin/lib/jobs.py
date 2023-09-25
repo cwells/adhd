@@ -93,7 +93,7 @@ def get_jobs(
         sys.exit(1)
 
     if (_cmd := command[0]) in jobs:  # pre-defined jobs
-        # TODO: use rest of cli as job arguments?
+        # TODO: use rest of cli as job arguments or sequential jobs?
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
             job_config: ConfigBox = jobs.get(dep, {})
             if dep.startswith("plugin:"):
