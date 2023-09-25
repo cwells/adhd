@@ -360,10 +360,10 @@ You can get a list of available plugins and their help with:
 
     adhd example --help-plugins
 
-You may disable individual plugins on the command line. For example, if you want
-to run a shell but not be prompted for an MFA code, you can use:
+You may enable or disable individual plugins on the command line.
 
-    adhd example --plugin aws:off bash
+    adhd example --plugin aws:off bash    # don't prompt for mfa code
+    adhd example --plugin python:on bash  # ensure we enter venv
 
 # TODO
 
