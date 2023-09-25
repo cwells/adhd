@@ -269,8 +269,8 @@ def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> dict[
     """
 
     home: str | LazyValue = project_config.get("home", ".")
-    workdir: Path = Path(home(project_config["env"]) if isinstance(home, LazyValue) else home)
     env: dict[str, str] = ConfigBox()
+    workdir: Path = get_resolved_path(home, env=project_config["env"])
 
     if "env" not in project_config:
         project_config["env"] = ConfigBox()
@@ -304,9 +304,10 @@ def print_job_help(jobs: dict) -> None:
 # ==============================================================================
 
 
-def get_resolved_path(path: str | LazyValue, env: dict) -> Path:
+def get_resolved_path(path: str | LazyValue, env: dict, workdir: Path | None = None) -> Path:
     "Resolves string or LazyValue into fully-qualified path."
 
-    _path: Path = Path(path(env) if isinstance(path, LazyValue) else path)
+    workdir = Path(".") if not workdir else workdir
+    _path: Path = Path(path(env=env, workdir=workdir) if isinstance(path, LazyValue) else path)
     _path = _path.expanduser().resolve()
     return _path
