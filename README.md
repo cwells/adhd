@@ -279,9 +279,9 @@ It may be useful to load other YAML files (e.g. for common env variables in
 project home directory). The format of the included file is exactly the same as
 the primary project file. Dictionaries will be recursively merged.
 
-    ```yaml
+  ```yaml
     !include more.yaml
-    ```
+  ```
 
 # Jobs
 
