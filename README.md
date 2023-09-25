@@ -260,15 +260,16 @@ EXTERNAL_ROUTE: !shell_stdout ip -json route get 1 | jq -r '.[0].prefsrc'
 In the above example, `EXTERNAL_ROUTE` would be the IP address of the machine's
 external interface.
 
-## !cat, !path, !url, !exists
+## !cat, !cats, !path, !url, !exists
 
 > string concatenation
 
-- `!cat` concatenates a list of strings with a single space between each item.
-- `!path` concatenates a list of strings into a path and returns a normalized
-path (`~` and `..` will be substituted and collapsed).
+- `!cat` concatenates a list of strings with no space between each item.
+- `!cats` concatenates a list of strings with a single space between each item.
+- `!path` concatenates a list of strings with '/' and returns a normalized path (`~` and `..` will be substituted and collapsed).
 - `!url` concatenates a list of strings into a URL.
 - `!exists` concatenates list of strings into a path and returns True if path exists.
+- `!not_exists` concatenates list of strings into a path and returns False if path exists.
 
 ```yaml
 SECRET: !cat [ because, is, hat ]

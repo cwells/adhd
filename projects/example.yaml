@@ -6,8 +6,7 @@ plugins:
   python:
     always: false
     venv: !path [ *home, venv ]
-    packages:
-    - Django
+    packages: [ Django ]
 
 jobs:
   django/up:
