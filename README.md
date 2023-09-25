@@ -51,81 +51,62 @@ $ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
 
 Start the included Django app:
 
-```sh
-$ adhd example django/up
-```
+    $ adhd example django/up
 
 To stop:
 
-```sh
-$ adhd example django/down
-```
+    $ adhd example django/down
 
 To destroy (removes entire directory with example app):
 
-```sh
-$ adhd example django/destroy
-```
+    $ adhd example django/destroy
 
 To see the example config:
 
-```sh
-$ cat ~/.adhd/projects/example.yaml
-```
+    $ cat ~/.adhd/projects/example.yaml
 
 # CLI
 
 The `adhd` CLI has the following interface:
 
-```
-Usage: adhd [OPTIONS] PROJECT [COMMAND]...
+    Usage: adhd [OPTIONS] PROJECT [COMMAND]...
 
-Options:
-  --home / --no-home   Change to project HOME directory
-  -e, --env ENV        Define env var(s) from CLI
-  -p, --plugin PLUGIN  Manage plugins using `<plugin>:[on|off]`
-  --dry-run            Don't actually execute anything
-  --help-jobs          Display available jobs and help text
-  --help-plugins       Display available plugins and help text
-  --explain            Display help text from job and its dependencies
-  -v, --verbose        Send stdout of all jobs to console
-  -f, --force          Bypass skip checks
-  --help               Show this message and exit.
-```
+    Options:
+      --home / --no-home   Change to project HOME directory
+      -e, --env ENV        Define env var(s) from CLI
+      -p, --plugin PLUGIN  Manage plugins using `<plugin>:[on|off]`
+      --dry-run            Don't actually execute anything
+      --help-jobs          Display available jobs and help text
+      --help-plugins       Display available plugins and help text
+      --explain            Display help text from job and its dependencies
+      -v, --verbose        Send stdout of all jobs to console
+      -f, --force          Bypass skip checks
+      --help               Show this message and exit.
 
 ## Examples
 
 Enter a virtual environment:
 
-```bash
-$ adhd example -- bash
-```
+    $ adhd example -- bash
 
 Run a predefined job to start `./manage.py shell`:
 
-```bash
-$ adhd example django/shell
-```
+    $ adhd example django/shell
 
-> If you run arbitrary shell commands, remember to put `--` before the command so
-that your shell knows which options are for `adhd` and which are for the command.
+> If you run arbitrary shell commands, remember to put `--` before the command so that your shell knows which options are for `adhd` and which are for the command.
 
 # Installation
 
 There is no install. Extract the archive (or `git clone`) into `~/.adhd` and
 create a symlink on your `$PATH` to `~/.adhd/bin/adhd`, e.g.
 
-```bash
-$ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
-```
+    $ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
 
 The adhd configuration is dynamic, based upon the name of the executable (by
 default `adhd`). If your executable is named `adhd`, then the config directory
 will be `~/.adhd`. If you create a symlink
 
-```bash
-$ ln -s ~/.adhd/bin/adhd ~/.local/bin/woot
-```
+    $ ln -s ~/.adhd/bin/adhd ~/.local/bin/woot
 
 then the configuration will be looked for in `~/.woot`. This allows you to manage
 multiple versions of `adhd` and even customize the code on a per-installation
@@ -146,8 +127,12 @@ An example config dir will look something like this:
 
 # A working example
 
-A working Django app is included in the `projects/` directory. It requires no
-setup, just run `adhd example django/up`.
+A working Django project is included in the [`projects/`](https://github.com/cwells/adhd/tree/main/projects) directory. It requires no
+setup, just run:
+
+    adhd example django/up
+
+This will run `django-admin startproject` (Django docs [here](https://docs.djangoproject.com/en/4.2/intro/tutorial01/#creating-a-project)) to create the default Django installation and open the front and admin pages in your browser.
 
 # Configuration
 
@@ -200,9 +185,9 @@ jobs:
 config references an undefined variable, the program leave the reference intact,
 assuming the subshell will be able to resolve it.
 
-```yaml
-ARCHIVE: !env ${USER}-archive.tgz
-```
+  ```yaml
+    ARCHIVE: !env ${USER}-archive.tgz
+  ```
 
 > Note that there are two phases for variable substitution: assembly-time (while evaluating the YAML source) and run-time (in the shell environment), so `FOO: ${BAR}` would simply evaluate to the literal string `"${BAR}"`, which is generally what you want, as `$BAR` will presumably be in the environment when it's needed.
 >
@@ -214,9 +199,10 @@ One reason to use `!env` is that environment variables are not passed through
 from the parent shell by default (`$PATH` being a notable exception).
 If you want to pass through a variable, use the following form:
 
-```yaml
-HOME: !env ${HOME}
-```
+  ```yaml
+    HOME: !env ${HOME}
+  ```
+
 Without `!env`, `${HOME}` would just be the plain string and be empty in the
 subshell.
 
@@ -228,33 +214,30 @@ passed to the user's command:
 
 Example use:
 
-```yaml
-ARCHIVE: !env ../../staging_dataset_${__DATE__}.tar.gz
-```
+  ```yaml
+    ARCHIVE: !env ../../staging_dataset_${__DATE__}.tar.gz
+  ```
 
 ## !shell_eq_0, !shell_neq_0, !shell_stdout
 
 > Execute arbitrary shell commands and use their results. There are a handful of variants:
 
-`!shell_eq_0 <command>` executes the command in a subshell, and evaluates to
-`true` if the exit status of the command is zero, otherwise evaluates to
+`!shell_eq_0 <command>` executes the command in a subshell, and evaluates to `true` if the exit status of the command is zero, otherwise evaluates to
 `false`.
-
 Inverse functionality is available as `!shell_neq_0`.
 
-```yaml
-skip: !shell_eq_0 fuser -s 8000/tcp
-```
+  ```yaml
+    skip: !shell_eq_0 fuser -s 8000/tcp
+  ```
 
 In the above example, the job would be skipped if a process were seen listening
 on port `8000/tcp`.
-
 
 `!shell_stdout command` executes the command in a subshell, and evaluates to
 the value the command writes to `stdout`.
 
 ```yaml
-EXTERNAL_ROUTE: !shell_stdout ip -json route get 1 | jq -r '.[0].prefsrc'
+  EXTERNAL_ROUTE: !shell_stdout ip -json route get 1 | jq -r '.[0].prefsrc'
 ```
 
 In the above example, `EXTERNAL_ROUTE` would be the IP address of the machine's
@@ -271,18 +254,12 @@ external interface.
 - `!exists` concatenates list of strings into a path and returns True if path exists.
 - `!not_exists` concatenates list of strings into a path and returns False if path exists.
 
-```yaml
-SECRET: !cat [ because, is, hat ]
-```
-```yaml
-API_ENDPOINT: !url [ https://domain.com/cust/, *cust_id, /api ]
-```
-```yaml
-DATA_DIR: !path [ "~", foo, bar, data_dir ]
-```
-```yaml
-binary: !exists [ "~/.bin", *bin_name  ]
-```
+  ```yaml
+    SECRET: !cat [ because, is, hat ]
+    API_ENDPOINT: !url [ https://domain.com/cust/, *cust_id, /api ]
+    DATA_DIR: !path [ "~", foo, bar, data_dir ]
+    binary: !exists [ "~/.bin", *bin_name  ]
+  ```
 
 > CAVEAT: `!exists` and `!path` tags will not have the project home as their working
 > directory due to the fact that this information isn't available when they
@@ -302,21 +279,21 @@ It may be useful to load other YAML files (e.g. for common env variables in
 project home directory). The format of the included file is exactly the same as
 the primary project file. Dictionaries will be recursively merged.
 
-```yaml
-!include more.yaml
-```
+    ```yaml
+    !include more.yaml
+    ```
 
 # Jobs
 
 You may define jobs in the `jobs` section of the YAML config file. A job can
 depend on other jobs or plugins, indicated by the key `after`:
 
-```yaml
+  ```yaml
     django/up:
       run: ./manage.py runserver &
       skip: !shell_eq_0 fuser -s 8000/tcp
       after: [ plugin:python, django/bootstrap, django/migrate ]
-```
+  ```
 
 If `django/up` is run, it will first load the `python` plugin, then run
 `django/bootstrap` and `django/migrate` (and these in turn may have other
@@ -327,64 +304,52 @@ directive, followed by a test that evaluates the output of a shell command.
 
 You can see available jobs using the `--help-jobs` option:
 
-```bash
-$ adhd example --help-jobs
-```
+    $ adhd example --help-jobs
 
 which would output
 
-```
-        django/up Start the Django server
-      django/down Stops the Django web server
-   django/migrate Run Django database migrations
- django/bootstrap Bootstrap the Django project
-   django/destroy Removes entire installation
-```
+            django/up Start the Django server
+          django/down Stops the Django web server
+      django/migrate Run Django database migrations
+    django/bootstrap Bootstrap the Django project
+      django/destroy Removes entire installation
 
 And don't forget that you can run arbitrary shell commands. Assuming you have
 configured AWS, you can try something like:
 
-```bash
-$ adhd example -- aws s3 ls
-```
+    $ adhd example -- aws s3 ls
 
-which would output
+which would output something like:
 
-```
-Finished installing Python requirements
-Starting aws s3 ls
-2020-04-28 11:27:21 my-prod-files
-2020-05-21 14:07:06 my-stage-files
-```
+    Finished installing Python requirements
+    Starting aws s3 ls
+    2020-04-28 11:27:21 my-prod-files
+    2020-05-21 14:07:06 my-stage-files
 
 You can also enter the virtual environment just by spawning a subshell:
 
-```bash
-$ adhd example bash
-Finished installing Python requirements
-Starting bash
-$ python
-Python 3.11.4 (main, Jun  7 2023, 00:00:00) [GCC 13.1.1 20230511 (Red Hat 13.1.1-2)] on linux
-Type "help", "copyright", "credits" or "license" for more information.
->>> import django
->>> django.setup()
->>>
-```
+  ```bash
+    $ adhd example bash
+    Finished installing Python requirements
+    Starting bash
+    $ python
+    Python 3.11.4 (main, Jun  7 2023, 00:00:00) [GCC 13.1.1 20230511 (Red Hat 13.1.1-2)] on linux
+    Type "help", "copyright", "credits" or "license" for more information.
+    >>> import django
+    >>> django.setup()
+    >>>
+  ```
 
 # Plugins
 
 You can get a list of available plugins and their help with:
 
-```
-adhd example --help-plugins
-```
+    adhd example --help-plugins
 
 You may disable individual plugins on the command line. For example, if you want
 to run a shell but not be prompted for an MFA code, you can use:
 
-```
-adhd example --plugin aws:off bash
-```
+    adhd example --plugin aws:off bash
 
 # TODO
 
