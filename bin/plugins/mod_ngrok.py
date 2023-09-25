@@ -1,5 +1,5 @@
 """
-[bold cyan]Configure Ngrok agent.[/] [bold white]THIS PLUGIN IS CURRRENTLY NON-FUNCTIONAL.[/]
+[bold cyan]Configure Ngrok agent.[/] [bold white]This plugin is largely fictional.[/]
 
   ngrok:
     tunnels:
@@ -49,3 +49,6 @@ def load(
     client = ngrok.Client(config.api_key)  # type: ignore
     for t in client.tunnels.list():
         console.print(t)
+
+
+key = None  # prevent this from accidentally displaying
