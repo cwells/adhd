@@ -67,7 +67,6 @@ wrapper around `make`.
 
 The `adhd` CLI has the following interface:
 
-  ```bash
         $ adhd example --help
         Usage: adhd [OPTIONS] PROJECT [COMMAND]...
 
@@ -82,7 +81,6 @@ The `adhd` CLI has the following interface:
           --debug              Generate extremely verbose output
           -f, --force          Bypass skip checks
           --help               Show this message and exit
-  ```
 
 ## Examples
 
