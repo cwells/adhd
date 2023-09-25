@@ -118,7 +118,7 @@ def eval_cat(
     sep: str,
     future: LazyValue,
     value: list,
-    workdir: Path,
+    workdir: Path | None = None,
     env: dict[str, Any] | None = None,
 ) -> str:
     evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
