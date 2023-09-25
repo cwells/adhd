@@ -59,7 +59,7 @@ def load_plugin(
 def load_plugins(
     project_config: dict[str, Any],
     process_env: dict,
-    enabled: dict[str, bool],
+    enabled: dict[str, bool],  # passed from cli
     verbose: bool = False,
 ) -> dict[str, Plugin]:
     "Locate plugins, import them, and run plugin.load() for each."
@@ -75,10 +75,9 @@ def load_plugins(
 
     for plugin in plugins.values():
         if not (
-            enabled.get(plugin.key, True)
-            and plugin.key
+            plugin.key
             and (plugin_config := project_config.get(f"plugins.{plugin.key}"))
-            and plugin_config.get("always", True)
+            and (plugin_config.get("always", True) or enabled.get(plugin.key, True))
         ):
             continue
 
