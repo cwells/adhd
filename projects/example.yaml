@@ -9,6 +9,13 @@ plugins:
     packages: [ Django ]
 
 jobs:
+  shell:
+    help: Enter the Python virtual environment for this project.
+    run: !env ${SHELL}
+    interactive: true
+    silent: true
+    after: plugin:python
+
   django/up:
     help: Start the Django server
     run: ./manage.py runserver &
