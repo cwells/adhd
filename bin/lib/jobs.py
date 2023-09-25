@@ -36,28 +36,19 @@ def get_job(
     tmp: str | LazyValue = job_config.get("tmp") or project_config.get("tmp", "./tmp")
     workdir: Path = get_resolved_path(home, env=env)
     tmpdir: Path = get_resolved_path(tmp, env=env)
-
-    cmd: Any = _eval(job_config.get("run", []), env)
-
-    tasks: list = [_eval(t, workdir=workdir, env=env) for t in (cmd if isinstance(cmd, list) else [cmd])]
-    _urls = _eval(job_config.get("open"), workdir=workdir, env=env)
-    _open: list = (
-        [_eval(_o, workdir=workdir, env=env) for _o in (_urls if isinstance(_urls, list) else [_urls])]
-        if _urls
-        else []
-    )
-    _env: dict[str, str] = resolve_dependencies(job_config.get("env", ConfigBox()), workdir)
-
+    cmd: Any = _eval(job_config.get("run", []), workdir=workdir, env=env)
+    tasks: list = cmd if isinstance(cmd, list) else [cmd]
+    task_env: dict[str, str] = resolve_dependencies(job_config.get("env", ConfigBox()), workdir)
     job: ConfigBox = ConfigBox(
         {
             "name": command,
-            "env": {**env, **_env},
+            "tasks": tasks,
+            "env": {**env, **task_env},
             "workdir": str(workdir),
             "tmp": str(tmpdir),
-            "tasks": tasks,
+            "open": _eval(job_config.get("open"), workdir=workdir, env=env),
             "skip": _eval(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
-            "open": _open,
-            "capture": _eval(job_config.get("capture", False), env=env),
+            "capture": _eval(job_config.get("capture", False), workdir=workdir, env=env),
             "interactive": _eval(job_config.get("interactive", False), workdir=workdir, env=env),
             "confirm": _eval(job_config.get("confirm"), workdir=workdir, env=env),
             "silent": job_config.get("silent"),
