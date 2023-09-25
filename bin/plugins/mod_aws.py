@@ -22,10 +22,9 @@ from typing import Any
 
 import rich.prompt
 import yaml
-from lib.plugins import PluginTarget
-from lib.util import ConfigBox, Style, check_permissions, console
 from lib.boot import missing_modules
-
+from lib.plugins import PluginTarget
+from lib.util import ConfigBox, Style, check_permissions, console, get_resolved_path
 
 key: str | None = "aws"
 target: PluginTarget = PluginTarget.ENV
@@ -59,7 +58,7 @@ def load(
     mfa: dict[str, Any] = config.get("mfa", {})
     mfa_device: str | None = mfa.get("device")
     mfa_expiry: int = int(mfa.get("expiry", 86400))
-    tmpdir: Path = Path(config.get("tmp", "/tmp")).expanduser().resolve()
+    tmpdir: Path = get_resolved_path(config.get("tmp", "/tmp"), env=env)
     secure_paths: dict[Path, str] = {tmpdir: "0700"}
 
     if not check_permissions(secure_paths):

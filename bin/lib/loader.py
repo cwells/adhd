@@ -9,7 +9,7 @@ import yaml
 from yarl import URL
 
 from .shell import shell
-
+from .util import get_resolved_path, LazyValue
 
 # ==============================================================================
 
@@ -21,34 +21,14 @@ builtins: dict[str, Any] = {
 # ==============================================================================
 
 
-class LazyValue:
-    """
-    Object that proxies a value in the form of a function and its arguments,
-    as well as a list of any dependencies on other values this value may have.
-    Specifically, this is used with toposort to linearly resolve inter-variable
-    references during reification.
+def find_deps(value) -> set[str]:
+    deps: set[str] = set()
 
-    For example, given the variable reference `FOO: !env ${BAR} ${BAZ}`, `FOO` will
-    have the dependencies `["BAR", "BAZ"]`, and during reification, `BAZ` and `BAR`
-    are guaranteed to be evaluated before `FOO`, thereby ensuring the value of `FOO`
-    can be calculated without the need for recursion.
-    """
+    if isinstance(value, str):
+        if match := re.findall(r"\${(\w+)}", value):
+            deps.update(match)
 
-    def __init__(self, fn: Callable, value: Any, deps: set[str]) -> None:
-        self.__fn: Callable = fn
-        self.__value: Any = value
-        self.__deps: set[str] = deps
-
-    def __call__(self, *args, **kwargs: Any) -> str:
-        "Reify this value."
-
-        return self.__fn(self, self.__value, *args, **kwargs)
-
-    @property
-    def dependencies(self) -> set[str]:
-        "Return the list of dependencies."
-
-        return self.__deps
+    return deps
 
 
 # ==============================================================================
@@ -127,21 +107,101 @@ def construct_shell(shell: Callable, loader: yaml.FullLoader, node: yaml.ScalarN
     "Execute a shell command."
 
     value: str = str(loader.construct_scalar(node))
-    deps: set[str] = set()
-    if match := re.findall(r"\${(\w+)}", value):
-        deps.update(match)
 
-    return LazyValue(partial(eval_shell_cmd, shell), value, deps)
+    return LazyValue(partial(eval_shell_cmd, shell), value, find_deps(value))
 
 
 # ==============================================================================
 
 
-def construct_cat(sep: str, loader: yaml.FullLoader, node: yaml.SequenceNode) -> str:
+def eval_cat(
+    sep: str,
+    future: LazyValue,
+    value: list,
+    workdir: Path,
+    env: dict[str, Any] | None = None,
+) -> str:
+    evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
+
+    return sep.join(evaled)
+
+
+def construct_cat(sep: str, loader: yaml.FullLoader, node: yaml.SequenceNode) -> LazyValue:
     "Concatenate list of strings together with `sep` between each item."
 
-    items: list = loader.construct_sequence(node)
-    return sep.join(items)
+    value: list = loader.construct_sequence(node)
+    deps: set[str] = set()
+
+    return LazyValue(partial(eval_cat, sep), value, deps)
+
+
+# ==============================================================================
+
+
+def eval_path(
+    future: LazyValue,
+    value: list,
+    workdir: Path,
+    env: dict[str, Any] | None = None,
+) -> str:
+    evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
+    path: Path = get_resolved_path("/".join(evaled), env=env, workdir=workdir)
+
+    return str(path)
+
+
+def construct_path(loader: yaml.FullLoader, node: yaml.SequenceNode) -> LazyValue:
+    "Concatenate list of strings into normalized path."
+
+    value: list = []
+    deps: set[str] = set()
+
+    if isinstance(node, yaml.SequenceNode):
+        value = loader.construct_sequence(node)
+    else:
+        _v = loader.construct_scalar(node)
+        deps.update(find_deps(_v))
+        value = [_v]
+
+    if not value:
+        raise TypeError("!path requires at least one item")
+
+    return LazyValue(eval_path, value, deps)
+
+
+# ==============================================================================
+
+
+def eval_exists(
+    exists: bool,
+    future: LazyValue,
+    value: list,
+    workdir: Path,
+    env: dict[str, Any],
+) -> bool:
+    evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
+    path: Path = get_resolved_path("/".join(evaled), env=env, workdir=workdir)
+
+    return path.exists() == exists
+
+
+def construct_exists(exists: bool, loader: yaml.FullLoader, node: yaml.SequenceNode) -> LazyValue:
+    "Check if all of a list of files exists."
+
+    value: list = []
+    deps: set[str] = set()
+
+    if isinstance(node, yaml.SequenceNode):
+        value = loader.construct_sequence(node)
+    else:
+        _v = loader.construct_scalar(node)
+        deps.update(find_deps(_v))
+        value = [_v]
+
+    if not value:
+        raise TypeError("!path requires at least one item")
+
+    return LazyValue(partial(eval_exists, exists), value, deps)
 
 
 # ==============================================================================
@@ -168,27 +228,6 @@ def construct_url(loader: yaml.FullLoader, node: yaml.SequenceNode) -> str:
 # ==============================================================================
 
 
-def construct_path(loader: yaml.FullLoader, node: yaml.SequenceNode) -> str:
-    "Concatenate list of strings into normalized path."
-
-    items: list[str] = []
-
-    if isinstance(node, yaml.SequenceNode):
-        items = loader.construct_sequence(node)
-    else:
-        items = [str(loader.construct_scalar(node))]
-
-    path: Path = Path("/".join(items)).expanduser().resolve()
-
-    if not items or not items[-1]:
-        raise TypeError("!dir requires at least one item")
-
-    return str(path)
-
-
-# ==============================================================================
-
-
 def construct_include(loader: yaml.FullLoader, node: yaml.ScalarNode) -> Any:
     "Include another YAML file about here."
 
@@ -200,21 +239,6 @@ def construct_include(loader: yaml.FullLoader, node: yaml.ScalarNode) -> Any:
 
 
 # ==============================================================================
-
-
-def construct_exists(exists: bool, loader: yaml.FullLoader, node: yaml.SequenceNode) -> bool:
-    "Check if all of a list of files exists."
-
-    paths: list[str] = []
-
-    if isinstance(node, yaml.SequenceNode):
-        paths = loader.construct_sequence(node)
-    else:
-        paths = [str(loader.construct_scalar(node))]
-
-    path: Path = Path("/".join(paths)).expanduser().resolve()
-
-    return path.exists() == exists
 
 
 def get_loader() -> type[yaml.FullLoader]:

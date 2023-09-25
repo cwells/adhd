@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 from lib.shell import shell
-from lib.util import console, Style, ConfigBox
+from lib.util import console, Style, ConfigBox, get_resolved_path
 from lib.plugins import PluginTarget
 from lib.boot import missing_modules
 
@@ -37,14 +37,19 @@ else:
 def load(config: ConfigBox, env: dict[str, str]) -> dict[str, str]:
     "Activate Python virtualenv."
 
-    if venv := config.get("venv"):
-        env.pop("PYTHONHOME", None)
-        venv = Path(venv).expanduser().resolve()
-        requirements: str | None = config.get("requirements")
+    requirements: Path | None = None
+
+    if _venv := config.get("venv"):
+        venv: Path = get_resolved_path(_venv, env=env)
+        if _req := config.get("requirements"):
+            requirements = get_resolved_path(_req, env=env)
         packages: list[str] | None = config.get("packages")
+
+        env.pop("PYTHONHOME", None)
+
         env.update(
             initialize_venv(
-                venv=venv,
+                venv=venv.expanduser().resolve(),
                 requirements=requirements,
                 packages=packages,
                 env=env,
@@ -60,7 +65,7 @@ def load(config: ConfigBox, env: dict[str, str]) -> dict[str, str]:
 
 
 def initialize_venv(
-    venv: Path, requirements: str | None, packages: list[str] | None, env: dict[str, str]
+    venv: Path, requirements: Path | None, packages: list[str] | None, env: dict[str, str]
 ) -> dict[str, str]:
     "Create the virtual environment if it doesn't exist, return env vars needed for venv."
 
@@ -88,11 +93,12 @@ def initialize_venv(
         console.print(f"{Style.FINISHED}building Python virtual environment [yellow]{venv}[/]")
 
     if requirements:
-        _req: Path = Path(requirements).expanduser().resolve()
-        with console.status(f"[bold green]:white_circle:[/]Installing requirements from [yellow]{_req}[/]"):
-            installed: bool = install_requirements(venv, _req, env)
+        with console.status(
+            f"[bold green]:white_circle:[/]Installing requirements from [yellow]{requirements}[/]"
+        ):
+            installed: bool = install_requirements(venv, requirements, env)
             style: Style = (Style.SKIPPED, Style.FINISHED)[installed]
-            console.print(f"{style}installing Python requirements from [yellow]{_req}[/]")
+            console.print(f"{style}installing Python requirements from [yellow]{requirements}[/]")
 
     if packages:
         with console.status(f"[bold green]:white_circle:[/]Installing additional packages"):

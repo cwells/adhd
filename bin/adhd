@@ -9,6 +9,7 @@ import sys
 import time
 import webbrowser
 from pathlib import Path
+from typing import Any
 
 from lib.boot import missing_modules
 
@@ -20,7 +21,9 @@ if missing := missing_modules(["box", "click", "rich", "toposort", "yaml", "yarl
 import click
 import rich.console
 import rich.prompt
+import yaml
 from lib.jobs import get_jobs
+from lib.loader import get_loader
 from lib.plugins import Plugin, list_plugins, load_plugins
 from lib.shell import shell
 from lib.util import (
@@ -33,8 +36,15 @@ from lib.util import (
     console,
     get_local_env,
     print_job_help,
-    read_project_config,
 )
+
+# ==============================================================================
+
+
+def read_project_config(project: str) -> dict[str, Any]:
+    with open(project) as config_file:
+        return ConfigBox(yaml.load(config_file, Loader=get_loader()))
+
 
 # ==============================================================================
 
@@ -105,7 +115,7 @@ def main(
     #
     # main loop - get_jobs() returns topologically-sorted list of jobs
     #
-    for job in get_jobs(command, project_config, process_env, plugins, verbose=verbose):
+    for job in get_jobs(command, project_config, process_env, plugins, verbose=verbose, debug=debug):
         if debug:
             console.print(job.to_dict())
 

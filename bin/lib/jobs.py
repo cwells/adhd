@@ -2,8 +2,10 @@ import sys
 from pathlib import Path
 from typing import Any, Generator
 
-from lib.plugins import Plugin, load_plugin
-from lib.util import ConfigBox, Style, console, get_sorted_deps, resolve_dependencies
+from .plugins import Plugin, load_plugin
+from .util import ConfigBox, LazyValue, Style, console, get_resolved_path, get_sorted_deps, resolve_dependencies
+
+# ==============================================================================
 
 
 def get_job(
@@ -30,9 +32,13 @@ def get_job(
 
         return v(*args, **kwargs) if callable(v) else v
 
+    home: str | LazyValue = job_config.get("home") or project_config.get("home", ".")
+    tmp: str | LazyValue = job_config.get("tmp") or project_config.get("tmp", "./tmp")
+    workdir: Path = get_resolved_path(home, env=env)
+    tmpdir: Path = get_resolved_path(tmp, env=env)
+
     cmd: Any = _eval(job_config.get("run", []), env)
-    workdir: Path = Path(_eval(job_config.get("home", project_config.get("home", ".")), env=env))
-    tmpdir: Path = Path(_eval(job_config.get("tmp", project_config.get("tmp", "/tmp")), env=env))
+
     tasks: list = [_eval(t, workdir=workdir, env=env) for t in (cmd if isinstance(cmd, list) else [cmd])]
     _urls = _eval(job_config.get("open"), workdir=workdir, env=env)
     _open: list = (
@@ -53,8 +59,8 @@ def get_job(
             "open": _open,
             "capture": _eval(job_config.get("capture", False), env=env),
             "interactive": _eval(job_config.get("interactive", False), workdir=workdir, env=env),
+            "confirm": _eval(job_config.get("confirm"), workdir=workdir, env=env),
             "silent": job_config.get("silent"),
-            "confirm": job_config.get("confirm"),
             "sleep": job_config.get("sleep", 0),
             "help": job_config.get("help", "No help available."),
         }
@@ -67,12 +73,16 @@ def get_job(
     return job
 
 
+# ==============================================================================
+
+
 def get_jobs(
     command: list[str] | tuple[str, ...],
     project_config: ConfigBox,
     process_env: dict,
     plugins: dict[str, Plugin],
     verbose: bool = False,
+    debug: bool = False,
 ) -> Generator:
     """
     Determine whether we're going to use a pre-defined job from configuration, or
@@ -80,9 +90,12 @@ def get_jobs(
     their associated env and other configuration.
     """
 
+    home: str | LazyValue = project_config.get("home", ".")
+    tmp: str | LazyValue = project_config.get("tmp", "./tmp")
+    workdir: Path = Path(home(project_config["env"]) if isinstance(home, LazyValue) else home)
+    tmpdir: Path = Path(tmp(project_config["env"]) if isinstance(tmp, LazyValue) else tmp)
+
     jobs: dict[str, Any] = project_config.get("jobs", {})
-    workdir: Path = Path(project_config.get("home", "."))
-    tmpdir: Path = Path(project_config.get("tmp", "/tmp"))
 
     if not command:
         console.print(f"No command given.")
@@ -103,9 +116,10 @@ def get_jobs(
             try:
                 yield get_job(dep, job_config, project_config, process_env)
             except Exception as e:
-                _err, _code = e.args
-                console.print(f"{Style.ERROR} job [bold cyan]{_cmd}[/] failed: {_err}")
-                sys.exit(_code)
+                console.print(f"{Style.ERROR} job [bold cyan]{_cmd}[/] failed: [bold white]{e}[/]")
+                if debug:
+                    raise
+                sys.exit(1)
 
     else:  # cli command
         cmd: str = " ".join(command)
