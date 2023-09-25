@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 from lib.shell import shell
-from lib.util import console, Style, ConfigBox
+from lib.util import console, Style, ConfigBox, get_resolved_path
 from lib.plugins import PluginTarget
 from lib.boot import missing_modules
 
@@ -37,14 +37,16 @@ else:
 def load(config: ConfigBox, env: dict[str, str]) -> dict[str, str]:
     "Activate Python virtualenv."
 
-    if venv := config.get("venv"):
-        env.pop("PYTHONHOME", None)
-        venv = Path(venv).expanduser().resolve()
+    if _venv := config.get("venv"):
+        venv: Path = get_resolved_path(_venv, env=env)
         requirements: str | None = config.get("requirements")
         packages: list[str] | None = config.get("packages")
+
+        env.pop("PYTHONHOME", None)
+
         env.update(
             initialize_venv(
-                venv=venv,
+                venv=venv.expanduser().resolve(),
                 requirements=requirements,
                 packages=packages,
                 env=env,

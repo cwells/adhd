@@ -3,17 +3,49 @@ import traceback
 from collections.abc import MutableMapping
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import click
 import rich.console
-import yaml
 from box import Box
 from toposort import CircularDependencyError, toposort_flatten
 
-from lib.loader import get_loader
 
 console: rich.console.Console = rich.console.Console()
+
+
+class LazyValue:
+    """
+    Object that proxies a value in the form of a function and its arguments,
+    as well as a list of any dependencies on other values this value may have.
+    Specifically, this is used with toposort to linearly resolve inter-variable
+    references during reification.
+
+    For example, given the variable reference `FOO: !env ${BAR} ${BAZ}`, `FOO` will
+    have the dependencies `["BAR", "BAZ"]`, and during reification, `BAZ` and `BAR`
+    are guaranteed to be evaluated before `FOO`, thereby ensuring the value of `FOO`
+    can be calculated without the need for recursion.
+    """
+
+    def __init__(self, fn: Callable, value: Any, deps: set[str]) -> None:
+        self.__fn: Callable = fn
+        self.__value: Any = value
+        self.__deps: set[str] = deps
+
+    def __call__(self, *args, **kwargs: Any) -> str:
+        "Reify this value."
+
+        return self.__fn(self, self.__value, *args, **kwargs)
+
+    @property
+    def dependencies(self) -> set[str]:
+        "Return the list of dependencies."
+
+        return self.__deps
+
+    @property
+    def value(self) -> Any:
+        return self.__value
 
 
 # ==============================================================================
@@ -229,14 +261,6 @@ def nested_update(dst: ConfigBox, src: ConfigBox) -> ConfigBox:
 # ==============================================================================
 
 
-def read_project_config(project: str) -> dict[str, Any]:
-    with open(project) as config_file:
-        return ConfigBox(yaml.load(config_file, Loader=get_loader()))
-
-
-# ==============================================================================
-
-
 def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> dict[str, str]:
     """
     Get env from config (yaml source), then override with any preset local env vars.
@@ -244,8 +268,9 @@ def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> dict[
     another variable will be reified _after_ its dependencies.
     """
 
+    home: str | LazyValue = project_config.get("home", ".")
+    workdir: Path = Path(home(project_config["env"]) if isinstance(home, LazyValue) else home)
     env: dict[str, str] = ConfigBox()
-    workdir: Path = Path(project_config.get("home", "."))
 
     if "env" not in project_config:
         project_config["env"] = ConfigBox()
@@ -274,3 +299,14 @@ def print_job_help(jobs: dict) -> None:
     for job, config in jobs.items():
         console.print(f" :white_circle:{f'[bold cyan]{job}[/] [dim]':.<{_width}}[/] {config.get('help', '')}")
     console.print()
+
+
+# ==============================================================================
+
+
+def get_resolved_path(path: str | LazyValue, env: dict) -> Path:
+    "Resolves string or LazyValue into fully-qualified path."
+
+    _path: Path = Path(path(env) if isinstance(path, LazyValue) else path)
+    _path = _path.expanduser().resolve()
+    return _path
