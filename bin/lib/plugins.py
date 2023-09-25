@@ -77,7 +77,7 @@ def load_plugins(
         if not (
             plugin.key
             and (plugin_config := project_config.get(f"plugins.{plugin.key}"))
-            and (plugin_config.get("always", True) or enabled.get(plugin.key, True))
+            and (plugin_config.get("always", True) or enabled.get(plugin.key, False))
         ):
             continue
 
