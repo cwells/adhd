@@ -74,14 +74,14 @@ The `adhd` CLI has the following interface:
         Options:
           --home / --no-home   Change to project HOME directory
           -e, --env ENV        Define env var(s) from CLI
-          -p, --plugin PLUGIN  Manage plugins using <plugin>:[on|off]
+          -p, --plugin PLUGIN  Manage plugins using plugin:[on|off]
           --help-jobs          Display available jobs and help text
           --help-plugins       Display available plugins and help text
           --explain            Display help text from job and its dependencies
           -v, --verbose        Send stdout of all jobs to console
           --debug              Generate extremely verbose output
           -f, --force          Bypass skip checks
-          --help               Show this message and exit.
+          --help               Show this message and exit
   ```
 
 ## Examples
@@ -121,7 +121,7 @@ setup, just run:
 This will:
 - create a virtualenv and install Django
 - run `django-admin startproject` (Django docs [here](https://docs.djangoproject.com/en/4.2/intro/tutorial01/#creating-a-project)) to create a basic Django project
-- and finally, open the front and admin pages in your browser to verify functionality.
+- and finally, open the front page in your browser to verify functionality.
 
 # Configuration
 
@@ -348,8 +348,7 @@ You can also enter the virtual environment just by spawning a subshell:
 
   ```bash
     $ adhd example bash -p python:on
-    Finished installing Python requirements
-    Starting bash
+    ⚫ Finished installing Python packages
     $ python
     Python 3.11.4 (main, Jun  7 2023, 00:00:00) [GCC 13.1.1 20230511 (Red Hat 13.1.1-2)] on linux
     Type "help", "copyright", "credits" or "license" for more information.

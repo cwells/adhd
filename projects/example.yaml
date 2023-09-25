@@ -12,7 +12,7 @@ plugins:
 jobs:
   up:
     help: Run [bold cyan]django/up[/] and open the front and admin pages.
-    open: [ http://localhost:8000/, http://localhost:8000/admin/ ]
+    open: [ http://localhost:8000/ ]
     after: django/up
 
   down:

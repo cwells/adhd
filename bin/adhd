@@ -42,9 +42,7 @@ from lib.util import (
 @click.command()
 @click.option("--home/--no-home", default=True, help="Change to project HOME directory")
 @click.option("-e", "--env", type=EnvParamType(), multiple=True, help="Define env var(s) from CLI")
-@click.option(
-    "-p", "--plugin", type=PluginParamType(), multiple=True, help="Manage plugins using `<plugin>:[on|off]`"
-)
+@click.option("-p", "--plugin", type=PluginParamType(), multiple=True, help="Manage plugins using plugin:[on|off]")
 @click.option("--help-jobs", is_flag=True, default=False, help="Display available jobs and help text")
 @click.option("--help-plugins", is_flag=True, default=False, help="Display available plugins and help text")
 @click.option("--explain", is_flag=True, default=False, help="Display help text from job and its dependencies")
