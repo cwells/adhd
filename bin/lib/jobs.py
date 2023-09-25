@@ -114,8 +114,6 @@ def get_jobs(
             try:
                 yield get_job(dep, job_config, project_config, process_env)
             except Exception as e:
-                # _err, _code = e.args
-                raise
                 console.print(f"{Style.ERROR} job [bold cyan]{_cmd}[/] failed: {e}")
                 sys.exit(1)
 
