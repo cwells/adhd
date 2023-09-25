@@ -337,10 +337,10 @@ be run in a separate process:
       confirm: \nSync staging database to dev?
 
 This means that you cannot set an env variable in one line and then use it in
-the next.
+the next. Each task gets a clean slate.
 
-If you want tasks to share a subprocess (similar to `make`'s `ONESHELL` option),
-use the following format:
+If you want tasks to share a subprocess (similar to `make`'s `.ONESHELL`
+option), use the following format:
 
     db/sync:
       help: Sync staging database to dev database.
