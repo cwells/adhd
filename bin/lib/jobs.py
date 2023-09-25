@@ -88,25 +88,24 @@ def get_jobs(
         console.print(f"No command given.")
         sys.exit(1)
 
-    if command[0] in jobs:  # pre-defined jobs
-        for _cmd in command:  # somehow this keeps the dep order. i don't trust it.
-            for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
-                job_config: ConfigBox = jobs.get(dep, {})
-                if dep.startswith("plugin:"):
-                    _, _plugin_name = dep.split(":", 1)
-                    _plugin_key = f"mod_{_plugin_name}"
-                    _plugin: Plugin | None = plugins.get(_plugin_key)
-                    if _plugin:
-                        load_plugin(_plugin, project_config, process_env, verbose=verbose)
-                    continue
+    if (_cmd := command[0]) in jobs:  # pre-defined jobs
+        # TODO: use rest of cli as job arguments?
+        for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
+            job_config: ConfigBox = jobs.get(dep, {})
+            if dep.startswith("plugin:"):
+                _, _plugin_name = dep.split(":", 1)
+                _plugin_key = f"mod_{_plugin_name}"
+                _plugin: Plugin | None = plugins.get(_plugin_key)
+                if _plugin:
+                    load_plugin(_plugin, project_config, process_env, verbose=verbose)
+                continue
 
-                try:
-                    yield get_job(dep, job_config, project_config, process_env)
-                except Exception as e:
-                    _err, _code = e.args
-                    console.print(f"{Style.ERROR} job [bold cyan]{_cmd}[/] failed: {_err}")
-                    raise
-                    sys.exit(_code)
+            try:
+                yield get_job(dep, job_config, project_config, process_env)
+            except Exception as e:
+                _err, _code = e.args
+                console.print(f"{Style.ERROR} job [bold cyan]{_cmd}[/] failed: {_err}")
+                sys.exit(_code)
 
     else:  # cli command
         cmd: str = " ".join(command)
