@@ -9,7 +9,7 @@ import yaml
 from yarl import URL
 
 from .shell import shell
-from .util import get_resolved_path, LazyValue
+from .util import LazyValue, get_resolved_path
 
 # ==============================================================================
 
@@ -207,22 +207,37 @@ def construct_exists(exists: bool, loader: yaml.FullLoader, node: yaml.SequenceN
 # ==============================================================================
 
 
-def construct_url(loader: yaml.FullLoader, node: yaml.SequenceNode) -> str:
-    "Concatenate list of strings with no spaces and see if its a url. Exciting stuff."
+def eval_url(
+    exists: bool,
+    future: LazyValue,
+    value: list,
+    workdir: Path,
+    env: dict[str, Any],
+) -> str:
+    evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
 
-    items: list[str] = []
-
-    if isinstance(node, yaml.SequenceNode):
-        items = loader.construct_sequence(node)
-    else:
-        items = [str(loader.construct_scalar(node))]
-
-    if not items or not items[-1]:
-        raise TypeError("!url requires at least one item")
-
-    url: URL = URL("".join(items))
+    url: URL = URL("/".join(evaled))
 
     return str(url)
+
+
+def construct_url(loader: yaml.FullLoader, node: yaml.SequenceNode) -> LazyValue:
+    "Concatenate list of strings with no spaces and see if its a url. Exciting stuff."
+
+    value: list[str] = []
+    deps: set[str] = set()
+
+    if isinstance(node, yaml.SequenceNode):
+        value = loader.construct_sequence(node)
+    else:
+        _v = str(loader.construct_scalar(node))
+        deps.update(find_deps(_v))
+        value = [_v]
+
+    if not value:
+        raise TypeError("!url requires at least one item")
+
+    return LazyValue(eval_url, value, deps)
 
 
 # ==============================================================================
