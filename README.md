@@ -318,9 +318,9 @@ which would output
 
             django/up Start the Django server
           django/down Stops the Django web server
-      django/migrate Run Django database migrations
-    django/bootstrap Bootstrap the Django project
-      django/destroy Removes entire installation
+       django/migrate Run Django database migrations
+     django/bootstrap Bootstrap the Django project
+       django/destroy Removes entire installation
 
 And don't forget that you can run arbitrary shell commands. Assuming you have
 configured AWS, you can try something like:
@@ -353,6 +353,19 @@ You can forcibly load the plugin from the cli, which will cause the virtual env 
 
     adhd example --plugin python:on bash
 
+Alternately, you can just add another command to make this automatic:
+
+    jobs:
+      shell:
+        help: Enter the Python virtual environment for this project.
+        run: !env ${SHELL}
+        interactive: true
+        silent: true
+        after: plugin:python
+
+and then run
+
+    adhd example shell
 
 # Plugins
 
