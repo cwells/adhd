@@ -263,3 +263,14 @@ def get_program_home():
     config_dir: Path = Path(f"~/.{bin_name}").expanduser().resolve()
 
     return config_dir
+
+
+# ==============================================================================
+
+
+def print_job_help(jobs: dict) -> None:
+    _width = max(len(j) for j in jobs) + 22
+    console.print()
+    for job, config in jobs.items():
+        console.print(f" :white_circle:{f'[bold cyan]{job}[/] [dim]':.<{_width}}[/] {config.get('help', '')}")
+    console.print()

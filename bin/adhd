@@ -20,7 +20,6 @@ if missing := missing_modules(["box", "click", "rich", "toposort", "yaml", "yarl
 import click
 import rich.console
 import rich.prompt
-
 from lib.jobs import get_jobs
 from lib.plugins import Plugin, list_plugins, load_plugins
 from lib.shell import shell
@@ -33,6 +32,7 @@ from lib.util import (
     _exit,
     console,
     get_local_env,
+    print_job_help,
     read_project_config,
 )
 
@@ -86,9 +86,7 @@ def main(
 
     # display list of possible jobs
     if help_jobs:
-        _width = max(len(j) for j in project_config["jobs"]) + 1
-        for job, config in project_config["jobs"].items():
-            console.print(f"[bold]{job:>{_width}}[/] {config.get('help', '')}")
+        print_job_help(project_config["jobs"])
         raise SystemExit
 
     if help_plugins:
