@@ -1,5 +1,6 @@
 ---
-home: &home ~/Work/example_django_app/
+project: &project example_django_app
+home: &home !path [ "~", *project ]
 tmp: !path [ "~", .tmp ]
 
 plugins:
@@ -10,7 +11,7 @@ plugins:
 
 jobs:
   up:
-    help: Runs [bold cyan]django/up[/] and opens the front and admin pages.
+    help: Run [bold cyan]django/up[/] and open the front and admin pages.
     open: [ http://localhost:8000/, http://localhost:8000/admin/ ]
     after: django/up
 
@@ -19,18 +20,18 @@ jobs:
     after: django/down
 
   shell:
-    help: Enter the Python virtual environment for this project.
+    help: Open a shell with the Python virtual environment activated.
     run: !env ${SHELL}
     interactive: true
     silent: true
     after: plugin:python
 
   django/up:
-    help: Start the Django server
+    help: Start the Django web server.
     run: ./manage.py runserver &
     skip: !shell_eq_0 fuser -s 8000/tcp
     interactive: true
-    sleep: 5
+    sleep: 4
     after:
     - plugin:python
     - django/bootstrap
@@ -47,7 +48,7 @@ jobs:
     - django/migrate
 
   django/down:
-    help: Stops the Django web server
+    help: Stop the Django web server.
     run: fuser -sk 8000/tcp
     skip: !shell_neq_0 fuser -s 8000/tcp
 
@@ -60,14 +61,14 @@ jobs:
     - django/bootstrap
 
   django/bootstrap:
-    help: Bootstrap the Django project
-    run: django-admin startproject example_django_app .
+    help: Bootstrap the Django project.
+    run: !cats [ django-admin startproject, *project, "." ]
     skip: !exists [ *home, manage.py ]
     after:
     - plugin:python
 
   django/destroy:
-    help: Removes installation directory
+    help: Remove installation directory (you will be prompted first).
     run: !cats [ rm -rf, *home ]
     confirm: !cat [ "\n[bold yellow]:warning:[/] Delete [bold cyan]", *home, "[/]?" ]
     skip: !not_exists [ *home ]
@@ -81,4 +82,5 @@ env:
   TERM: !env ${TERM}
   USER: !env ${USER}
   DJANGO_LOG_LEVEL: INFO
-  DJANGO_SECRET_KEY: abc123def456ghi789
+  DJANGO_SECRET_KEY: abc62himom9832qda
+  DJANGO_SETTINGS_MODULE: !cat [ *project, .settings ]
