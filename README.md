@@ -67,19 +67,22 @@ wrapper around `make`.
 
 The `adhd` CLI has the following interface:
 
-    Usage: adhd [OPTIONS] PROJECT [COMMAND]...
+  ```bash
+        $ adhd example --help
+        Usage: adhd [OPTIONS] PROJECT [COMMAND]...
 
-    Options:
-      --home / --no-home   Change to project HOME directory
-      -e, --env ENV        Define env var(s) from CLI
-      -p, --plugin PLUGIN  Manage plugins using `<plugin>:[on|off]`
-      --dry-run            Don't actually execute anything
-      --help-jobs          Display available jobs and help text
-      --help-plugins       Display available plugins and help text
-      --explain            Display help text from job and its dependencies
-      -v, --verbose        Send stdout of all jobs to console
-      -f, --force          Bypass skip checks
-      --help               Show this message and exit.
+        Options:
+          --home / --no-home   Change to project HOME directory
+          -e, --env ENV        Define env var(s) from CLI
+          -p, --plugin PLUGIN  Manage plugins using <plugin>:[on|off]
+          --help-jobs          Display available jobs and help text
+          --help-plugins       Display available plugins and help text
+          --explain            Display help text from job and its dependencies
+          -v, --verbose        Send stdout of all jobs to console
+          --debug              Generate extremely verbose output
+          -f, --force          Bypass skip checks
+          --help               Show this message and exit.
+  ```
 
 ## Examples
 
@@ -316,20 +319,27 @@ You can see available jobs using the `--help-jobs` option:
 
 which would output
 
-            django/up Start the Django server
-          django/down Stops the Django web server
-       django/migrate Run Django database migrations
-     django/bootstrap Bootstrap the Django project
-       django/destroy Removes entire installation
+  ```bash
+    adhd example --help-jobs
+
+    ⚪ up ................ Run django/up and open the front and admin pages.
+    ⚪ down .............. Alias for django/down.
+    ⚪ shell ............. Open a shell with the Python virtual environment activated.
+    ⚪ django/up ......... Start the Django web server.
+    ⚪ django/shell ...... Start an interactive Django Python REPL.
+    ⚪ django/down ....... Stop the Django web server.
+    ⚪ django/migrate .... Run Django database migrations
+    ⚪ django/bootstrap .. Bootstrap the Django project.
+    ⚪ django/destroy .... Remove installation directory (you will be prompted first).
+  ```
 
 And don't forget that you can run arbitrary shell commands. Assuming you have
-configured AWS, you can try something like:
+configured the AWS plugin, you can try something like:
 
     adhd example -- aws s3 ls
 
 which would output something like:
 
-    Finished installing Python requirements
     Starting aws s3 ls
     2020-04-28 11:27:21 my-prod-files
     2020-05-21 14:07:06 my-stage-files
@@ -337,7 +347,7 @@ which would output something like:
 You can also enter the virtual environment just by spawning a subshell:
 
   ```bash
-    $ adhd example bash
+    $ adhd example bash -p python:on
     Finished installing Python requirements
     Starting bash
     $ python
