@@ -70,7 +70,7 @@ jobs:
   django/destroy:
     help: Remove installation directory (you will be prompted first).
     run: !cats [ rm -rf, *home ]
-    confirm: !cat [ "\n[bold yellow]:warning:[/] Delete [bold cyan]", *home, "[/]?" ]
+    confirm: !cat [ "\n[bold yellow]:warning:[/]  Delete [bold cyan]", *home, "[/]?" ]
     skip: !not_exists [ *home ]
     after:
     - django/down
