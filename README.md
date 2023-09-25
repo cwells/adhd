@@ -112,17 +112,6 @@ then the configuration will be looked for in `~/.woot`. This allows you to manag
 multiple versions of `adhd` and even customize the code on a per-installation
 basis. No need to pin the version of `adhd`.
 
-An example config dir will look something like this:
-
-    ~/.adhd/
-        ├── bin
-        │   └── adhd
-        └── projects
-            ├── project1.yaml
-            ├── project2.yaml
-            ├── ...
-            └── projectX.yaml
-
 > The reason for this approach is to allow you to maintain multiple versions of `adhd` under different names alongside the relevant project configs without needing to worry about an update breaking your config.
 
 # A working example
@@ -132,9 +121,31 @@ setup, just run:
 
     adhd example django/up
 
-This will run `django-admin startproject` (Django docs [here](https://docs.djangoproject.com/en/4.2/intro/tutorial01/#creating-a-project)) to create the default Django installation and open the front and admin pages in your browser.
+This will:
+- create a virtualenv and install Django
+- run `django-admin startproject` (Django docs [here](https://docs.djangoproject.com/en/4.2/intro/tutorial01/#creating-a-project)) to create a basic Django project
+- and finally, open the front and admin pages in your browser to verify functionality.
 
 # Configuration
+
+
+An typical config dir will look something like this:
+
+      .adhd
+      ├── bin/
+      │   ├── adhd/
+      │   ├── lib/
+      │   └── plugins/
+      ├── projects/
+      │   ├── project1.yaml
+      │   ├── project2.yaml
+      │   ├── project3.yaml
+      │   ├── ...
+      │   └── projectn.yaml
+      └── requirements.txt
+
+
+Each project file will have the following form:
 
 ```yaml
 home: [str]                   # path to project directory
@@ -299,6 +310,9 @@ If `django/up` is run, it will first load the `python` plugin, then run
 `django/bootstrap` and `django/migrate` (and these in turn may have other
 dependencies). If you don't always want a job to run, you can add the `skip`
 directive, followed by a test that evaluates the output of a shell command.
+
+Jobs and plugins are only run once, regardless of how many other jobs may depend
+on them.
 
 # The CLI
 
