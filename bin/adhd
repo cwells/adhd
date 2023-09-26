@@ -81,6 +81,7 @@ def main(
     plugins: dict[str, Plugin]
     job: ConfigBox
     task: str
+    style: Style | str
     returncode: int = 0
 
     verbose = True if debug else verbose
@@ -122,7 +123,7 @@ def main(
 
         if explain:
             skip: bool = job.get("skip") and force is False
-            style: Style = (Style.RUN, Style.SKIP)[skip]
+            style = (Style.RUN, Style.SKIP)[skip]
             text: str = job.get("help", "No description.")
             console.print(f"{style} [bold cyan]{job['name']}[/]: [cyan]{text}")
             if verbose:
