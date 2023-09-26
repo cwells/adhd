@@ -102,6 +102,7 @@ class ProjectParamType(click.ParamType):
         param: click.Parameter | None,
         ctx: click.Context | None,
     ) -> Path:
+        program: Path = Path(sys.argv[0])
         home: Path = get_program_home()
         config: Path = home / "projects" / f"{value}.yaml"
 
@@ -111,8 +112,8 @@ class ProjectParamType(click.ParamType):
                 config:            "0600",
                 home:              "0700",
                 home / "projects": "0700",
-                home / "bin":      "0700",
-                home / "bin/adhd": "0700",
+                program.parent:    "0700", # bin/
+                program:           "0700", # bin/adhd
             }
         ):
             sys.exit(1)
@@ -291,9 +292,9 @@ def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> dict[
 # ==============================================================================
 
 
-def get_program_home():
-    bin_name: str = Path(sys.argv[0]).name
-    config_dir: Path = Path(f"~/.{bin_name}").expanduser().resolve()
+def get_program_home() -> Path:
+    program: Path = Path(sys.argv[0])
+    config_dir: Path = Path(f"~/.{program.name}").expanduser().resolve()
 
     return config_dir
 
