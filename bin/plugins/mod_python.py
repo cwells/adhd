@@ -34,32 +34,38 @@ else:
 # ==============================================================================
 
 
-def load(config: ConfigBox, env: dict[str, str]) -> dict[str, str]:
-    "Activate Python virtualenv."
+class PythonPlugin:
+    key = "python"
 
-    requirements: Path | None = None
+    def load(self, config: ConfigBox, env: dict[str, str]) -> dict[str, str]:
+        "Activate Python virtualenv."
 
-    if _venv := config.get("venv"):
-        venv: Path = get_resolved_path(_venv, env=env)
-        if _req := config.get("requirements"):
-            requirements = get_resolved_path(_req, env=env)
-        packages: list[str] | None = config.get("packages")
+        requirements: Path | None = None
 
-        env.pop("PYTHONHOME", None)
+        if _venv := config.get("venv"):
+            venv: Path = get_resolved_path(_venv, env=env)
+            if _req := config.get("requirements"):
+                requirements = get_resolved_path(_req, env=env)
+            packages: list[str] | None = config.get("packages")
 
-        env.update(
-            initialize_venv(
-                venv=venv.expanduser().resolve(),
-                requirements=requirements,
-                packages=packages,
-                env=env,
+            env.pop("PYTHONHOME", None)
+
+            env.update(
+                initialize_venv(
+                    venv=venv.expanduser().resolve(),
+                    requirements=requirements,
+                    packages=packages,
+                    env=env,
+                )
             )
-        )
-    else:
-        env.pop("VIRTUAL_ENV", None)
+        else:
+            env.pop("VIRTUAL_ENV", None)
 
-    return env
+        return env
 
+
+plugin = PythonPlugin()
+load = plugin.load
 
 # ==============================================================================
 

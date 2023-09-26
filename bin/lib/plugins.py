@@ -4,7 +4,10 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, cast
 
-from lib.util import Style, console, get_program_bin
+import rich.prompt
+
+from .util import Style, console, get_program_bin
+from .util import ConfigBox
 
 
 # ==============================================================================
@@ -105,3 +108,17 @@ def list_plugins() -> None:
         console.print(f"\n[bold white]:black_circle:[/][bold yellow]{mod.stem}[/] {doc}")
 
     console.print()
+
+
+# ==============================================================================
+
+
+class Plugin:
+    key = None
+
+    def load(self, config: ConfigBox, env: dict[str, Any], verbose: bool = False) -> None:
+        raise NotImplementedError("You must override the load method.")
+
+    def prompt(self, msg: str) -> str:
+        prompt: str = f"[bold]?[/] [bold blue]plugin:{self.key}[/] -> [bold]{msg}[/]"
+        return rich.prompt.Prompt.ask(prompt)
