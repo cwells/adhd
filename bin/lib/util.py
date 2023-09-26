@@ -234,9 +234,13 @@ def get_sorted_deps(command: str, commands: dict, workdir: Path, env: dict[str, 
 def check_permissions(paths: dict[Path, str]) -> bool:
     "Validate permissions on program directories and files."
 
-    def perm(p: Path) -> str:
+    def perm(p: Path) -> str | None:
         "Return a string with the octal representation of Unix file permissions."
-        return oct(p.stat().st_mode)[-4:]
+
+        try:
+            return oct(p.stat().st_mode)[-4:]
+        except Exception as e:
+            _exit(e)
 
     insecure: list[str] = [
         f"- chmod {required} {p}" for p, required in paths.items() if not (actual := perm(p)) == required
@@ -309,7 +313,10 @@ def print_job_help(jobs: dict) -> None:
     _width = max(len(j) for j in jobs) + 22
     console.print()
     for job, config in jobs.items():
-        console.print(f" :white_circle:{f'[bold cyan]{job}[/] [dim]':.<{_width}}[/] {config.get('help', '')}")
+        console.print(
+            f" :white_circle:{f'[bold cyan]{job}[/] [dim]':.<{_width}}[/] {config.get('help', '')}",
+            highlight=False,
+        )
     console.print()
 
 

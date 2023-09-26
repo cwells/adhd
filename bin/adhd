@@ -22,7 +22,7 @@ import click
 import rich.console
 import rich.prompt
 import yaml
-from lib.jobs import get_jobs
+from lib.jobs import get_job, get_jobs
 from lib.loader import get_loader
 from lib.plugins import Plugin, list_plugins, load_plugins
 from lib.shell import shell
@@ -96,7 +96,11 @@ def main(
 
     # display list of possible jobs
     if help_jobs:
-        print_job_help(project_config["jobs"])
+        jobs = {
+            name: get_job(command, job, project_config["jobs"], process_env, informational=True)
+            for name, job in project_config["jobs"].items()
+        }
+        print_job_help(jobs)
         raise SystemExit
 
     if help_plugins:

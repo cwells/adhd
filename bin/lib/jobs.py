@@ -13,6 +13,7 @@ def get_job(
     job_config: ConfigBox,
     project_config: ConfigBox,
     process_env: dict[str, str],
+    informational: bool = False,  # don't _eval values that we don't need
 ) -> ConfigBox:
     "Build a job structure from configuration."
 
@@ -39,23 +40,31 @@ def get_job(
     cmd: Any = _eval(job_config.get("run", []), workdir=workdir, env=env)
     tasks: list = cmd if isinstance(cmd, list) else [cmd]
     task_env: dict[str, str] = resolve_dependencies(job_config.get("env", ConfigBox()), workdir)
+
     job: ConfigBox = ConfigBox(
         {
+            "env": {**env, **task_env},
+            "help": _eval(job_config.get("help", "No help available."), workdir=workdir, env=env),
             "name": command,
             "tasks": tasks,
-            "env": {**env, **task_env},
-            "workdir": str(workdir),
             "tmp": str(tmpdir),
-            "open": _eval(job_config.get("open"), workdir=workdir, env=env),
-            "skip": _eval(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
-            "capture": _eval(job_config.get("capture", False), workdir=workdir, env=env),
-            "interactive": _eval(job_config.get("interactive", False), workdir=workdir, env=env),
-            "confirm": _eval(job_config.get("confirm"), workdir=workdir, env=env),
-            "silent": job_config.get("silent"),
-            "sleep": job_config.get("sleep", 0),
-            "help": job_config.get("help", "No help available."),
+            "workdir": str(workdir),
         }
     )
+
+    if not informational:
+        job.update(
+            {
+                "capture": _eval(job_config.get("capture", False), workdir=workdir, env=env),
+                "confirm": _eval(job_config.get("confirm"), workdir=workdir, env=env),
+                "interactive": _eval(job_config.get("interactive", False), workdir=workdir, env=env),
+                "open": _eval(job_config.get("open"), workdir=workdir, env=env),
+                "open": _eval(job_config.get("open"), workdir=workdir, env=env),
+                "silent": _eval(job_config.get("silent", False), workdir=workdir, env=env),
+                "skip": _eval(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
+                "sleep": _eval(job_config.get("help", 0), workdir=workdir, env=env),
+            }
+        )
 
     if not (job["tasks"] or job_config.get("after") or job_config.get("open")):
         console.print(f"{Style.ERROR}{command}: must have at least one command, dependency, or open directive.")
