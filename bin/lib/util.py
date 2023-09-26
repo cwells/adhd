@@ -293,14 +293,12 @@ def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> dict[
 
 def get_program_bin() -> Path:
     program: Path = Path(sys.argv[0]).resolve()
-    console.print(program.parent)
     return program.parent
 
 
 def get_project_home() -> Path:
     program: Path = Path(sys.argv[0])
     config_dir: Path = Path(f"~/.{program.name}").expanduser().resolve()
-
     return config_dir
 
 
