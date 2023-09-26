@@ -97,7 +97,13 @@ def main(
     # display list of possible jobs
     if help_jobs:
         jobs = {
-            name: get_job(command, job, project_config["jobs"], process_env, informational=True)
+            name: get_job(
+                command,
+                job,
+                project_config["jobs"],
+                process_env,
+                informational=True,
+            )
             for name, job in project_config["jobs"].items()
         }
         print_job_help(jobs)
