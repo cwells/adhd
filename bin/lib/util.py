@@ -115,8 +115,7 @@ class ProjectParamType(click.ParamType):
                 program.parent:    "0700", # bin/
                 program:           "0700", # bin/adhd
             }
-        ):
-            sys.exit(1)
+        ): sys.exit(1)
         # fmt: on
 
         if not config.is_file():
