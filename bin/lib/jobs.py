@@ -59,10 +59,9 @@ def get_job(
                 "confirm": _eval(job_config.get("confirm"), workdir=workdir, env=env),
                 "interactive": _eval(job_config.get("interactive", False), workdir=workdir, env=env),
                 "open": _eval(job_config.get("open"), workdir=workdir, env=env),
-                "open": _eval(job_config.get("open"), workdir=workdir, env=env),
                 "silent": _eval(job_config.get("silent", False), workdir=workdir, env=env),
                 "skip": _eval(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
-                "sleep": _eval(job_config.get("help", 0), workdir=workdir, env=env),
+                "sleep": int(_eval(job_config.get("sleep", 0), workdir=workdir, env=env)),
             }
         )
 
