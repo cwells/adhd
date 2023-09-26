@@ -4,7 +4,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, cast
 
-from lib.util import Style, console, get_program_home
+from lib.util import Style, console, get_program_bin
 
 
 # ==============================================================================
@@ -64,7 +64,7 @@ def load_plugins(
 ) -> dict[str, Plugin]:
     "Locate plugins, import them, and run plugin.load() for each."
 
-    plugin_dir: Path = get_program_home() / "bin/plugins"
+    plugin_dir: Path = get_program_bin() / "plugins"
     plugin: Plugin
     plugins: dict[str, Plugin] = {}
 
@@ -95,7 +95,7 @@ def load_plugins(
 
 
 def list_plugins() -> None:
-    plugins_dir: Path = get_program_home() / "bin/plugins"
+    plugins_dir: Path = get_program_bin() / "plugins"
 
     for mod in plugins_dir.glob("mod_*.py"):
         module = importlib.import_module(f"plugins.{mod.stem}")
