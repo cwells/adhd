@@ -23,16 +23,12 @@ from typing import Any
 import rich.prompt
 import yaml
 from lib.boot import missing_modules
-from lib.plugins import Plugin, PluginTarget
+from lib.plugins import BasePlugin, PluginTarget
 from lib.util import ConfigBox, Style, check_permissions, console, get_resolved_path
-
-key: str | None = "aws"
-target: PluginTarget = PluginTarget.ENV
-has_run: bool = False
 
 if missing_modules(["boto3"]):
     print("boto3 not found: AWS support disabled.")
-    key = None
+    boto3 = None
 else:
     import boto3
 
@@ -40,66 +36,19 @@ else:
 # ==============================================================================
 
 
-class CachedSession(dict):
-    "Caches session data until expiry, then prompts for new MFA code."
+class Plugin(BasePlugin):
+    key: str = "aws"
+    enabled: bool = boto3 is not None
+    target: PluginTarget = PluginTarget.ENV
+    has_run: bool = False
 
-    def __init__(
-        self,
-        plugin: Plugin,
-        session: boto3.Session,  # type: ignore
-        profile: str,
-        device_arn: str,
-        expiry: int = 86400,
-        tmpdir: Path = Path("/tmp"),
-    ) -> None:
-        if key is None:  # we were unable to import module
-            console.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
-            sys.exit(1)
-
-        sts: boto3.client.STS = session.client("sts")  # type: ignore
-        tmp: Path = Path(tmpdir).expanduser().resolve()
-        cache_file: Path = tmp / f"adhd-aws-{profile}.cache"
-
-        os.umask(0o0077)  # 0600
-
-        with open(cache_file, "a+") as cached_data:
-            cached_data.seek(0)
-
-            data: dict[str, Any] = yaml.load(cached_data, Loader=yaml.FullLoader)
-
-            if not data or datetime.utcnow().replace(tzinfo=timezone.utc) > data["Credentials"]["Expiration"]:
-                while len(code := plugin.prompt(f"Enter MFA code")) != 6 or not code.isdigit():
-                    continue
-
-                data = sts.get_session_token(
-                    DurationSeconds=expiry,
-                    SerialNumber=device_arn,
-                    TokenCode=code,
-                )
-
-                cached_data.seek(0)
-                cached_data.write(yaml.dump(data))
-
-        self.update(data)
-
-
-# ==============================================================================
-
-
-class AwsPlugin(Plugin):
-    key = "aws"
-
-    def load(
-        self,
-        config: ConfigBox,
-        env: dict[str, Any],
-        verbose: bool = False,
-    ) -> dict[str, str]:
+    def load(self, config: ConfigBox, env: dict[str, Any]) -> dict[str, str]:
         """
         If aws configured, prompt for 2fa code, authenticate with AWS, then
         store auth token and temp credentials in cache.
         """
-        if key is None:  # we were unable to import module
+
+        if not self.enabled:  # we were unable to import module
             console.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
             sys.exit(1)
 
@@ -120,7 +69,13 @@ class AwsPlugin(Plugin):
 
         session: boto3.Session = boto3.Session(profile_name=profile)  # type: ignore
         device_arn: str = f"arn:aws:iam::{config['account']}:mfa/{mfa_device}"
-        token: dict[str, Any] = CachedSession(self, session, profile, device_arn, mfa_expiry, tmpdir=tmpdir)
+        token: dict[str, Any] = self.cache_session(
+            session=session,
+            profile=profile,
+            device_arn=device_arn,
+            expiry=mfa_expiry,
+            tmpdir=tmpdir,
+        )
         response_code: int = token["ResponseMetadata"]["HTTPStatusCode"]
 
         if response_code != 200:
@@ -137,6 +92,42 @@ class AwsPlugin(Plugin):
             "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS": "true",
         }
 
+    def cache_session(
+        self,
+        session: boto3.Session,  # type: ignore
+        profile: str,
+        device_arn: str,
+        expiry: int = 86400,
+        tmpdir: Path = Path("/tmp"),
+    ) -> dict[str, Any]:
+        "Caches session data until expiry, then prompts for new MFA code."
 
-plugin = AwsPlugin()
-load = plugin.load
+        if not self.enabled:  # we were unable to import module
+            console.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
+            sys.exit(1)
+
+        sts: boto3.client.STS = session.client("sts")  # type: ignore
+        tmp: Path = Path(tmpdir).expanduser().resolve()
+        cache_file: Path = tmp / f"adhd-aws-{profile}.cache"
+
+        os.umask(0o0077)  # 0600
+
+        with open(cache_file, "a+") as cached_data:
+            cached_data.seek(0)
+
+            data: dict[str, Any] = yaml.load(cached_data, Loader=yaml.FullLoader)
+
+            if not data or datetime.utcnow().replace(tzinfo=timezone.utc) > data["Credentials"]["Expiration"]:
+                while len(code := self.prompt(f"Enter MFA code")) != 6 or not code.isdigit():
+                    continue
+
+                data = sts.get_session_token(
+                    DurationSeconds=expiry,
+                    SerialNumber=device_arn,
+                    TokenCode=code,
+                )
+
+                cached_data.seek(0)
+                cached_data.write(yaml.dump(data))
+
+        return data

@@ -14,15 +14,10 @@ import os
 import sys
 from pathlib import Path
 
-from lib.shell import shell
-from lib.util import console, Style, ConfigBox, get_resolved_path
-from lib.plugins import PluginTarget
 from lib.boot import missing_modules
-
-
-key: str | None = "python"
-target: PluginTarget = PluginTarget.ENV
-has_run: bool = False
+from lib.plugins import BasePlugin, PluginTarget
+from lib.shell import shell
+from lib.util import ConfigBox, Style, console, get_resolved_path
 
 if missing_modules(["virtualenv"]):
     console.print(f"{Style.WARNING}virtualenv module not found:[/] Python venv creation disabled.")
@@ -34,8 +29,11 @@ else:
 # ==============================================================================
 
 
-class PythonPlugin:
-    key = "python"
+class Plugin(BasePlugin):
+    key: str = "python"
+    enabled: bool = True
+    target: PluginTarget = PluginTarget.ENV
+    has_run: bool = False
 
     def load(self, config: ConfigBox, env: dict[str, str]) -> dict[str, str]:
         "Activate Python virtualenv."
@@ -51,7 +49,7 @@ class PythonPlugin:
             env.pop("PYTHONHOME", None)
 
             env.update(
-                initialize_venv(
+                self.initialize_venv(
                     venv=venv.expanduser().resolve(),
                     requirements=requirements,
                     packages=packages,
@@ -63,95 +61,78 @@ class PythonPlugin:
 
         return env
 
+    def initialize_venv(
+        self, venv: Path, requirements: Path | None, packages: list[str] | None, env: dict[str, str]
+    ) -> dict[str, str]:
+        "Create the virtual environment if it doesn't exist, return env vars needed for venv."
 
-plugin = PythonPlugin()
-load = plugin.load
+        bin_dir: Path = venv / "bin"
+        venv_env: dict[str, str] = {
+            "VIRTUAL_ENV": str(venv),
+            "PATH": os.pathsep.join([str(bin_dir), env["PATH"]]),
+        }
 
-# ==============================================================================
+        env.update(venv_env)
+        bin_dir.mkdir(parents=True, exist_ok=True)
 
+        if not (bin_dir / "python").exists():
+            if virtualenv is None:
+                console.print(f"{Style.ERROR}Virtualenv creation is disabled. Please install virtualenv package.")
+                sys.exit(1)
 
-def initialize_venv(
-    venv: Path, requirements: Path | None, packages: list[str] | None, env: dict[str, str]
-) -> dict[str, str]:
-    "Create the virtual environment if it doesn't exist, return env vars needed for venv."
+            with console.status(f"[bold green]:white_circle:[/]Building Python virtual environment"):
+                virtualenv.cli_run(
+                    [str(venv)],
+                    options=None,
+                    setup_logging=True,
+                    env=env,
+                )
+            if not self.silent:
+                console.print(f"{Style.FINISHED}building Python virtual environment [yellow]{venv}[/]")
 
-    bin_dir: Path = venv / "bin"
-    venv_env: dict[str, str] = {
-        "VIRTUAL_ENV": str(venv),
-        "PATH": os.pathsep.join([str(bin_dir), env["PATH"]]),
-    }
+        if requirements:
+            with console.status(
+                f"[bold green]:white_circle:[/]Installing requirements from [yellow]{requirements}[/]"
+            ):
+                installed: bool = self.install_requirements(venv, requirements, env)
+                if not self.silent:
+                    style: Style = (Style.SKIPPED, Style.FINISHED)[installed]
+                    console.print(f"{style}installing Python requirements from [yellow]{requirements}[/]")
 
-    env.update(venv_env)
-    bin_dir.mkdir(parents=True, exist_ok=True)
+        if packages:
+            with console.status(f"[bold green]:white_circle:[/]Installing additional packages"):
+                self.install_packages(venv, packages, env)
+            if not self.silent:
+                console.print(f"{Style.FINISHED}installing Python packages")
 
-    if not (bin_dir / "python").exists():
-        if virtualenv is None:
-            console.print(f"{Style.ERROR}Virtualenv creation is disabled. Please install virtualenv package.")
-            sys.exit(1)
+        return env
 
-        with console.status(f"[bold green]:white_circle:[/]Building Python virtual environment"):
-            virtualenv.cli_run(
-                [str(venv)],
-                options=None,
-                setup_logging=True,
-                env=env,
-            )
-        console.print(f"{Style.FINISHED}building Python virtual environment [yellow]{venv}[/]")
+    def install_packages(self, venv: Path, packages: list[str], venv_env: dict[str, str]) -> int:
+        "Install additional packages."
 
-    if requirements:
-        with console.status(
-            f"[bold green]:white_circle:[/]Installing requirements from [yellow]{requirements}[/]"
-        ):
-            installed: bool = install_requirements(venv, requirements, env)
-            style: Style = (Style.SKIPPED, Style.FINISHED)[installed]
-            console.print(f"{style}installing Python requirements from [yellow]{requirements}[/]")
+        bin_dir: Path = venv / "bin"
+        python: Path = bin_dir / "python"
+        packages_str: str = " ".join(packages)
 
-    if packages:
-        with console.status(f"[bold green]:white_circle:[/]Installing additional packages"):
-            install_packages(venv, packages, env)
-        console.print(f"{Style.FINISHED}installing Python packages")
-
-    return env
-
-
-# ==============================================================================
-
-
-def install_packages(venv: Path, packages: list[str], venv_env: dict[str, str]) -> int:
-    "Install additional packages."
-
-    bin_dir: Path = venv / "bin"
-    python: Path = bin_dir / "python"
-    packages_str: str = " ".join(packages)
-
-    return shell(
-        f"{python} -m pip install {packages_str} --upgrade",
-        workdir=venv,
-        env=venv_env,
-    ).returncode
-
-
-# ==============================================================================
-
-
-def install_requirements(
-    venv: Path,
-    requirements: Path,
-    venv_env: dict[str, str],
-    verbose: bool = False,
-) -> bool:
-    "Install requirements.txt into virtual env."
-
-    bin_dir: Path = venv / "bin"
-    python: Path = bin_dir / "python"
-    pip_log: Path = venv / "pip.log"
-
-    if not pip_log.exists() or (requirements.stat().st_mtime > pip_log.stat().st_mtime):
-        shell(
-            f"{python} -m pip install -r {requirements} --upgrade > {pip_log}",
+        return shell(
+            f"{python} -m pip install {packages_str} --upgrade",
             workdir=venv,
             env=venv_env,
-        )
-        return True
+        ).returncode
 
-    return False
+    def install_requirements(self, venv: Path, requirements: Path, venv_env: dict[str, str]) -> bool:
+        "Install requirements.txt into virtual env."
+
+        bin_dir: Path = venv / "bin"
+        python: Path = bin_dir / "python"
+        pip_log: Path = venv / "pip.log"
+
+        if not pip_log.exists() or (requirements.stat().st_mtime > pip_log.stat().st_mtime):
+            shell(
+                f"{python} -m pip install -r {requirements} --upgrade > {pip_log}",
+                workdir=venv,
+                env=venv_env,
+            )
+            return True
+
+        return False

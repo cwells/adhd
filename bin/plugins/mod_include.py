@@ -12,32 +12,28 @@ the plugins section.
 from typing import Any
 
 import yaml
-from lib.plugins import PluginTarget
-from lib.util import ConfigBox, console
 from lib.boot import missing_modules
-
+from lib.plugins import BasePlugin, PluginTarget
+from lib.util import ConfigBox, console
 
 # ==============================================================================
 
 
-key: str | None = None
-target: PluginTarget = PluginTarget.CONF
-has_run: bool = False
+class Plugin(BasePlugin):
+    key: str | None = None
+    enabled: bool = False
+    target: PluginTarget = PluginTarget.CONF
+    has_run: bool = False
 
+    def load(self, config: ConfigBox, env: dict[str, Any], verbose: bool = False) -> ConfigBox:
+        "Include YAML files"
 
-def load(
-    config: ConfigBox,
-    env: dict[str, Any],
-    verbose: bool = False,
-) -> ConfigBox:
-    "Include YAML files"
+        conf: ConfigBox = ConfigBox()
 
-    conf: ConfigBox = ConfigBox()
+        for _include in config:
+            with open(_include, "r") as _file:
+                conf.update(yaml.load(_file.read(), Loader=yaml.FullLoader))
+            if verbose:
+                console.print(f"Included {_include}")
 
-    for _include in config:
-        with open(_include, "r") as _file:
-            conf.update(yaml.load(_file.read(), Loader=yaml.FullLoader))
-        if verbose:
-            console.print(f"Included {_include}")
-
-    return conf
+        return conf
