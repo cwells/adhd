@@ -27,18 +27,11 @@ class PluginModule(ModuleType):
 # ==============================================================================
 
 
-def load_plugin(
-    plugin: PluginModule,
-    project_config: dict[str, Any],
-    process_env: dict,
-    silent: bool = False,
-    verbose: bool = False,
-    debug: bool = False,
-) -> None:
+def load_plugin(plugin: PluginModule, project_config: dict[str, Any], process_env: dict) -> None:
     plugin_config: dict[str, Any] | None = project_config.get(f"plugins.{plugin.key}")
 
     if not plugin_config or getattr(plugin, "has_run", False):
-        if verbose:
+        if not plugin.silent:
             console.print(f"{Style.SKIP_LOAD}plugin [cyan]{plugin.key}[/] is already loaded")
         return
 
@@ -52,7 +45,7 @@ def load_plugin(
 
     plugin.has_run = True
 
-    if verbose:
+    if not plugin.silent:
         console.print(f"{Style.FINISH_LOAD}plugin: [cyan]{plugin.key}[/]")
 
 
@@ -60,7 +53,7 @@ def load_plugin(
 
 
 def load_plugins(
-    project_config: dict[str, Any],
+    project_config: ConfigBox,
     process_env: dict,
     enabled: dict[str, bool],  # passed from cli
     silent: bool = False,
@@ -76,7 +69,11 @@ def load_plugins(
     for mod in plugin_dir.glob("mod_*.py"):
         module = importlib.import_module(f"plugins.{mod.stem}")
         importlib.reload(module)
-        plugins[(mod.stem)] = module.Plugin(silent=silent, verbose=verbose, debug=debug)
+        plugins[mod.stem] = module.Plugin(
+            silent=project_config.get(f"plugins.{module.Plugin.key}.silent", silent),
+            verbose=project_config.get(f"plugins.{module.Plugin.key}.verbose", verbose),
+            debug=project_config.get(f"plugins.{module.Plugin.key}.debug", debug),
+        )
 
     for plugin in plugins.values():
         if not (
@@ -86,14 +83,7 @@ def load_plugins(
         ):
             continue
 
-        load_plugin(
-            plugin,
-            project_config=project_config,
-            process_env=process_env,
-            silent=silent,
-            verbose=verbose,
-            debug=debug,
-        )
+        load_plugin(plugin, project_config=project_config, process_env=process_env)
 
     return plugins
 
@@ -128,12 +118,7 @@ class BasePlugin:
         self.debug = debug
         self.verbose = verbose
 
-    def load(
-        self,
-        config: ConfigBox,
-        env: dict[str, Any],
-        verbose: bool = False,
-    ) -> dict[str, str] | None:
+    def load(self, config: ConfigBox, env: dict[str, Any]) -> dict[str, str] | None:
         raise NotImplementedError("You must override the load method.")
 
     def prompt(self, msg: str) -> str:

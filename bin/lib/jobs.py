@@ -82,6 +82,7 @@ def get_jobs(
     project_config: ConfigBox,
     process_env: dict,
     plugins: dict[str, PluginModule],
+    silent: bool = False,
     verbose: bool = False,
     debug: bool = False,
 ) -> Generator:
@@ -111,7 +112,7 @@ def get_jobs(
                 _plugin_key = f"mod_{_plugin_name}"
                 _plugin: PluginModule | None = plugins.get(_plugin_key)
                 if _plugin:
-                    load_plugin(_plugin, project_config, process_env, verbose=verbose)
+                    load_plugin(_plugin, project_config, process_env)
                 continue
 
             try:
@@ -133,7 +134,9 @@ def get_jobs(
             "sleep": 0,
             "capture": False,
             "interactive": True,
-            "silent": False,
+            "silent": silent,
+            "verbose": verbose,
+            "debug": debug,
             "skip": False,
             "help": "I can't explain this.",
         }
