@@ -2,7 +2,7 @@ import importlib
 from enum import Enum
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable, cast
+from typing import Any, Callable
 
 import rich.prompt
 

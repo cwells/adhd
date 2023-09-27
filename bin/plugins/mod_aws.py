@@ -20,7 +20,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-import rich.prompt
 import yaml
 from lib.boot import missing_modules
 from lib.plugins import BasePlugin, PluginTarget
