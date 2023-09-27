@@ -2,14 +2,14 @@ import sys
 from pathlib import Path
 from typing import Any, Generator
 
-from .plugins import Plugin, load_plugin
+from .plugins import PluginModule, load_plugin
 from .util import ConfigBox, LazyValue, Style, console, get_resolved_path, get_sorted_deps, resolve_dependencies
 
 # ==============================================================================
 
 
 def get_job(
-    command: str,
+    command: tuple[str, ...] | list[str] | str,
     job_config: ConfigBox,
     project_config: ConfigBox,
     process_env: dict[str, str],
@@ -59,7 +59,9 @@ def get_job(
                 "confirm": _eval(job_config.get("confirm"), workdir=workdir, env=env),
                 "interactive": _eval(job_config.get("interactive", False), workdir=workdir, env=env),
                 "open": _eval(job_config.get("open"), workdir=workdir, env=env),
-                "silent": _eval(job_config.get("silent", False), workdir=workdir, env=env),
+                "silent": _eval(
+                    job_config.get("silent", project_config.get("silent", False)), workdir=workdir, env=env
+                ),
                 "skip": _eval(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
                 "sleep": int(_eval(job_config.get("sleep", 0), workdir=workdir, env=env)),
             }
@@ -79,7 +81,7 @@ def get_jobs(
     command: list[str] | tuple[str, ...],
     project_config: ConfigBox,
     process_env: dict,
-    plugins: dict[str, Plugin],
+    plugins: dict[str, PluginModule],
     verbose: bool = False,
     debug: bool = False,
 ) -> Generator:
@@ -107,7 +109,7 @@ def get_jobs(
             if dep.startswith("plugin:"):
                 _, _plugin_name = dep.split(":", 1)
                 _plugin_key = f"mod_{_plugin_name}"
-                _plugin: Plugin | None = plugins.get(_plugin_key)
+                _plugin: PluginModule | None = plugins.get(_plugin_key)
                 if _plugin:
                     load_plugin(_plugin, project_config, process_env, verbose=verbose)
                 continue

@@ -24,7 +24,7 @@ import rich.prompt
 import yaml
 from lib.jobs import get_job, get_jobs
 from lib.loader import get_loader
-from lib.plugins import Plugin, list_plugins, load_plugins
+from lib.plugins import PluginModule, list_plugins, load_plugins
 from lib.shell import shell
 from lib.util import (
     ConfigBox,
@@ -78,7 +78,7 @@ def main(
     process_env: dict[str, str] = ConfigBox()
     project_config: ConfigBox = ConfigBox()
     plugins_enabled: dict[str, bool] = dict(plugin)
-    plugins: dict[str, Plugin]
+    plugins: dict[str, PluginModule]
     job: ConfigBox
     task: str
     style: Style | str
@@ -93,6 +93,8 @@ def main(
     except Exception as e:
         console.print(f"{Style.ERROR}loading configuration {project}:\n")
         _exit(e, verbose=verbose, debug=debug)
+
+    silent: bool = project_config.get("silent", False)
 
     # display list of possible jobs
     if help_jobs:
@@ -121,7 +123,9 @@ def main(
             project_config=project_config,
             process_env=process_env,
             enabled=plugins_enabled,
+            silent=silent,
             verbose=verbose,
+            debug=debug,
         )
 
     #
@@ -148,7 +152,7 @@ def main(
 
         capture: bool = job.get("capture", False)
         interactive: bool = job.get("interactive", False) or verbose
-        silent: bool = job.get("silent", False)
+        silent = job.get("silent", False)
         workdir: Path = Path(job.get("workdir", ".")).expanduser().resolve()
 
         # go to workdir, if defined and not overridden by cli
@@ -162,7 +166,8 @@ def main(
 
         # skip / confirm
         if job.get("skip") and force is False:
-            console.print(f'{Style.SKIPPED}[bold blue]{job["name"]}[/]')
+            if not silent:
+                console.print(f'{Style.SKIPPED}[bold blue]{job["name"]}[/]')
             continue
         elif confirm := job.get("confirm"):
             if not rich.prompt.Confirm.ask(confirm, default=False, console=console):
@@ -231,7 +236,7 @@ def main(
 
     if explain:
         console.print()
-    else:
+    elif not silent:
         console.print(f"{Style.FINISHED}Finished all jobs.")
 
     sys.exit(returncode)

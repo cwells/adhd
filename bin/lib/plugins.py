@@ -6,9 +6,7 @@ from typing import Any, Callable, cast
 
 import rich.prompt
 
-from .util import Style, console, get_program_bin
-from .util import ConfigBox
-
+from .util import ConfigBox, Style, console, get_program_bin
 
 # ==============================================================================
 
@@ -20,7 +18,7 @@ class PluginTarget(Enum):
     CONF = "conf"
 
 
-class Plugin(ModuleType):
+class PluginModule(ModuleType):
     key: str
     load: Callable
     has_run: bool = False
@@ -30,10 +28,12 @@ class Plugin(ModuleType):
 
 
 def load_plugin(
-    plugin: Plugin,
+    plugin: PluginModule,
     project_config: dict[str, Any],
     process_env: dict,
+    silent: bool = False,
     verbose: bool = False,
+    debug: bool = False,
 ) -> None:
     plugin_config: dict[str, Any] | None = project_config.get(f"plugins.{plugin.key}")
 
@@ -63,18 +63,20 @@ def load_plugins(
     project_config: dict[str, Any],
     process_env: dict,
     enabled: dict[str, bool],  # passed from cli
+    silent: bool = False,
     verbose: bool = False,
-) -> dict[str, Plugin]:
+    debug: bool = False,
+) -> dict[str, PluginModule]:
     "Locate plugins, import them, and run plugin.load() for each."
 
     plugin_dir: Path = get_program_bin() / "plugins"
-    plugin: Plugin
-    plugins: dict[str, Plugin] = {}
+    plugin: PluginModule
+    plugins: dict[str, PluginModule] = {}
 
     for mod in plugin_dir.glob("mod_*.py"):
         module = importlib.import_module(f"plugins.{mod.stem}")
         importlib.reload(module)
-        plugins[(mod.stem)] = cast(Plugin, module)
+        plugins[(mod.stem)] = module.Plugin(silent=silent, verbose=verbose, debug=debug)
 
     for plugin in plugins.values():
         if not (
@@ -88,7 +90,9 @@ def load_plugins(
             plugin,
             project_config=project_config,
             process_env=process_env,
+            silent=silent,
             verbose=verbose,
+            debug=debug,
         )
 
     return plugins
@@ -102,7 +106,7 @@ def list_plugins() -> None:
 
     for mod in plugins_dir.glob("mod_*.py"):
         module = importlib.import_module(f"plugins.{mod.stem}")
-        if module.key is None:
+        if not module.plugin.enabled:
             continue
         doc: str = (module.__doc__ or "No description available.").strip("\n")
         console.print(f"\n[bold white]:black_circle:[/][bold yellow]{mod.stem}[/] {doc}")
@@ -113,12 +117,27 @@ def list_plugins() -> None:
 # ==============================================================================
 
 
-class Plugin:
-    key = None
+class BasePlugin:
+    key: str | None = None
+    enabled: bool = False
+    target: PluginTarget | None = None
+    has_run: bool = False
 
-    def load(self, config: ConfigBox, env: dict[str, Any], verbose: bool = False) -> None:
+    def __init__(self, silent=False, verbose=False, debug=False) -> None:
+        self.silent = silent
+        self.debug = debug
+        self.verbose = verbose
+
+    def load(
+        self,
+        config: ConfigBox,
+        env: dict[str, Any],
+        verbose: bool = False,
+    ) -> dict[str, str] | None:
         raise NotImplementedError("You must override the load method.")
 
     def prompt(self, msg: str) -> str:
+        "Prompt the user with a y/n question."
+
         prompt: str = f"[bold]?[/] [bold blue]plugin:{self.key}[/] -> [bold]{msg}[/]"
         return rich.prompt.Prompt.ask(prompt)
