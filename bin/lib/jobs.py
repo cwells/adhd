@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from typing import Any, Generator
 
-from .plugins import PluginModule, load_plugin
+from .plugins import BasePlugin, load_plugin
 from .util import ConfigBox, LazyValue, Style, console, get_resolved_path, get_sorted_deps, resolve_dependencies
 
 # ==============================================================================
@@ -81,7 +81,7 @@ def get_jobs(
     command: list[str] | tuple[str, ...],
     project_config: ConfigBox,
     process_env: dict,
-    plugins: dict[str, PluginModule],
+    plugins: dict[str, BasePlugin],
     silent: bool = False,
     verbose: bool = False,
     debug: bool = False,
@@ -110,7 +110,7 @@ def get_jobs(
             if dep.startswith("plugin:"):
                 _, _plugin_name = dep.split(":", 1)
                 _plugin_key = f"mod_{_plugin_name}"
-                _plugin: PluginModule | None = plugins.get(_plugin_key)
+                _plugin: BasePlugin | None = plugins.get(_plugin_key)
                 if _plugin:
                     load_plugin(_plugin, project_config, process_env)
                 continue

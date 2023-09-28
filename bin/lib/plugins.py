@@ -1,3 +1,19 @@
+"""
+Plugins can do pretty much anything, but they can only directly affect two aspects
+of `adhd`: configuration and environment. This is done by way of their return
+value, which is always a dictionary and will be merged with the relevant part
+of the execution environment.
+
+`Plugin.target` may be one of:
+- `PluginTarget.ENV`: merge return value with environment
+- `PluginTarget.CONF`: merge return value with configuration
+- `None`: ignore any return value
+
+Plugins are only run once, either at boot time (if `always: true` is specified
+in plugin configuration), or on-demand, if they are specified as a dependency
+for a job (e.g. `after: plugin:python`).
+"""
+
 import importlib
 from enum import Enum
 from pathlib import Path
@@ -12,23 +28,38 @@ from .util import ConfigBox, Style, console, get_program_bin
 
 
 class PluginTarget(Enum):
-    "Plugins can update either environment or configuration."
+    "Plugins can update either environment, configuration, or None."
 
     ENV = "env"
     CONF = "conf"
 
 
-class PluginModule(ModuleType):
-    key: str
-    load: Callable
+class BasePlugin:
+    key: str | None = None
+    enabled: bool = False
+    target: PluginTarget | None = None
     has_run: bool = False
+
+    def __init__(self, silent=False, verbose=False, debug=False) -> None:
+        self.silent = silent
+        self.debug = debug
+        self.verbose = verbose
+
+    def load(self, config: ConfigBox, env: dict[str, Any]) -> dict[str, str] | None:
+        raise NotImplementedError("You must override the load method.")
+
+    def prompt(self, msg: str) -> str:
+        "Prompt the user with a y/n question."
+
+        prompt: str = f"[bold]?[/] [bold blue]plugin:{self.key}[/] -> [bold]{msg}[/]"
+        return rich.prompt.Prompt.ask(prompt)
 
 
 # ==============================================================================
 
 
-def load_plugin(plugin: PluginModule, project_config: dict[str, Any], process_env: dict) -> None:
-    plugin_config: dict[str, Any] | None = project_config.get(f"plugins.{plugin.key}")
+def load_plugin(plugin: BasePlugin, project_config: dict[str, Any], process_env: dict) -> None:
+    plugin_config: ConfigBox | None = project_config.get(f"plugins.{plugin.key}")
 
     if not plugin_config or getattr(plugin, "has_run", False):
         if not plugin.silent:
@@ -38,10 +69,11 @@ def load_plugin(plugin: PluginModule, project_config: dict[str, Any], process_en
     plugin_config["tmp"] = project_config.get("tmp", "/tmp")
     data = plugin.load(config=plugin_config, env=process_env)
 
-    if plugin.target == PluginTarget.ENV:
-        process_env.update(data)
-    elif plugin.target == PluginTarget.CONF:
-        project_config.update(data)
+    if data and plugin.target is not None:
+        if plugin.target == PluginTarget.ENV:
+            process_env.update(data)
+        elif plugin.target == PluginTarget.CONF:
+            project_config.update(data)
 
     plugin.has_run = True
 
@@ -59,15 +91,15 @@ def load_plugins(
     silent: bool = False,
     verbose: bool = False,
     debug: bool = False,
-) -> dict[str, PluginModule]:
+) -> dict[str, BasePlugin]:
     "Locate plugins, import them, and run plugin.load() for each."
 
     plugin_dir: Path = get_program_bin() / "plugins"
-    plugin: PluginModule
-    plugins: dict[str, PluginModule] = {}
+    plugin: BasePlugin
+    plugins: dict[str, BasePlugin] = {}
 
     for mod in plugin_dir.glob("mod_*.py"):
-        module = importlib.import_module(f"plugins.{mod.stem}")
+        module: ModuleType = importlib.import_module(f"plugins.{mod.stem}")
         importlib.reload(module)
         plugins[mod.stem] = module.Plugin(
             silent=project_config.get(f"plugins.{module.Plugin.key}.silent", silent),
@@ -102,27 +134,3 @@ def list_plugins() -> None:
         console.print(f"\n[bold white]:black_circle:[/][bold yellow]{mod.stem}[/] {doc}")
 
     console.print()
-
-
-# ==============================================================================
-
-
-class BasePlugin:
-    key: str | None = None
-    enabled: bool = False
-    target: PluginTarget | None = None
-    has_run: bool = False
-
-    def __init__(self, silent=False, verbose=False, debug=False) -> None:
-        self.silent = silent
-        self.debug = debug
-        self.verbose = verbose
-
-    def load(self, config: ConfigBox, env: dict[str, Any]) -> dict[str, str] | None:
-        raise NotImplementedError("You must override the load method.")
-
-    def prompt(self, msg: str) -> str:
-        "Prompt the user with a y/n question."
-
-        prompt: str = f"[bold]?[/] [bold blue]plugin:{self.key}[/] -> [bold]{msg}[/]"
-        return rich.prompt.Prompt.ask(prompt)

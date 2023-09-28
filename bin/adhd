@@ -24,7 +24,7 @@ import rich.prompt
 import yaml
 from lib.jobs import get_job, get_jobs
 from lib.loader import get_loader
-from lib.plugins import PluginModule, list_plugins, load_plugins
+from lib.plugins import BasePlugin, list_plugins, load_plugins
 from lib.shell import shell
 from lib.util import (
     ConfigBox,
@@ -78,7 +78,7 @@ def main(
     process_env: dict[str, str] = ConfigBox()
     project_config: ConfigBox = ConfigBox()
     plugins_enabled: dict[str, bool] = dict(plugin)
-    plugins: dict[str, PluginModule]
+    plugins: dict[str, BasePlugin]
     job: ConfigBox
     task: str
     style: Style | str
