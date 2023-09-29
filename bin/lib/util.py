@@ -102,24 +102,11 @@ class ProjectParamType(click.ParamType):
         param: click.Parameter | None,
         ctx: click.Context | None,
     ) -> Path:
-        program: Path = Path(sys.argv[0])
         home: Path = get_project_home()
         config: Path = home / "projects" / f"{value}.yaml"
 
-        # fmt: off
-        if not check_permissions(
-            {
-                config:            "0600",
-                home:              "0700",
-                home / "projects": "0700",
-                program.parent:    "0700", # bin/
-                program:           "0700", # bin/adhd
-            }
-        ): sys.exit(1)
-        # fmt: on
-
         if not config.is_file():
-            self.fail(f"{value} is not a valid project.", param, ctx)
+            self.fail(f"{value} is not a valid project configuration {config}.", param, ctx)
 
         return config
 
@@ -231,28 +218,38 @@ def get_sorted_deps(command: str, commands: dict, workdir: Path, env: dict[str, 
 # ==============================================================================
 
 
-def check_permissions(paths: dict[Path, str]) -> bool:
+def check_permissions(paths: dict[Path, int], fix_perms: bool = False) -> bool:
     "Validate permissions on program directories and files."
 
-    def perm(p: Path) -> str | None:
-        "Return a string with the octal representation of Unix file permissions."
+    def perm(p: Path) -> int | None:
+        "Return POSIX file permissions."
 
         try:
-            return oct(p.stat().st_mode)[-4:]
+            return p.stat().st_mode & 0o000777
         except Exception as e:
             _exit(e)
 
-    insecure: list[str] = [
-        f"- chmod {required} {p}" for p, required in paths.items() if not (actual := perm(p)) == required
+    # fmt: off
+    insecure: list[tuple[Path, int]] = [
+        (p, required)
+        for p, required in paths.items()
+        if not perm(p) == required
     ]
+    # fmt: on
 
     if insecure:
-        console.print(f"\nInsecure configuration. Please run the following commands:\n")
-        for issue in insecure:
-            console.print(issue)
+        console.print(f"\nInsecure configuration:")
+
+        for path, mode in insecure:
+            if fix_perms:
+                path.chmod(mode)
+                console.print(f"- fixed {path} ({mode:04o})")
+            else:
+                console.print(f"- chmod {mode:04o} {path}")
+
         console.print()
 
-    return not insecure
+    return not insecure or fix_perms
 
 
 # ==============================================================================
@@ -330,3 +327,27 @@ def get_resolved_path(path: str | LazyValue, env: dict, workdir: Path | None = N
     _path: Path = Path(path(env=env, workdir=workdir) if isinstance(path, LazyValue) else path)
     _path = _path.expanduser().resolve()
     return _path
+
+
+# ==============================================================================
+
+
+def check_project(project: str, fix_perms: bool = False) -> bool:
+    "Check for path permissions and general sanity."
+
+    program: Path = Path(sys.argv[0])
+    home: Path = get_project_home()
+    config: Path = home / "projects" / project
+
+    # fmt: off
+    return check_permissions(
+        {
+            config:            0o0600,
+            home:              0o0700,
+            home / "projects": 0o0700,
+            program.parent:    0o0700, # bin/
+            program:           0o0700, # bin/adhd
+        },
+        fix_perms = fix_perms,
+    )
+    # fmt: on

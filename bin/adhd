@@ -33,6 +33,7 @@ from lib.util import (
     ProjectParamType,
     Style,
     _exit,
+    check_project,
     console,
     get_local_env,
     print_job_help,
@@ -59,6 +60,7 @@ def read_project_config(project: str) -> dict[str, Any]:
 @click.option("-v", "--verbose", is_flag=True, default=False, help="Send stdout of all jobs to console")
 @click.option("--debug", is_flag=True, default=False, help="Generate extremely verbose output")
 @click.option("-f", "--force", is_flag=True, default=False, help="Bypass skip checks")
+@click.option("--fix-perms", is_flag=True, default=False, help="Fix file permissions")
 @click.argument("project", type=ProjectParamType())
 @click.argument("command", nargs=-1)
 def main(
@@ -73,6 +75,7 @@ def main(
     verbose: bool,
     debug: bool,
     force: bool,
+    fix_perms: bool,
 ) -> None:
     options_env: dict[str, str] = ConfigBox(env)
     process_env: dict[str, str] = ConfigBox()
@@ -85,6 +88,9 @@ def main(
     returncode: int = 0
 
     verbose = True if debug else verbose
+
+    if not check_project(project, fix_perms=fix_perms):
+        sys.exit(1)
 
     # read configuration
     try:
