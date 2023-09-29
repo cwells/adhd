@@ -57,7 +57,7 @@ class Plugin(BasePlugin):
         mfa_device: str | None = mfa.get("device")
         mfa_expiry: int = int(mfa.get("expiry", 86400))
         tmpdir: Path = get_resolved_path(config.get("tmp", "/tmp"), env=env)
-        secure_paths: dict[Path, str] = {tmpdir: "0700"}
+        secure_paths: dict[Path, int] = {tmpdir: 0o0700}
 
         if not check_permissions(secure_paths):
             sys.exit(2)

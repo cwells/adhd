@@ -245,6 +245,7 @@ def check_permissions(paths: dict[Path, int], fix_perms: bool = False) -> bool:
                 path.chmod(mode)
                 console.print(f"- fixed {path} ({mode:04o})")
             else:
+                print(mode, path)
                 console.print(f"- chmod {mode:04o} {path}")
 
         console.print()
