@@ -1,13 +1,18 @@
 """
 [bold cyan]Import .env files.[/]
 
-Import one or more .env (dotenv) files into the runtime environment.
-
-  dotenv:
-    files:
-    - !path [ ~/projects/.env ]
-    - !path [ ~/projects/.dev.env ]
+Import one or more .env files into the runtime environment.
 """
+
+example = """
+dotenv:
+  files:
+  - !path [ ~/projects/.env ]
+  - !path [ ~/projects/.dev.env ]
+"""
+
+required_modules: dict[str, str] = {"dotenv": "python-dotenv"}
+required_binaries: list[str] = []
 
 import sys
 from pathlib import Path
@@ -17,8 +22,10 @@ from lib.boot import missing_modules
 from lib.plugins import BasePlugin, MetadataType
 from lib.util import ConfigBox, console, Style, check_permissions
 
-if missing_modules(["dotenv"]):
-    print("python-dotenv not found: .env support disabled.")
+missing: list[str]
+
+if missing := missing_modules(required_modules):
+    console.print(f"Plugin [bold blue]dotenv[/] disabled, missing modules: {', '.join(missing)}\n")
     dotenv_values = None
 else:
     from dotenv import dotenv_values

@@ -1,14 +1,19 @@
 """
 [bold cyan]Configure Python virtual environment.[/]
 
-  python:
-    venv: ~/myproject/.venv                    # location venv will be created
-    requirements: ~/myproject/requirements.txt # optional requirements.txt to be installed
-    packages: [ requests, PyYAML==5.4.1 ]      # additional packages to install
-
 If [cyan]virtualenv[/] package is missing, plugin will still work with an existing
 virtual environment, but won't be able to create a new one.
 """
+
+example = """
+python:
+  venv: ~/myproject/.venv
+  requirements: ~/myproject/requirements.txt
+  packages: [ requests, PyYAML==5.4.1 ]
+"""
+
+required_modules: dict[str, str] = {"virtualenv": "virtualenv"}
+required_binaries: list[str] = []
 
 import os
 import sys
@@ -19,7 +24,7 @@ from lib.plugins import BasePlugin, MetadataType
 from lib.shell import shell
 from lib.util import ConfigBox, Style, console, get_resolved_path
 
-if missing_modules(["virtualenv"]):
+if missing_modules(required_modules):
     console.print(f"{Style.WARNING}virtualenv module not found:[/] Python venv creation disabled.")
     virtualenv = None
 else:

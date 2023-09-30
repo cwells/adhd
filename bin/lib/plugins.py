@@ -10,15 +10,16 @@ for a job (e.g. `after: plugin:python`).
 """
 
 import importlib
-from enum import Enum
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Literal
 
 import rich.prompt
+import rich.style
+from rich.syntax import Syntax
+from rich.table import Table
 
 from .util import ConfigBox, Style, console, get_program_bin, realize
-
 
 # ==============================================================================
 
@@ -145,28 +146,45 @@ def load_plugins(
 
 
 # ==============================================================================
-from rich.table import Table
 
 
 def list_plugins() -> None:
     plugins_dir: Path = get_program_bin() / "plugins"
     table: Table = Table(
-        show_header=False,
-        title="Plugins",
-        padding=1,
-        row_styles=["white on grey3", "white on grey11"],
-        highlight=True,
-        box=None,
+        show_header=False, padding=2, highlight=True, border_style=rich.style.Style(color="grey15")
     )
+    row_styles: list[str] = ["grey7", "grey15"]
 
-    table.add_column("Plugin", justify="left")
+    table.add_column("Description", justify="left")
+    table.add_column("Example", justify="left")
 
+    idx: int = 0
     for mod in plugins_dir.glob("mod_*.py"):
         module = importlib.import_module(f"plugins.{mod.stem}")
         if not module.Plugin.enabled:
             continue
-        doc: str = (module.__doc__ or "No description available.").strip("\n")
-        table.add_row(f"[bold yellow]{mod.stem}[/]: {doc}")
-    # console.print(f"\n[bold white]:black_circle:[/][bold yellow]{mod.stem}[/] {doc}")
 
+        doc: str = (module.__doc__ or "No description available.").strip("\n")
+        row: list[str] = [
+            f"[bold yellow]{mod.stem}[/]: {doc}\n",
+        ]
+
+        required_modules: str = "[/], [cyan]".join(module.required_modules.values())
+        required_binaries: str = "[/], [cyan]".join(module.required_binaries)
+
+        if required_modules or required_binaries:
+            row.append("[bold white]Requirements:[/]")
+
+        if required_modules:
+            row.append(f"- modules: [cyan]{required_modules}[/]")
+        if required_binaries:
+            row.append(f"- programs: [cyan]{required_binaries}[/]")
+
+        example: Syntax = Syntax(getattr(module, "example", ""), "yaml", background_color=row_styles[idx % 2])
+
+        table.add_row("\n".join(row), example, style=f"white on {row_styles[idx % 2]}")
+
+        idx += 1
+
+    # with console.pager():
     console.print(table)

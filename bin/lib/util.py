@@ -10,7 +10,7 @@ import rich.console
 from box import Box
 from toposort import CircularDependencyError, toposort_flatten
 
-console: rich.console.Console = rich.console.Console()
+console: rich.console.Console = rich.console.Console(color_system="truecolor")
 
 
 # ==============================================================================

@@ -13,7 +13,16 @@ from typing import Any
 
 from lib.boot import missing_modules
 
-if missing := missing_modules(["box", "click", "rich", "toposort", "yaml", "yarl"]):
+required_modules: dict[str, str] = {
+    "box": "python-box",
+    "click": "click",
+    "rich": "rich",
+    "toposort": "toposort",
+    "yaml": "PyYAML",
+    "yarl": "yarl",
+}
+
+if missing := missing_modules(required_modules):
     print("You need to install this program's dependencies, e.g. `python -m pip install -r requirements.txt\n")
     print(f"Missing modules: {', '.join(missing)}\n")
     sys.exit(1)

@@ -3,11 +3,16 @@
 
 Note that inclusion happens relative to the document root, _not_ in-place within
 the plugins section.
-
-  include:
-  - file1.yaml
-  - !path [ "~", projects/file2.yaml ]
 """
+
+example = """
+include:
+- file1.yaml
+- !path [ "~", projects/file2.yaml ]
+"""
+
+required_modules: dict[str, str] = {}
+required_binaries: list[str] = []
 
 from typing import Any
 

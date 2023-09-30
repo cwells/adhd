@@ -1,21 +1,6 @@
 """
 [bold cyan]Configure Ngrok agent.[/]
 
-  ngrok:
-    always: true
-    subscribed: false
-    config:
-      authtoken: [bold white]<auth_token>[/]
-      api_key: [bold white]<api_key>[/]
-      version: "2"
-      log: ~/ngrok.log
-      tunnels:
-        django:
-          addr: 8000
-          schemes: [ https ]
-          inspect: false
-          proto: http
-
 This plugin's config mirrors the ngrok config as documented here:
 
 [u]https://ngrok.com/docs/secure-tunnels/ngrok-agent/reference/config[/u]
@@ -24,13 +9,33 @@ This plugin's config mirrors the ngrok config as documented here:
 
 While this plugin allows you to define multple tunnels, the ngrok free tier only
 allows a single active tunnel, and as such, only the first defined tunnel will be
-started. Set the [cyan]subscribed[/] attribute to [cyan]true[/] to start additional tunnels.
+started. Set the [blue]subscribed[/] attribute to [blue]true[/] to start additional tunnels.
 
-[cyan]console_ui[/] is always set to [cyan]false[/].
+[blue]console_ui[/] is always set to [blue]false[/].
 
 [cyan]unplug:ngrok[/] should be called when destroying the stack as otherwise the
 tunnel will remain up.
 """
+
+example = """
+ngrok:
+  always: true
+  subscribed: false
+  config:
+    authtoken: "<auth_token>"
+    api_key: "<api_key>"
+    version: "2"
+    log: ~/ngrok.log
+    tunnels:
+      django:
+        addr: 8000
+        schemes: [ https ]
+        inspect: false
+        proto: http
+"""
+
+required_modules: dict[str, str] = {"ngrok": "ngrok-api", "psutil": "psutil"}
+required_binaries: list[str] = ["ngrok"]
 
 import sys
 import time
@@ -40,17 +45,23 @@ from typing import Any, Generator
 
 import yaml
 
-from lib.boot import missing_modules
+from lib.boot import missing_modules, missing_binaries
 from lib.plugins import BasePlugin, MetadataType
 from lib.util import ConfigBox, Style, console
 from lib.shell import shell
 
-if missing := missing_modules(["ngrok", "psutil"]):
-    console.print(f"Plugin [bold blud]ngrok[/] disabled, missing modules: {', '.join(missing)}\n")
+missing: list[str]
+
+if missing := missing_modules(required_modules):
+    console.print(f"Plugin [bold blue]ngrok[/] disabled, missing modules: {', '.join(missing)}\n")
     ngrok = None
 else:
     import ngrok
     import psutil
+
+if missing := missing_binaries(required_binaries):
+    console.print(f"Plugin [bold blue]ngrok[/] disabled, missing binaries: {', '.join(missing)}\n")
+    ngrok = None
 
 
 # ==============================================================================
@@ -58,7 +69,7 @@ else:
 
 class Plugin(BasePlugin):
     key: str = "ngrok"
-    enabled: bool = ngrok is not None
+    enabled: bool = bool(ngrok)
     has_run: bool = False
 
     def load(

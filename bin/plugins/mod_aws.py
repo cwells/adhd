@@ -1,18 +1,28 @@
 """
 [bold cyan]Configure AWS session with MFA.[/]
 
-  aws:
-    profile: default      # profile name from .aws/credentials
-    username: john.doe    # AWS username
-    account: 123456789012 # AWS account ID
-    region: eu-west-1     # AWS region
-    mfa:
-      device: MyDevice    # last part of ARN "arn:aws:iam::123456789012:mfa/MyDevice"
-      expiry: 86400       # TTL for token (will prompt for MFA code upon expiry)
-
 Session will be cached in [cyan]tmp[/] for [cyan]expiry[/] seconds and you won't be prompted
 for MFA code until that time, even across multple invokations and multiple shells.
+
+The [cyan]profile[/] is a profile from "~/.aws/credentials".
+
+The MFA [cyan]device[/] is the last part of ARN, e.g. for the device ARN
+"arn:aws:iam::123456789012:mfa/MyDevice", [cyan]device[/] would be "MyDevice".
 """
+
+example = """
+aws:
+  profile: default
+  username: "<username>"
+  account: "<account id>"
+  region: "<region>"
+  mfa:
+    device: "<device>"
+    expiry: 86400
+"""
+
+required_modules: dict[str, str] = {"boto3": "boto3"}
+required_binaries: list[str] = []
 
 import os
 import sys
@@ -25,8 +35,10 @@ from lib.boot import missing_modules
 from lib.plugins import BasePlugin, MetadataType
 from lib.util import ConfigBox, Style, check_permissions, console, get_resolved_path
 
-if missing_modules(["boto3"]):
-    print("boto3 not found: AWS support disabled.")
+missing: list[str]
+
+if missing := missing_modules(required_modules):
+    console.print(f"Plugin [bold blue]AWS[/] disabled, missing modules: {', '.join(missing)}\n")
     boto3 = None
 else:
     import boto3
