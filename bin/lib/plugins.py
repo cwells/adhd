@@ -18,11 +18,11 @@ import importlib
 from enum import Enum
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Callable
+from typing import Any
 
 import rich.prompt
 
-from .util import ConfigBox, Style, console, get_program_bin
+from .util import ConfigBox, Style, console, get_program_bin, realize
 
 # ==============================================================================
 
@@ -66,7 +66,12 @@ def load_plugin(plugin: BasePlugin, project_config: dict[str, Any], process_env:
             console.print(f"{Style.SKIP_LOAD}plugin [cyan]{plugin.key}[/] is already loaded")
         return
 
-    plugin_config["tmp"] = project_config.get("tmp", "/tmp")
+    for k, v in plugin_config.items():
+        plugin_config[k] = realize(v, workdir=Path("."))
+
+    if "tmp" not in plugin_config:
+        plugin_config["tmp"] = project_config.get("tmp", "/tmp")
+
     data = plugin.load(config=plugin_config, env=process_env)
 
     if data and plugin.target is not None:

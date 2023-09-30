@@ -352,3 +352,36 @@ def check_project(project: str, fix_perms: bool = False) -> bool:
         fix_perms = fix_perms,
     )
     # fmt: on
+
+
+# ==============================================================================
+
+
+class NonCallable:
+    def __call__(self, *args: Any, **kwargs: Any):
+        raise NotImplementedError("This module is disabled.")
+
+    def __bool__(self) -> bool:
+        return False
+
+    __nonzero__ = __bool__
+
+
+# ==============================================================================
+
+
+def realize(v: Any, *args, **kwargs) -> Any:
+    "Evaluate v as a LazyObject, or return v"
+
+    if not v:
+        return v
+
+    if isinstance(v, dict):
+        for _k, _v in v.items():
+            v[_k] = realize(_v, *args, **kwargs)
+        return v
+    elif isinstance(v, (list, tuple)):
+        v = [realize(i, *args, **kwargs) for i in v]
+        return v
+
+    return v(*args, **kwargs) if callable(v) else v

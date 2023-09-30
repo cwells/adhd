@@ -14,6 +14,10 @@ you have ADHD), this tool can be quite helpful.
 jobs in turn can define dependent jobs that will also be run. Jobs can be
 conditionally run depending on the return codes of user-defined shell commands.
 
+The original purpose of `adhd` was as a replacement for .env files, but of course
+running jobs made sense, and then you need job ordering and dependencies, and plugins
+sound cool, So here we are.
+
 > It is important to note that `adhd` is not meant to replace `make` or other tools, and it's not expected that your `adhd` config will live in the project directory to be shared with others. Rather `adhd` is a way to personalize and simplify _your_ workflow without impacting other people working on the same project. In many cases an `adhd` project will be nothing more than a thin wrapper around `make`.
 
 `adhd` has the following features:
