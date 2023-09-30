@@ -5,8 +5,8 @@
     always: true
     subscribed: false
     config:
-      authtoken: <auth_token>
-      api_key: <api_key>
+      authtoken: [bold white]<auth_token>[/]
+      api_key: [bold white]<api_key>[/]
       version: "2"
       log: ~/ngrok.log
       tunnels:
