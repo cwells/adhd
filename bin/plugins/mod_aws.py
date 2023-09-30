@@ -32,8 +32,8 @@ from typing import Any
 
 import yaml
 from lib.boot import missing_modules
-from lib.plugins import BasePlugin, MetadataType
 from lib.util import ConfigBox, Style, check_permissions, console, get_resolved_path
+from plugins import BasePlugin, MetadataType
 
 missing: list[str]
 

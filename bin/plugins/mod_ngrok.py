@@ -44,11 +44,10 @@ from tempfile import NamedTemporaryFile
 from typing import Any, Generator
 
 import yaml
-
-from lib.boot import missing_modules, missing_binaries
-from lib.plugins import BasePlugin, MetadataType
-from lib.util import ConfigBox, Style, console
+from lib.boot import missing_binaries, missing_modules
 from lib.shell import shell
+from lib.util import ConfigBox, Style, console
+from plugins import BasePlugin, MetadataType
 
 missing: list[str]
 

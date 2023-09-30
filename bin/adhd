@@ -33,7 +33,6 @@ import rich.prompt
 import yaml
 from lib.jobs import get_job, get_jobs
 from lib.loader import get_loader
-from lib.plugins import BasePlugin, list_plugins, load_plugins
 from lib.shell import shell
 from lib.util import (
     ConfigBox,
@@ -47,6 +46,7 @@ from lib.util import (
     get_local_env,
     print_job_help,
 )
+from plugins import BasePlugin, list_plugins, load_plugins
 
 # ==============================================================================
 

@@ -19,8 +19,8 @@ from pathlib import Path
 from typing import Any
 
 from lib.boot import missing_modules
-from lib.plugins import BasePlugin, MetadataType
-from lib.util import ConfigBox, console, Style, check_permissions
+from lib.util import ConfigBox, Style, check_permissions, console
+from plugins import BasePlugin, MetadataType
 
 missing: list[str]
 

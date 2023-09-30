@@ -20,9 +20,9 @@ import sys
 from pathlib import Path
 
 from lib.boot import missing_modules
-from lib.plugins import BasePlugin, MetadataType
 from lib.shell import shell
 from lib.util import ConfigBox, Style, console, get_resolved_path
+from plugins import BasePlugin, MetadataType
 
 if missing_modules(required_modules):
     console.print(f"{Style.WARNING}virtualenv module not found:[/] Python venv creation disabled.")

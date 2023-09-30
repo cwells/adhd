@@ -17,8 +17,8 @@ required_binaries: list[str] = []
 from typing import Any
 
 import yaml
-from lib.plugins import BasePlugin, MetadataType
 from lib.util import ConfigBox, console
+from plugins import BasePlugin, MetadataType
 
 # ==============================================================================
 

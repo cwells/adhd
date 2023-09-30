@@ -322,7 +322,7 @@ def print_job_help(jobs: dict) -> None:
 # ==============================================================================
 
 
-def get_resolved_path(path: str | LazyValue, env: dict, workdir: Path | None = None) -> Path:
+def get_resolved_path(path: str | LazyValue, env: dict[str, Any] | None, workdir: Path | None = None) -> Path:
     "Resolves string or LazyValue into fully-qualified path."
 
     workdir = Path(".") if not workdir else workdir

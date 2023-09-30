@@ -138,12 +138,7 @@ def construct_cat(sep: str, loader: yaml.FullLoader, node: yaml.SequenceNode) ->
 # ==============================================================================
 
 
-def eval_path(
-    future: LazyValue,
-    value: list,
-    workdir: Path,
-    env: dict[str, Any] | None = None,
-) -> str:
+def eval_path(future: LazyValue, value: list, workdir: Path, env: dict[str, Any] | None = None) -> str:
     evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
     path: Path = get_resolved_path("/".join(evaled), env=env, workdir=workdir)
 
@@ -172,13 +167,7 @@ def construct_path(loader: yaml.FullLoader, node: yaml.SequenceNode) -> LazyValu
 # ==============================================================================
 
 
-def eval_exists(
-    exists: bool,
-    future: LazyValue,
-    value: list,
-    workdir: Path,
-    env: dict[str, Any],
-) -> bool:
+def eval_exists(exists: bool, future: LazyValue, value: list, workdir: Path, env: dict[str, Any]) -> bool:
     evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
     path: Path = get_resolved_path("/".join(evaled), env=env, workdir=workdir)
 
@@ -207,13 +196,7 @@ def construct_exists(exists: bool, loader: yaml.FullLoader, node: yaml.SequenceN
 # ==============================================================================
 
 
-def eval_url(
-    exists: bool,
-    future: LazyValue,
-    value: list,
-    workdir: Path,
-    env: dict[str, Any],
-) -> str:
+def eval_url(exists: bool, future: LazyValue, value: list, workdir: Path, env: dict[str, Any]) -> str:
     evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
 
     url: URL = URL("/".join(evaled))

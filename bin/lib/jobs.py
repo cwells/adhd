@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from typing import Any, Generator
 
-from .plugins import BasePlugin, load_plugin, unload_plugin
+from plugins import BasePlugin, load_plugin, unload_plugin
 from .util import (
     ConfigBox,
     LazyValue,
