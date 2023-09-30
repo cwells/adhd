@@ -4,7 +4,6 @@
 Import one or more .env (dotenv) files into the runtime environment.
 
   dotenv:
-    always: true
     files:
     - !path [ ~/projects/.env ]
     - !path [ ~/projects/.dev.env ]
