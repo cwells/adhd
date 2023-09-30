@@ -1,18 +1,13 @@
 ---
 project: &project example_django_app
 home: &home !path [ "~", *project ]
-tmp: !path [ "~", .tmp ]
+tmp: &tmp !path [ ~/.tmp ]
 
 plugins:
   python:
     always: false
     venv: !path [ *home, venv ]
     packages: [ Django ]
-
-  dotenv:
-    always: true
-    files:
-    - !path [ ~/.test.env ]
 
 jobs:
   up:
