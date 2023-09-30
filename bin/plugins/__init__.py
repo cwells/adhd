@@ -176,9 +176,9 @@ def list_plugins() -> None:
             row.append("[bold white]Requirements:[/]")
 
         if required_modules:
-            row.append(f"- modules: [cyan]{required_modules}[/]")
+            row.append(f":white_circle:modules: [cyan]{required_modules}[/]")
         if required_binaries:
-            row.append(f"- programs: [cyan]{required_binaries}[/]")
+            row.append(f":white_circle:programs: [cyan]{required_binaries}[/]")
 
         example: Syntax = Syntax(getattr(module, "example", ""), "yaml", background_color=row_styles[idx % 2])
 

@@ -1,8 +1,11 @@
 """
 [bold cyan]Configure Python virtual environment.[/]
 
-If [cyan]virtualenv[/] package is missing, plugin will still work with an existing
-virtual environment, but won't be able to create a new one.
+This plugin will create a virtual environment and install requirements.txt. It also configures the proper environment variables so that you can enter the virtual environment just by spawning a shell, e.g. "adhd example /bin/bash". You can also specify packages to be installed via the [cyan]packages[/] attribute.
+
+This plugin will also check the timestamp of your project's "requirements.txt" and if it detects a newer version, will reinstall project requirements.
+
+If [cyan]virtualenv[/] package is missing, plugin will still work with an existing virtual environment, but won't be able to create a new one.
 """
 
 example = """

@@ -1,13 +1,17 @@
 """
 [bold cyan]Configure AWS session with MFA.[/]
 
-Session will be cached in [cyan]tmp[/] for [cyan]expiry[/] seconds and you won't be prompted
-for MFA code until that time, even across multple invokations and multiple shells.
+Session will be cached in [cyan]tmp[/] for [cyan]expiry[/] seconds and you won't be prompted for MFA code until that time, even across multple invokations and multiple shells.
 
 The [cyan]profile[/] is a profile from "~/.aws/credentials".
 
-The MFA [cyan]device[/] is the last part of ARN, e.g. for the device ARN
-"arn:aws:iam::123456789012:mfa/MyDevice", [cyan]device[/] would be "MyDevice".
+The attribute [cyan]mfa.device[/] is either the entire ARN for the device, or the part of the ARN after the final slash.
+
+For example, given the ARN:
+
+    "arn:aws:iam::123456789012:mfa/MyDevice"
+
+You can use either "MyDevice" or "arn:aws:iam::123456789012:mfa/MyDevice" as the value for [cyan]mfa.device[/].
 """
 
 example = """
@@ -79,7 +83,14 @@ class Plugin(BasePlugin):
             sys.exit(2)
 
         session: boto3.Session = boto3.Session(profile_name=profile)  # type: ignore
-        device_arn: str = f"arn:aws:iam::{config['account']}:mfa/{mfa_device}"
+        device_arn_prefix: str = f"arn:aws:iam::{config['account']}:mfa"
+        device_arn: str
+
+        if mfa_device.startswith(device_arn_prefix):
+            device_arn = mfa_device
+        else:
+            device_arn = f"arn:aws:iam::{config['account']}:mfa/{mfa_device}"
+
         token: dict[str, Any] = self.cache_session(
             session=session,
             profile=profile,
