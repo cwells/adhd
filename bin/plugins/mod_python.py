@@ -7,6 +7,7 @@ virtual environment, but won't be able to create a new one.
 
 example = """
 python:
+  autoload: true
   venv: ~/myproject/.venv
   requirements: ~/myproject/requirements.txt
   packages: [ requests, PyYAML==5.4.1 ]

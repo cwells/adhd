@@ -5,7 +5,7 @@ tmp: &tmp !path [ ~/.tmp ]
 
 plugins:
   python:
-    always: false
+    autoload: false
     venv: !path [ *home, venv ]
     packages: [ Django ]
 

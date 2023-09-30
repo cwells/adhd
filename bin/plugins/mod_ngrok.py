@@ -6,12 +6,12 @@ This plugin's config mirrors the ngrok config as documented here:
 [u]https://ngrok.com/docs/secure-tunnels/ngrok-agent/reference/config[/u]
 
 [bold]Notes[/]:
-
 While this plugin allows you to define multple tunnels, the ngrok free tier only
 allows a single active tunnel, and as such, only the first defined tunnel will be
-started. Set the [blue]subscribed[/] attribute to [blue]true[/] to start additional tunnels.
+started. Set the [blue]subscribed[/] attribute to [blue]true[/] if you have a
+paid account to start additional tunnels (untested).
 
-[blue]console_ui[/] is always set to [blue]false[/].
+[blue]console_ui[/] is autoload set to [blue]false[/].
 
 [cyan]unplug:ngrok[/] should be called when destroying the stack as otherwise the
 tunnel will remain up.
@@ -19,7 +19,7 @@ tunnel will remain up.
 
 example = """
 ngrok:
-  always: true
+  autoload: true
   subscribed: false
   config:
     authtoken: "<auth_token>"

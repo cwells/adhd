@@ -1,10 +1,10 @@
 """
 Plugins can do pretty much anything, but they can only directly affect two aspects
 of `adhd`: configuration and environment. This is done by way of their return
-value, which is always a dictionary and will be merged with the relevant part
+value, which is autoload a dictionary and will be merged with the relevant part
 of the execution environment.
 
-Plugins are only run once, either at boot time (if `always: true` is specified
+Plugins are only run once, either at boot time (if `autoload: true` is specified
 in plugin configuration), or on-demand, if they are specified as a dependency
 for a job (e.g. `after: plugin:python`).
 """
@@ -136,7 +136,7 @@ def load_plugins(
         if not (
             plugin.key
             and (plugin_config := project_config.get(f"plugins.{plugin.key}"))
-            and (plugin_config.get("always", True) or enabled.get(plugin.key, False))
+            and (plugin_config.get("autoload", True) or enabled.get(plugin.key, False))
         ):
             continue
 

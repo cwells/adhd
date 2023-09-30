@@ -147,12 +147,12 @@ tmp: Optional[str]            # path to store temporary files
 
 plugins:
   python:
-    always: [bool]              # always load this plugin on startup
+    autoload: [bool]            # autoload load this plugin on startup
     venv: [str]                 # path to project's virtual env
     requirements: [str]         # path to requirements.txt
 
   aws:
-    always: [bool]              # always load this plugin on startup
+    autoload: [bool]            # autoload load this plugin on startup
     profile: [str]              # AWS CLI profile (from ~/.aws/credentials)
     username: [str]             # AWS username
     account: [str]              # AWS account ID
@@ -301,7 +301,7 @@ depend on other jobs or plugins, indicated by the key `after`:
 
 If `django/up` is run, it will first load the `python` plugin, then run
 `django/bootstrap` and `django/migrate` (and these in turn may have other
-dependencies). If you don't always want a job to run, you can add the `skip`
+dependencies). If you don't autoload want a job to run, you can add the `skip`
 directive, followed by a test that evaluates the output of a shell command.
 
 Jobs and plugins are only run once, regardless of how many other jobs may depend
@@ -399,7 +399,7 @@ You can also enter the virtual environment just by spawning a subshell:
     >>> django.setup()
     >>>
 
-If you have `always: false` for the `python` plugin, then the virtual env won't be started.
+If you have `autoload: false` for the `python` plugin, then the virtual env won't be started.
 You can forcibly load the plugin from the cli, which will cause the virtual env to be activated:
 
     adhd example --plugin python:on bash
@@ -460,17 +460,17 @@ Plugins can be enabled in the `plugins` section of your project config:
   ```yaml
     plugins:
       python:
-        always: false
+        autoload: false
         venv: !path [ *home, venv ]
         packages: [ Django ]
 
       dotenv:
-        always: true
+        autoload: true
         files:
         - !path [ ~/.test.env ]
   ```
 
-The `always` key specifies whether to load the plugin at startup, or to only make
+The `autoload` key specifies whether to load the plugin at startup, or to only make
 it available as a job dependency. Note that if one dependency loads a plugin, it
 will be available from that point forward.
 

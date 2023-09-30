@@ -12,6 +12,7 @@ The MFA [cyan]device[/] is the last part of ARN, e.g. for the device ARN
 
 example = """
 aws:
+  autoload: true
   profile: default
   username: "<username>"
   account: "<account id>"
