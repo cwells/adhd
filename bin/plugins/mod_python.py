@@ -6,7 +6,7 @@
     requirements: ~/myproject/requirements.txt # optional requirements.txt to be installed
     packages: [ requests, PyYAML==5.4.1 ]      # additional packages to install
 
-If `virtualenv` package is missing, plugin will still work with an existing
+If [blue]virtualenv[/] package is missing, plugin will still work with an existing
 virtual environment, but won't be able to create a new one.
 """
 
