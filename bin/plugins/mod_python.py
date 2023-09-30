@@ -6,7 +6,7 @@
     requirements: ~/myproject/requirements.txt # optional requirements.txt to be installed
     packages: [ requests, PyYAML==5.4.1 ]      # additional packages to install
 
-If [blue]virtualenv[/] package is missing, plugin will still work with an existing
+If [cyan]virtualenv[/] package is missing, plugin will still work with an existing
 virtual environment, but won't be able to create a new one.
 """
 
@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 from lib.boot import missing_modules
-from lib.plugins import BasePlugin, PluginTarget
+from lib.plugins import BasePlugin, MetadataType
 from lib.shell import shell
 from lib.util import ConfigBox, Style, console, get_resolved_path
 
@@ -32,10 +32,9 @@ else:
 class Plugin(BasePlugin):
     key: str = "python"
     enabled: bool = True
-    target: PluginTarget = PluginTarget.ENV
     has_run: bool = False
 
-    def load(self, config: ConfigBox, env: dict[str, str]) -> dict[str, str]:
+    def load(self, config: ConfigBox, env: dict[str, str]) -> MetadataType:
         "Activate Python virtualenv."
 
         requirements: Path | None = None
@@ -59,7 +58,9 @@ class Plugin(BasePlugin):
         else:
             env.pop("VIRTUAL_ENV", None)
 
-        return env
+        self.metadata["env"].update(env)
+
+        return self.metadata
 
     def initialize_venv(
         self, venv: Path, requirements: Path | None, packages: list[str] | None, env: dict[str, str]

@@ -10,7 +10,7 @@
       device: MyDevice    # last part of ARN "arn:aws:iam::123456789012:mfa/MyDevice"
       expiry: 86400       # TTL for token (will prompt for MFA code upon expiry)
 
-Session will be cached in [blue]tmp[/] for [blue]expiry[/] seconds and you won't be prompted
+Session will be cached in [cyan]tmp[/] for [cyan]expiry[/] seconds and you won't be prompted
 for MFA code until that time, even across multple invokations and multiple shells.
 """
 
@@ -22,7 +22,7 @@ from typing import Any
 
 import yaml
 from lib.boot import missing_modules
-from lib.plugins import BasePlugin, PluginTarget
+from lib.plugins import BasePlugin, MetadataType
 from lib.util import ConfigBox, Style, check_permissions, console, get_resolved_path
 
 if missing_modules(["boto3"]):
@@ -38,10 +38,9 @@ else:
 class Plugin(BasePlugin):
     key: str = "aws"
     enabled: bool = boto3 is not None
-    target: PluginTarget = PluginTarget.ENV
     has_run: bool = False
 
-    def load(self, config: ConfigBox, env: dict[str, Any]) -> dict[str, str]:
+    def load(self, config: ConfigBox, env: dict[str, Any]) -> MetadataType:
         """
         If aws configured, prompt for 2fa code, authenticate with AWS, then
         store auth token and temp credentials in cache.
@@ -82,14 +81,18 @@ class Plugin(BasePlugin):
 
         credentials = token["Credentials"]
 
-        return {
-            "AWS_PROFILE": profile,
-            "AWS_DEFAULT_REGION": region,
-            "AWS_ACCESS_KEY_ID": credentials["AccessKeyId"],
-            "AWS_SECRET_ACCESS_KEY": credentials["SecretAccessKey"],
-            "AWS_SESSION_TOKEN": credentials["SessionToken"],
-            "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS": "true",
-        }
+        self.metadata["env"].update(
+            {
+                "AWS_PROFILE": profile,
+                "AWS_DEFAULT_REGION": region,
+                "AWS_ACCESS_KEY_ID": credentials["AccessKeyId"],
+                "AWS_SECRET_ACCESS_KEY": credentials["SecretAccessKey"],
+                "AWS_SESSION_TOKEN": credentials["SessionToken"],
+                "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS": "true",
+            }
+        )
+
+        return self.metadata
 
     def cache_session(
         self,
@@ -131,7 +134,7 @@ class Plugin(BasePlugin):
 
         return data
 
-    def unload(self, config: ConfigBox, env: dict[str, Any]) -> list[str]:
+    def unload(self, config: ConfigBox, env: dict[str, Any]) -> None:
         "Remove cached credentials, unset environment."
 
         profile: str = config.get("profile", "default")
@@ -140,12 +143,3 @@ class Plugin(BasePlugin):
 
         if cache_file.exists():
             cache_file.unlink()
-
-        return [  # these will be removed from env
-            "AWS_PROFILE",
-            "AWS_DEFAULT_REGION",
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-            "AWS_SESSION_TOKEN",
-            "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS",
-        ]

@@ -14,8 +14,8 @@ from pathlib import Path
 from typing import Any
 
 from lib.boot import missing_modules
-from lib.plugins import BasePlugin, PluginTarget
-from lib.util import ConfigBox, console, Style, check_permissions, NonCallable
+from lib.plugins import BasePlugin, MetadataType
+from lib.util import ConfigBox, console, Style, check_permissions
 
 if missing_modules(["dotenv"]):
     print("python-dotenv not found: .env support disabled.")
@@ -30,10 +30,9 @@ else:
 class Plugin(BasePlugin):
     key: str = "dotenv"
     enabled: bool = dotenv_values is not None
-    target: PluginTarget = PluginTarget.ENV
     has_run: bool = False
 
-    def load(self, config: ConfigBox, env: dict[str, Any], verbose: bool = False) -> ConfigBox:
+    def load(self, config: ConfigBox, env: dict[str, Any], verbose: bool = False) -> MetadataType:
         "Import .env files. The circle is complete."
 
         if not self.enabled:  # we were unable to import module
@@ -62,4 +61,6 @@ class Plugin(BasePlugin):
             if verbose:
                 console.print(f"Imported environment from {filename}")
 
-        return conf
+        self.metadata["conf"].update(conf)
+
+        return self.metadata

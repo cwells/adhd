@@ -4,11 +4,6 @@ of `adhd`: configuration and environment. This is done by way of their return
 value, which is always a dictionary and will be merged with the relevant part
 of the execution environment.
 
-`Plugin.target` may be one of:
-- `PluginTarget.ENV`: merge return value with environment
-- `PluginTarget.CONF`: merge return value with configuration
-- `None`: ignore any return value
-
 Plugins are only run once, either at boot time (if `always: true` is specified
 in plugin configuration), or on-demand, if they are specified as a dependency
 for a job (e.g. `after: plugin:python`).
@@ -18,37 +13,34 @@ import importlib
 from enum import Enum
 from pathlib import Path
 from types import ModuleType
-from typing import Any
+from typing import Any, Literal
 
 import rich.prompt
 
 from .util import ConfigBox, Style, console, get_program_bin, realize
 
+
 # ==============================================================================
 
-
-class PluginTarget(Enum):
-    "Plugins can update either environment, configuration, or None."
-
-    ENV = "env"
-    CONF = "conf"
+MetadataType = dict[Literal["conf", "env", "vars"], dict[str, Any]]
 
 
 class BasePlugin:
     key: str | None = None
     enabled: bool = False
-    target: PluginTarget | None = None
+    metadata: MetadataType
     has_run: bool = False
 
     def __init__(self, silent=False, verbose=False, debug=False) -> None:
         self.silent = silent
         self.debug = debug
         self.verbose = verbose
+        self.metadata = {"conf": {}, "env": {}, "vars": {}}
 
-    def load(self, config: ConfigBox, env: dict[str, Any]) -> dict[str, str] | None:
+    def load(self, config: ConfigBox, env: dict[str, Any]) -> MetadataType:
         raise NotImplementedError("You must override the load method.")
 
-    def unload(self, config: ConfigBox, env: dict[str, Any]) -> list[str] | None:
+    def unload(self, config: ConfigBox, env: dict[str, Any]) -> None:
         console.print(f"Plugin [bold blue]{self.key}[/] does not support unloading.")
 
     def prompt(self, msg: str) -> str:
@@ -63,7 +55,7 @@ class BasePlugin:
 
 def load_plugin(
     plugin: BasePlugin,
-    project_config: dict[str, Any],
+    project_config: ConfigBox,
     process_env: dict,
 ) -> None:
     "Load a plugin, if enabled."
@@ -83,11 +75,11 @@ def load_plugin(
 
     data = plugin.load(config=plugin_config, env=process_env)
 
-    if data and plugin.target is not None:
-        if plugin.target == PluginTarget.ENV:
-            process_env.update(data)
-        elif plugin.target == PluginTarget.CONF:
-            project_config.update(data)
+    if data:  # plugins can update runtime environment
+        process_env.update(data.get("env", {}))
+        project_config.update(data.get("conf", {}))
+        project_config.plugins[plugin.key].setdefault("__vars__", {})
+        project_config.plugins[plugin.key]["__vars__"].update(data.get("vars", {}))
 
     plugin.has_run = True
 
@@ -101,12 +93,11 @@ def load_plugin(
 def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: dict[str, Any]) -> None:
     "Unload plugin, if supported."
 
-    data: list[str] | None = plugin.unload(project_config, process_env)
+    plugin.unload(project_config, process_env)
 
-    if data:
-        if plugin.target == PluginTarget.ENV:
-            for k in data:
-                process_env.pop(k, None)
+    if env := plugin.metadata.get("env"):
+        for k in env:
+            process_env.pop(k, None)
 
     plugin.has_run = False
 
@@ -154,16 +145,28 @@ def load_plugins(
 
 
 # ==============================================================================
+from rich.table import Table
 
 
 def list_plugins() -> None:
     plugins_dir: Path = get_program_bin() / "plugins"
+    table: Table = Table(
+        show_header=False,
+        title="Plugins",
+        padding=1,
+        row_styles=["white on grey3", "white on grey11"],
+        highlight=True,
+        box=None,
+    )
+
+    table.add_column("Plugin", justify="left")
 
     for mod in plugins_dir.glob("mod_*.py"):
         module = importlib.import_module(f"plugins.{mod.stem}")
         if not module.Plugin.enabled:
             continue
         doc: str = (module.__doc__ or "No description available.").strip("\n")
-        console.print(f"\n[bold white]:black_circle:[/][bold yellow]{mod.stem}[/] {doc}")
+        table.add_row(f"[bold yellow]{mod.stem}[/]: {doc}")
+    # console.print(f"\n[bold white]:black_circle:[/][bold yellow]{mod.stem}[/] {doc}")
 
-    console.print()
+    console.print(table)

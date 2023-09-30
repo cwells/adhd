@@ -18,17 +18,17 @@
 
 This plugin's config mirrors the ngrok config as documented here:
 
-https://ngrok.com/docs/secure-tunnels/ngrok-agent/reference/config
+[u]https://ngrok.com/docs/secure-tunnels/ngrok-agent/reference/config[/u]
 
 [bold]Notes[/]:
 
 While this plugin allows you to define multple tunnels, the ngrok free tier only
 allows a single active tunnel, and as such, only the first defined tunnel will be
-started. Set the [blue]subscribed[/] attribute to [blue]true[/] to start additional tunnels.
+started. Set the [cyan]subscribed[/] attribute to [cyan]true[/] to start additional tunnels.
 
-[blue]console_ui[/] is always set to [blue]false[/].
+[cyan]console_ui[/] is always set to [cyan]false[/].
 
-[blue]unplug:ngrok[/] should be called when destroying the stack as otherwise the
+[cyan]unplug:ngrok[/] should be called when destroying the stack as otherwise the
 tunnel will remain up.
 """
 
@@ -41,7 +41,7 @@ from typing import Any, Generator
 import yaml
 
 from lib.boot import missing_modules
-from lib.plugins import BasePlugin, PluginTarget
+from lib.plugins import BasePlugin, MetadataType
 from lib.util import ConfigBox, Style, console
 from lib.shell import shell
 
@@ -59,7 +59,6 @@ else:
 class Plugin(BasePlugin):
     key: str = "ngrok"
     enabled: bool = ngrok is not None
-    target: PluginTarget | None = None
     has_run: bool = False
 
     def load(
@@ -69,7 +68,7 @@ class Plugin(BasePlugin):
         silent: bool = False,
         verbose: bool = False,
         debug: bool = False,
-    ) -> None:
+    ) -> MetadataType:
         "Start the ngrok agent."
 
         if not self.enabled:
@@ -87,6 +86,11 @@ class Plugin(BasePlugin):
             if not subscribed:  # free tier only allows one active tunnel
                 break
 
+        # update plugin.metadata
+        self.metadata["vars"].update({"tunnels": self.list_tunnels(config)})
+
+        return self.metadata
+
     def start_tunnel(
         self,
         tunnel: str | None,
@@ -96,7 +100,7 @@ class Plugin(BasePlugin):
         verbose: bool = False,
         debug: bool = False,
     ) -> None:
-        "Use the ngrok agent rather than API as we exit and can't maintain our own tunnel."
+        "Use the ngrok agent rather than API as we exit and can't be our own agent."
 
         tmpdir: Path = Path(config["tmp"])
 
@@ -117,16 +121,10 @@ class Plugin(BasePlugin):
             shell(f"ngrok --config {tmpfile.name} start {tunnel} &", env=env, interactive=True)
             time.sleep(2)  # give ngrok time to read config before it's gone
 
-    def unload(self, config: ConfigBox, env: dict[str, Any]) -> list[str] | None:
+    def unload(self, config: ConfigBox, env: dict[str, Any]) -> None:
         "We can't manage individual tunnels on free plan, so just kill the process."
 
         if not self.has_run:
-            return
-
-        if not "ngrok" in config.get("plugins", []):
-            return
-
-        if not "config" in config.plugins.ngrok:
             return
 
         if any(t["up"] for t in self.list_tunnels(config.plugins.ngrok.config)):
