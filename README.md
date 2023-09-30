@@ -455,6 +455,44 @@ You may enable or disable individual plugins on the command line.
     adhd example --plugin aws:off bash    # don't prompt for mfa code
     adhd example --plugin python:on bash  # ensure we enter venv
 
+Plugins can be enabled in the `plugins` section of your project config:
+
+  ```yaml
+    plugins:
+      python:
+        always: false
+        venv: !path [ *home, venv ]
+        packages: [ Django ]
+
+      dotenv:
+        always: true
+        files:
+        - !path [ ~/.test.env ]
+  ```
+
+The `always` key specifies whether to load the plugin at startup, or to only make
+it available as a job dependency. Note that if one dependency loads a plugin, it
+will be available from that point forward.
+
+  ```yaml
+    jobs:
+      aws/shell:
+        help: Disable AWS authentication.
+        after: plugin:aws
+  ```
+
+Some plugins support unloading as a dependency using `unplug` instead of `plugin`:
+
+  ```yaml
+    jobs:
+      safe/shell:
+        help: Disable AWS authentication.
+        after: unplug:aws
+  ```
+
+  Note that any processes that were already run will not be affected by unloading
+  a plugin.
+
 # TODO
 
 - additional planned plugins:
