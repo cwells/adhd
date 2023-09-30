@@ -1,12 +1,13 @@
 """
 [bold cyan]Import .env files.[/]
 
-Note that inclusion happens relative to the document root, _not_ in-place within
-the plugins section.
+Import one or more .env (dotenv) files into the runtime environment.
 
   dotenv:
-  - !path [ "~", projects/.env ]
-  - !path [ "~", projects/.dev.env ]
+    always: true
+    files:
+    - !path [ ~/projects/.env ]
+    - !path [ ~/projects/.dev.env ]
 """
 
 import sys

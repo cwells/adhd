@@ -9,6 +9,11 @@ plugins:
     venv: !path [ *home, venv ]
     packages: [ Django ]
 
+  dotenv:
+    always: true
+    files:
+    - !path [ ~/.test.env ]
+
 jobs:
   up:
     help: Run [bold cyan]django/up[/] and open the front page.
