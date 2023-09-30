@@ -180,7 +180,11 @@ def list_plugins() -> None:
         if required_binaries:
             row.append(f":white_circle:programs: [cyan]{required_binaries}[/]")
 
-        example: Syntax = Syntax(getattr(module, "example", ""), "yaml", background_color=row_styles[idx % 2])
+        example: Syntax = Syntax(
+            getattr(module, "example", "").strip(),
+            "yaml",
+            background_color=row_styles[idx % 2],
+        )
 
         table.add_row("\n".join(row), example, style=f"white on {row_styles[idx % 2]}")
 
