@@ -48,6 +48,9 @@ class BasePlugin:
     def load(self, config: ConfigBox, env: dict[str, Any]) -> dict[str, str] | None:
         raise NotImplementedError("You must override the load method.")
 
+    def unload(self, config: ConfigBox, env: dict[str, Any]) -> list[str] | None:
+        console.print(f"Plugin [bold blue]{self.key}[/] does not support unloading.")
+
     def prompt(self, msg: str) -> str:
         "Prompt the user with a y/n question."
 
@@ -58,7 +61,13 @@ class BasePlugin:
 # ==============================================================================
 
 
-def load_plugin(plugin: BasePlugin, project_config: dict[str, Any], process_env: dict) -> None:
+def load_plugin(
+    plugin: BasePlugin,
+    project_config: dict[str, Any],
+    process_env: dict,
+) -> None:
+    "Load a plugin, if enabled."
+
     plugin_config: ConfigBox | None = project_config.get(f"plugins.{plugin.key}")
 
     if not plugin_config or getattr(plugin, "has_run", False):
@@ -66,11 +75,11 @@ def load_plugin(plugin: BasePlugin, project_config: dict[str, Any], process_env:
             console.print(f"{Style.SKIP_LOAD}plugin [cyan]{plugin.key}[/] is already loaded")
         return
 
-    for k, v in plugin_config.items():
-        plugin_config[k] = realize(v, workdir=Path("."))
-
     if "tmp" not in plugin_config:
         plugin_config["tmp"] = project_config.get("tmp", "/tmp")
+
+    for k, v in plugin_config.items():
+        plugin_config[k] = realize(v, workdir=Path("."))
 
     data = plugin.load(config=plugin_config, env=process_env)
 
@@ -84,6 +93,25 @@ def load_plugin(plugin: BasePlugin, project_config: dict[str, Any], process_env:
 
     if not plugin.silent:
         console.print(f"{Style.FINISH_LOAD}plugin: [cyan]{plugin.key}[/]")
+
+
+# ==============================================================================
+
+
+def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: dict[str, Any]) -> None:
+    "Unload plugin, if supported."
+
+    data: list[str] | None = plugin.unload(project_config, process_env)
+
+    if data:
+        if plugin.target == PluginTarget.ENV:
+            for k in data:
+                process_env.pop(k, None)
+
+    plugin.has_run = False
+
+    if not plugin.silent:
+        console.print(f"{Style.FINISH_UNLOAD}plugin: [cyan]{plugin.key}[/]")
 
 
 # ==============================================================================

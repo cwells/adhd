@@ -2,7 +2,7 @@ import sys
 from pathlib import Path
 from typing import Any, Generator
 
-from .plugins import BasePlugin, load_plugin
+from .plugins import BasePlugin, load_plugin, unload_plugin
 from .util import (
     ConfigBox,
     LazyValue,
@@ -90,7 +90,6 @@ def get_jobs(
     tmp: str | LazyValue = project_config.get("tmp", "./tmp")
     workdir: Path = Path(home(project_config["env"]) if isinstance(home, LazyValue) else home)
     tmpdir: Path = Path(tmp(project_config["env"]) if isinstance(tmp, LazyValue) else tmp)
-
     jobs: dict[str, Any] = project_config.get("jobs", {})
 
     if not command:
@@ -107,6 +106,13 @@ def get_jobs(
                 _plugin: BasePlugin | None = plugins.get(_plugin_key)
                 if _plugin:
                     load_plugin(_plugin, project_config, process_env)
+                continue
+            elif dep.startswith("unplug:"):
+                _, _plugin_name = dep.split(":", 1)
+                _plugin_key = f"mod_{_plugin_name}"
+                _plugin: BasePlugin | None = plugins.get(_plugin_key)
+                if _plugin:
+                    unload_plugin(_plugin, project_config, process_env)
                 continue
 
             try:

@@ -68,6 +68,7 @@ class Style(Enum):
     START_LOAD = "[bold green]:white_circle:[/]Loading "
     FINISH_LOAD = "[bold green]:black_circle:[/]Loaded "
     SKIP_LOAD = "[bold yellow]:white_circle:[/]Skipped "
+    FINISH_UNLOAD = "[bold yellow]:black_circle:[/]Unloaded "
     OPEN_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Opened "
 
     def __str__(self):

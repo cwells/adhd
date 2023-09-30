@@ -130,3 +130,22 @@ class Plugin(BasePlugin):
                 cached_data.write(yaml.dump(data))
 
         return data
+
+    def unload(self, config: ConfigBox, env: dict[str, Any]) -> list[str]:
+        "Remove cached credentials, unset environment."
+
+        profile: str = config.get("profile", "default")
+        tmpdir: Path = get_resolved_path(config.get("tmp", "/tmp"), env=env)
+        cache_file: Path = tmpdir / f"adhd-aws-{profile}.cache"
+
+        if cache_file.exists():
+            cache_file.unlink()
+
+        return [  # these will be removed from env
+            "AWS_PROFILE",
+            "AWS_DEFAULT_REGION",
+            "AWS_ACCESS_KEY_ID",
+            "AWS_SECRET_ACCESS_KEY",
+            "AWS_SESSION_TOKEN",
+            "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS",
+        ]
