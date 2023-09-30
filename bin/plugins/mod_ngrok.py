@@ -102,8 +102,16 @@ class Plugin(BasePlugin):
             shell(f"ngrok --config {tmpfile.name} start {tun} &", env=env, interactive=True)
             time.sleep(2)  # give ngrok time to read config
 
-    def stop_tunnel(self, config: ConfigBox, env: dict[str, Any]) -> None:
+    def unload(self, config: ConfigBox, env: dict[str, Any]) -> list[str] | None:
+        for tunnel in self.list_tunnels(config.config):
+            if not tunnel["up"]:
+                console.print(f"{Style.SKIPPED}tunnel {tunnel['name']}.")
+            else:
+                self.stop_tunnel(tunnel["name"], config, env)
+
+    def stop_tunnel(self, tunnel: str, config: ConfigBox, env: dict[str, Any]) -> None:
         client = ngrok.Client(config.api_key)  # type: ignore
+        # FIXME: TBD
 
     def list_tunnels(self, config: dict[str, Any]) -> Generator[dict[str, Any], None, None]:
         client = ngrok.Client(config.api_key)  # type: ignore
