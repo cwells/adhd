@@ -54,12 +54,11 @@ class BasePlugin:
 # ==============================================================================
 
 
-def public(method: Callable):
-    def inner(*args: Any, **kwargs: Any) -> Any:
-        return method(*args, **kwargs)
+def public(method: Callable) -> Callable:
+    "Decorator to mark a plugin method as public."
 
-    setattr(inner, "is_public", True)
-    return inner
+    setattr(method, "is_public", True)
+    return method
 
 
 # ==============================================================================
