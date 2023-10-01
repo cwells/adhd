@@ -41,26 +41,26 @@ sound cool, So here we are.
 
 - Install:
 
-        git clone git@github.com:cwells/adhd.git ~/.adhd
-        pip install -r ~/.adhd/requirements.txt
-        chmod +x ~/.adhd/bin/adhd
-        ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
+        $ git clone git@github.com:cwells/adhd.git ~/.adhd
+        $ pip install -r ~/.adhd/requirements.txt
+        $ chmod +x ~/.adhd/bin/adhd
+        $ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
 
 - Start the included Django app:
 
-        adhd example django/up
+        $ adhd example django/up
 
 - Stop the Django app:
 
-        adhd example django/down
+        $ adhd example django/down
 
 - Cleanup (you'll be prompted to remove directory):
 
-        adhd example django/destroy
+        $ adhd example django/destroy
 
 - To see the example config (you probably should have read this first):
 
-        cat ~/.adhd/projects/example.yaml
+        $ cat ~/.adhd/projects/example.yaml
 
 # CLI
 
@@ -84,11 +84,11 @@ The `adhd` CLI has the following interface:
 
 Enter a virtual environment:
 
-    adhd example -- bash
+    $ adhd example -- bash
 
 Run a predefined job to start `./manage.py shell`:
 
-    adhd example django/shell
+    $ adhd example django/shell
 
 > If you run arbitrary shell commands, remember to put `--` before the command so that your shell knows which options are for `adhd` and which are for the command.
 
@@ -97,13 +97,13 @@ Run a predefined job to start `./manage.py shell`:
 There is no install. Extract the archive (or `git clone`) into `~/.adhd` and
 create a symlink on your `$PATH` to `~/.adhd/bin/adhd`, e.g.
 
-    ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
+    $ ln -s ~/.adhd/bin/adhd ~/.local/bin/adhd
 
 The adhd configuration is dynamic, based upon the name of the executable (by
 default `adhd`). If your executable is named `adhd`, then the config directory
 will be `~/.adhd`. If you create a symlink
 
-    ln -s ~/.adhd/bin/adhd ~/.local/bin/woot
+    $ ln -s ~/.adhd/bin/adhd ~/.local/bin/woot
 
 then the configuration will be looked for in `~/.woot` when you run `woot`. This allows you to simply manage multiple versions of `adhd` across disparate projects without involving packages.
 
@@ -112,7 +112,7 @@ then the configuration will be looked for in `~/.woot` when you run `woot`. This
 A working Django project is included in the [`projects/`](https://github.com/cwells/adhd/tree/main/projects) directory. It requires no
 setup, just run:
 
-    adhd example django/up
+    $ adhd example django/up
 
 This will:
 - create a virtualenv and install Django
@@ -361,11 +361,11 @@ option), use the following format:
 
 You can see available jobs using the `--help-jobs` option:
 
-    adhd example --help-jobs
+    $ adhd example --help-jobs
 
 which would output
 
-    adhd example --help-jobs
+    $ adhd example --help-jobs
 
     ⚪ up ................ Run django/up and open the front and admin pages.
     ⚪ down .............. Alias for django/down.
@@ -380,7 +380,7 @@ which would output
 And don't forget that you can run arbitrary shell commands. Assuming you have
 configured the AWS plugin, you can try something like:
 
-    adhd example -- aws s3 ls
+    $ adhd example -- aws s3 ls
 
 which would output something like:
 
@@ -402,7 +402,7 @@ You can also enter the virtual environment just by spawning a subshell:
 If you have `autoload: false` for the `python` plugin, then the virtual env won't be started.
 You can forcibly load the plugin from the cli, which will cause the virtual env to be activated:
 
-    adhd example --plugin python:on bash
+    $ adhd example --plugin python:on bash
 
 Alternately, you can just add another command to make this automatic:
 
@@ -418,7 +418,7 @@ Alternately, you can just add another command to make this automatic:
 
 and then run
 
-    adhd example shell
+    $ adhd example shell
 
 # Plugins
 
@@ -452,8 +452,8 @@ You can get a list of available plugins and their help with:
 
 You may enable or disable individual plugins on the command line.
 
-    adhd example --plugin aws:off bash    # don't prompt for mfa code
-    adhd example --plugin python:on bash  # ensure we enter venv
+    $ adhd example --plugin aws:off bash    # don't prompt for mfa code
+    $ adhd example --plugin python:on bash  # ensure we enter venv
 
 Plugins can be enabled in the `plugins` section of your project config:
 
@@ -508,7 +508,16 @@ Some plugins provide methods that can be used as dependencies:
 
 The above code will print the ngrok public URLs after bringing up the stack.
 
-Calling a plugin method causes the plugin to be loaded.
+You may also call plugins and their methods from the cli:
+
+    # bring up ngrok tunnel
+    $ adhd example plugin:ngrok
+
+    # check the tunnel stqtus
+    $ adhd example plugin:ngrok.status
+
+Obviouosly, calling a plugin method causes the plugin to be loaded, if it wasn't
+already.
 
 # TODO
 
