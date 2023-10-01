@@ -493,11 +493,27 @@ Some plugins support unloading as a dependency using `unplug` instead of `plugin
   Note that any processes that were already run will not be affected by unloading
   a plugin.
 
+### Plugin methods
+
+Some plugins provide methods that can be used as dependencies:
+
+  ```yaml
+    stack/up:
+      help: Bring up all required services.
+      after:
+      - docker/up
+      - django/up
+      - plugin:ngrok.status
+  ```
+
+The above code will print the ngrok public URLs after bringing up the stack.
+
+Calling a plugin method causes the plugin to be loaded.
+
 # TODO
 
 - additional planned plugins:
   - `mod_git` - clone a project git repo.
   - `mod_asdf` - select Python version.
-  - `mod_ngrok` - manage ngrok tunnels.
 - get `!exists` and `!path` to operate in project home.
 - more verbosity when verbose.
