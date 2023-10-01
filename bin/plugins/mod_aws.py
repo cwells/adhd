@@ -84,13 +84,9 @@ class Plugin(BasePlugin):
 
         session: boto3.Session = boto3.Session(profile_name=profile)  # type: ignore
         device_arn_prefix: str = f"arn:aws:iam::{config['account']}:mfa"
-        device_arn: str
-
-        if mfa_device.startswith(device_arn_prefix):
-            device_arn = mfa_device
-        else:
-            device_arn = f"arn:aws:iam::{config['account']}:mfa/{mfa_device}"
-
+        device_arn: str = (
+            mfa_device if mfa_device.startswith(device_arn_prefix) else f"{device_arn_prefix}/{mfa_device}"
+        )
         token: dict[str, Any] = self.cache_session(
             session=session,
             profile=profile,
