@@ -163,14 +163,18 @@ class Plugin(BasePlugin):
 
     @public
     def status(self, config: ConfigBox, env: dict[str, Any]) -> None:
-        console.print("\nNgrok public endpoints:")
+        console.print("\n[bold]Ngrok public endpoints:[/]")
 
         for t in self.list_tunnels(config.plugins.ngrok.config):
             if t["up"]:
                 console.print(
-                    "[bold cyan]{name}[/] is [bold]up[/]: [u]{public_url}[/u] -> [u]{addr}[/u]".format(**t)
+                    "[bold green]:black_circle:[/][white]{name} tunnel is[/]"
+                    " [bold green]up[/]:   [u]{public_url}[/u] -> [u]{addr}[/u]".format(**t)
                 )
             else:
-                console.print("[bold cyan]{name}[/] is [bold]down[/]: [u]{addr}[/u]".format(**t))
+                console.print(
+                    "[bold red]:black_circle:[/][white]{name} tunnel is[/]"
+                    " [bold red]down[/]: [u]{addr}[/u]".format(**t)
+                )
 
         print()
