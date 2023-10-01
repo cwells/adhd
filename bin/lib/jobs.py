@@ -1,7 +1,7 @@
 import re
 import sys
 from pathlib import Path
-from typing import Any, Generator
+from typing import Any, Generator, Literal
 
 from plugins import BasePlugin, call_plugin_method, load_plugin, unload_plugin
 
@@ -73,6 +73,36 @@ def get_job(
 
 
 # ==============================================================================
+plugin_regex = re.compile(r"(?P<action>[^:]+):(?P<plugin>[^.]+)(\.(?P<method>.+))?")
+
+
+def get_plugin_cmd(cmd: str) -> dict | None:
+    if match := plugin_regex.match(cmd):
+        return match.groupdict()
+    return None
+
+
+def load_or_unload_plugin(
+    cmd: str,
+    plugins: dict[str, BasePlugin],
+    project_config: ConfigBox,
+    process_env: dict[str, Any],
+) -> bool:
+    "If cmd is a plugin, attempt to load/unload or call one of its methods."
+
+    plugin: BasePlugin | None = None
+
+    if plugin_cmd := get_plugin_cmd(cmd):
+        plugin_name = plugin_cmd["plugin"]
+        if plugin := plugins.get(f"mod_{plugin_name}"):
+            if plugin_cmd["action"] == "plugin":
+                load_plugin(plugin, project_config, process_env)
+                if method := plugin_cmd.get("method"):
+                    call_plugin_method(plugin, method, project_config, process_env)
+            elif plugin_cmd["action"] == "unplug":
+                unload_plugin(plugin, project_config, process_env)
+
+    return bool(plugin)
 
 
 def get_jobs(
@@ -96,30 +126,19 @@ def get_jobs(
     tmpdir: Path = Path(tmp(project_config["env"]) if isinstance(tmp, LazyValue) else tmp)
     jobs: dict[str, Any] = project_config.get("jobs", {})
 
+    _cmd: str = command[0]
+
     if not command:
         console.print(f"No command given.")
         sys.exit(1)
 
-    if (_cmd := command[0]) in jobs:  # pre-defined jobs
+    elif load_or_unload_plugin(_cmd, plugins, project_config, process_env):
+        pass
+
+    elif _cmd in jobs:  # pre-defined jobs
         # TODO: use rest of cli as job arguments or sequential jobs?
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
             job_config: ConfigBox = jobs.get(dep, {})
-
-            if match := re.match(r"(?P<action>[^:]+):(?P<plugin>[^.]+)(\.(?P<method>.+))?", dep):
-                callinfo: dict[str, str] = match.groupdict()
-                plugin_name = callinfo["plugin"]
-                plugin_key = f"mod_{plugin_name}"
-                plugin: BasePlugin | None = plugins.get(plugin_key)
-                if plugin:
-                    if callinfo["action"] == "plugin":
-                        if not plugin.has_run:
-                            load_plugin(plugin, project_config, process_env)
-                        if method := callinfo.get("method"):
-                            call_plugin_method(plugin, method, project_config, process_env)
-                    elif callinfo["action"] == "unplug":
-                        unload_plugin(plugin, project_config, process_env)
-                continue
-
             try:
                 yield get_job(dep, job_config, project_config, process_env)
             except Exception as e:
