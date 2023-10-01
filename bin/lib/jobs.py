@@ -1,8 +1,10 @@
+import re
 import sys
 from pathlib import Path
 from typing import Any, Generator
 
-from plugins import BasePlugin, load_plugin, unload_plugin
+from plugins import BasePlugin, call_plugin_method, load_plugin, unload_plugin
+
 from .util import (
     ConfigBox,
     LazyValue,
@@ -102,19 +104,20 @@ def get_jobs(
         # TODO: use rest of cli as job arguments or sequential jobs?
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
             job_config: ConfigBox = jobs.get(dep, {})
-            if dep.startswith("plugin:"):
-                _, _plugin_name = dep.split(":", 1)
-                _plugin_key = f"mod_{_plugin_name}"
-                _plugin: BasePlugin | None = plugins.get(_plugin_key)
-                if _plugin:
-                    load_plugin(_plugin, project_config, process_env)
-                continue
-            elif dep.startswith("unplug:"):
-                _, _plugin_name = dep.split(":", 1)
-                _plugin_key = f"mod_{_plugin_name}"
-                _plugin: BasePlugin | None = plugins.get(_plugin_key)
-                if _plugin:
-                    unload_plugin(_plugin, project_config, process_env)
+
+            if match := re.match(r"(?P<action>[^:]+):(?P<plugin>[^.]+)(\.(?P<method>.+))?", dep):
+                callinfo: dict[str, str] = match.groupdict()
+                plugin_name = callinfo["plugin"]
+                plugin_key = f"mod_{plugin_name}"
+                plugin: BasePlugin | None = plugins.get(plugin_key)
+                if plugin:
+                    if callinfo["action"] == "plugin":
+                        if not plugin.has_run:
+                            load_plugin(plugin, project_config, process_env)
+                        if method := callinfo.get("method"):
+                            call_plugin_method(plugin, method, project_config, process_env)
+                    elif callinfo["action"] == "unplug":
+                        unload_plugin(plugin, project_config, process_env)
                 continue
 
             try:

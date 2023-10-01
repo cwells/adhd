@@ -43,7 +43,7 @@ import yaml
 from lib.boot import missing_binaries, missing_modules
 from lib.shell import shell
 from lib.util import ConfigBox, Style, console
-from plugins import BasePlugin, MetadataType
+from plugins import BasePlugin, MetadataType, public
 
 missing: list[str]
 
@@ -160,3 +160,17 @@ class Plugin(BasePlugin):
                     "addr": addr,
                     "up": False,
                 }
+
+    @public
+    def status(self, config: ConfigBox, env: dict[str, Any]) -> None:
+        console.print("\nNgrok public endpoints:")
+
+        for t in self.list_tunnels(config.plugins.ngrok.config):
+            if t["up"]:
+                console.print(
+                    "[bold cyan]{name}[/] is [bold]up[/]: [u]{public_url}[/u] -> [u]{addr}[/u]".format(**t)
+                )
+            else:
+                console.print("[bold cyan]{name}[/] is [bold]down[/]: [u]{addr}[/u]".format(**t))
+
+        print()

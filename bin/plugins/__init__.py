@@ -12,7 +12,7 @@ for a job (e.g. `after: plugin:python`).
 import importlib
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 import rich.prompt
 import rich.style
@@ -49,6 +49,37 @@ class BasePlugin:
 
         prompt: str = f"[bold]?[/] [bold blue]plugin:{self.key}[/] -> [bold]{msg}[/]"
         return rich.prompt.Prompt.ask(prompt)
+
+
+# ==============================================================================
+
+
+def public(method: Callable):
+    def inner(*args: Any, **kwargs: Any) -> Any:
+        return method(*args, **kwargs)
+
+    setattr(inner, "is_public", True)
+    return inner
+
+
+# ==============================================================================
+
+
+def call_plugin_method(
+    plugin: BasePlugin,
+    method: str,
+    project_config: ConfigBox,
+    process_env: dict[str, Any],
+) -> Any:
+    "If plugin has method and it's public, call it."
+
+    _method: Callable | None
+
+    if _method := getattr(plugin, method):
+        if getattr(_method, "is_public", False):
+            return _method(config=project_config, env=process_env)
+
+    raise NotImplementedError(f"Unknown plugin function: {method}")
 
 
 # ==============================================================================
