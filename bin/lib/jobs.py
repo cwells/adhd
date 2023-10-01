@@ -34,6 +34,7 @@ def get_job(
     cmd: Any = realize(job_config.get("run", []), workdir=workdir, env=env)
     tasks: list = cmd if isinstance(cmd, list) else [cmd]
     task_env: dict[str, str] = resolve_dependencies(job_config.get("env", ConfigBox()), workdir)
+    after: list[str] = _after if isinstance((_after := job_config.get("after", [])), list) else [_after]
 
     job: ConfigBox = ConfigBox(
         {
@@ -43,6 +44,7 @@ def get_job(
             "tasks": tasks,
             "tmp": str(tmpdir),
             "workdir": str(workdir),
+            "after": after,
         }
     )
 

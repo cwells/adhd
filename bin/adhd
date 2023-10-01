@@ -63,8 +63,6 @@ def read_project_config(project: str) -> dict[str, Any]:
 @click.option("--home/--no-home", default=True, help="Change to project HOME directory")
 @click.option("-e", "--env", type=EnvParamType(), multiple=True, help="Define env var(s) from CLI")
 @click.option("-p", "--plugin", type=PluginParamType(), multiple=True, help="Manage plugins using plugin:[on|off]")
-@click.option("--help-jobs", is_flag=True, default=False, help="Display available jobs and help text")
-@click.option("--help-plugins", is_flag=True, default=False, help="Display available plugins and help text")
 @click.option("--explain", is_flag=True, default=False, help="Display help text from job and its dependencies")
 @click.option("-v", "--verbose", is_flag=True, default=False, help="Send stdout of all jobs to console")
 @click.option("--debug", is_flag=True, default=False, help="Generate extremely verbose output")
@@ -78,14 +76,14 @@ def main(
     plugin: list[tuple[str, bool]],
     project: str,
     command: tuple[str] | list[str],
-    help_jobs: bool,
-    help_plugins: bool,
     explain: bool,
     verbose: bool,
     debug: bool,
     force: bool,
     fix_perms: bool,
 ) -> None:
+    "You may also type `help jobs` or `help plugins` for detailed information on those topics."
+
     options_env: dict[str, str] = ConfigBox(env)
     process_env: dict[str, str] = ConfigBox()
     project_config: ConfigBox = ConfigBox()
@@ -112,7 +110,7 @@ def main(
     silent: bool = project_config.get("silent", False)
 
     # display list of possible jobs
-    if help_jobs:
+    if set(command) == set(("help", "jobs")):
         jobs = {
             name: get_job(
                 command,
@@ -123,10 +121,10 @@ def main(
             )
             for name, job in project_config["jobs"].items()
         }
-        print_job_help(jobs)
+        print_job_help(jobs, verbose=verbose)
         raise SystemExit
 
-    if help_plugins:
+    if set(command) == set(("help", "plugins")):
         list_plugins()
         raise SystemExit
 

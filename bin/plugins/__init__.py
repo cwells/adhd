@@ -151,7 +151,10 @@ def load_plugins(
 def list_plugins() -> None:
     plugins_dir: Path = get_program_bin() / "plugins"
     table: Table = Table(
-        show_header=False, padding=2, highlight=True, border_style=rich.style.Style(color="grey15")
+        show_header=False,
+        padding=2,
+        highlight=True,
+        border_style=rich.style.Style(color="grey15"),
     )
     row_styles: list[str] = ["grey7", "grey15"]
 

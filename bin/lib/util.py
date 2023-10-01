@@ -7,7 +7,10 @@ from typing import Any, Callable
 
 import click
 import rich.console
+import rich.style
 from box import Box
+from rich.syntax import Syntax
+from rich.table import Table
 from toposort import CircularDependencyError, toposort_flatten
 
 console: rich.console.Console = rich.console.Console(color_system="truecolor")
@@ -308,7 +311,10 @@ def get_project_home() -> Path:
 # ==============================================================================
 
 
-def print_job_help(jobs: dict) -> None:
+def print_job_help(jobs: dict, verbose=False) -> None:
+    if verbose:
+        return print_job_help_verbose(jobs)
+
     _width = max(len(j) for j in jobs) + 22
     console.print()
     for job, config in jobs.items():
@@ -317,6 +323,41 @@ def print_job_help(jobs: dict) -> None:
             highlight=False,
         )
     console.print()
+
+
+def print_job_help_verbose(jobs: dict) -> None:
+    table: Table = Table(
+        show_header=False,
+        padding=2,
+        highlight=True,
+        border_style=rich.style.Style(color="grey15"),
+        expand=True,
+    )
+    row_styles: list[str] = ["grey7", "grey15"]
+
+    table.add_column("Jobs", justify="left", max_width=60, no_wrap=False)
+    table.add_column("Tasks", justify="left")
+
+    for idx, (job, config) in enumerate(jobs.items()):
+        text: list[str] = [
+            f":white_circle:{f'[bold cyan]{job}[/]'}\n",
+            f"[white]{config.get('help', '')}[/]",
+        ]
+        row: list[str | Syntax] = []
+
+        after: str = ", ".join(config.get("after", []))
+        if after:
+            text.append("")
+            text.append(rf"[white]After:[/] [bold yellow]{after}[/]")
+
+        row.append("\n".join(text))
+
+        for task in config.get("tasks", []):
+            row.append(Syntax(task, "bash", background_color=row_styles[idx % 2]))
+
+        table.add_row(*row, style=f"white on {row_styles[idx % 2]}")
+
+    console.print(table)
 
 
 # ==============================================================================
