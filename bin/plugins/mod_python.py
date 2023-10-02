@@ -46,12 +46,15 @@ class Plugin(BasePlugin):
     def load(self, config: ConfigBox, env: dict[str, str]) -> MetadataType:
         "Activate Python virtualenv."
 
-        requirements: Path | None = None
+        requirements: list[Path] = []
 
         if _venv := config.get("venv"):
             venv: Path = get_resolved_path(_venv, env=env)
             if _req := config.get("requirements"):
-                requirements = get_resolved_path(_req, env=env)
+                if isinstance(_req, str):
+                    _req = [_req]
+                for _r in _req:
+                    requirements.append(get_resolved_path(_r, env=env))
             packages: list[str] | None = config.get("packages")
 
             env.pop("PYTHONHOME", None)
@@ -90,7 +93,7 @@ class Plugin(BasePlugin):
                 console.print(f"{Style.ERROR}Virtualenv creation is disabled. Please install virtualenv package.")
                 sys.exit(1)
 
-            with console.status(f"[bold green]:white_circle:[/]Building Python virtual environment"):
+            with console.status(f"Building Python virtual environment"):
                 virtualenv.cli_run(
                     [str(venv)],
                     options=None,
@@ -101,13 +104,13 @@ class Plugin(BasePlugin):
                 console.print(f"{Style.FINISHED}building Python virtual environment [yellow]{venv}[/]")
 
         if requirements:
-            with console.status(
-                f"[bold green]:white_circle:[/]Installing requirements from [yellow]{requirements}[/]"
-            ):
-                installed: bool = self.install_requirements(venv, requirements, env)
-                if not self.silent:
-                    style: Style = (Style.SKIPPED, Style.FINISHED)[installed]
-                    console.print(f"{style}installing Python requirements from [yellow]{requirements}[/]")
+            with console.status(f"Installing requirements") as status:
+                for _req in requirements:
+                    status.update(f"Installing requirements from [yellow]{_req}[/]")
+                    installed: bool = self.install_requirements(venv, _req, env)
+                    if not self.silent:
+                        style: Style = (Style.SKIPPED, Style.FINISHED)[installed]
+                        console.print(f"{style}installing Python requirements from [yellow]{_req}[/]")
 
         if packages:
             with console.status(f"[bold green]:white_circle:[/]Installing additional packages"):
@@ -135,7 +138,7 @@ class Plugin(BasePlugin):
 
         bin_dir: Path = venv / "bin"
         python: Path = bin_dir / "python"
-        pip_log: Path = venv / "pip.log"
+        pip_log: Path = venv / f"{requirements}.log"
 
         if not pip_log.exists() or (requirements.stat().st_mtime > pip_log.stat().st_mtime):
             shell(
