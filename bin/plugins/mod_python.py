@@ -113,7 +113,7 @@ class Plugin(BasePlugin):
                         console.print(f"{style}installing Python requirements from [yellow]{_req}[/]")
 
         if packages:
-            with console.status(f"[bold green]:white_circle:[/]Installing additional packages"):
+            with console.status(f"Installing additional packages"):
                 self.install_packages(venv, packages, env)
             if not self.silent:
                 console.print(f"{Style.FINISHED}installing Python packages")
