@@ -1,5 +1,5 @@
 """
-[bold cyan]Import .env files.[/]
+Import .env files.
 
 Import one or more .env files into the runtime environment.
 """

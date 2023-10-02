@@ -1,5 +1,5 @@
 """
-[bold cyan]Configure Ngrok agent.[/]
+Configure Ngrok agent.
 
 This plugin's config mirrors the ngrok config as documented here:
 

@@ -1,5 +1,5 @@
 """
-[bold cyan]Configure AWS session with MFA.[/]
+Configure AWS session with MFA.
 
 Session will be cached in [cyan]tmp[/] for [cyan]expiry[/] seconds and you won't be prompted for MFA code until that time, even across multple invokations and multiple shells.
 

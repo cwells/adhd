@@ -1,5 +1,5 @@
 """
-[bold cyan]Configure Python virtual environment.[/]
+Configure Python virtual environment.
 
 This plugin will create a virtual environment and install requirements.txt. It also configures the proper environment variables so that you can enter the virtual environment just by spawning a shell, e.g. "adhd example /bin/bash". You can also specify packages to be installed via the [cyan]packages[/] attribute.
 

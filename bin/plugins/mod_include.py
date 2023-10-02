@@ -1,5 +1,5 @@
 """
-[bold cyan]Include external YAML files.[/]
+Include external YAML files.
 
 Note that inclusion happens relative to the document root, _not_ in-place within the plugins section. The [blue]autoload[/] attribute is not available for this plugin.
 """

@@ -181,7 +181,32 @@ def load_plugins(
 # ==============================================================================
 
 
-def list_plugins() -> None:
+def print_plugin_help(pager: str | bool = False, verbose=False) -> None:
+    plugins_dir: Path = get_program_bin() / "plugins"
+    plugins: dict[str, BasePlugin] = {}
+
+    for module_file in plugins_dir.glob("mod_*.py"):
+        module = importlib.import_module(f"plugins.{module_file.stem}")
+        if not module.Plugin.enabled:
+            continue
+        plugins[module_file.stem] = module
+
+    if verbose:
+        return print_plugin_help_verbose(plugins, pager=pager)
+
+    width: int = max(len(p) for p in plugins) + 22
+
+    console.print()
+    for plugin, module in plugins.items():
+        doc: str = (module.__doc__ or "No description available.").strip("\n").split("\n")[0]
+        console.print(
+            f" :white_circle:{f'[bold cyan]{plugin}[/] [dim]':.<{width}}[/] {doc}",
+            highlight=False,
+        )
+    console.print()
+
+
+def print_plugin_help_verbose(plugins: dict[str, BasePlugin], pager: str | bool = False) -> None:
     plugins_dir: Path = get_program_bin() / "plugins"
     table: Table = Table(
         show_header=False,
@@ -195,14 +220,10 @@ def list_plugins() -> None:
     table.add_column("Example", justify="left")
 
     idx: int = 0
-    for mod in plugins_dir.glob("mod_*.py"):
-        module = importlib.import_module(f"plugins.{mod.stem}")
-        if not module.Plugin.enabled:
-            continue
-
+    for plugin, module in plugins.items():
         doc: str = (module.__doc__ or "No description available.").strip("\n")
         row: list[str] = [
-            f"[bold yellow]{mod.stem}[/]: {doc}\n",
+            f":white_circle:[bold cyan]{module.Plugin.key}[/] {doc}\n",
         ]
 
         required_modules: str = "[/], [cyan]".join(module.required_modules.values())
@@ -226,5 +247,8 @@ def list_plugins() -> None:
 
         idx += 1
 
-    # with console.pager():
-    console.print(table)
+    if not pager:
+        console.print(table)
+    else:
+        with console.pager(styles=pager == "color"):
+            console.print(table)

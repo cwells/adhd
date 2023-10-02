@@ -311,21 +311,22 @@ def get_project_home() -> Path:
 # ==============================================================================
 
 
-def print_job_help(jobs: dict, verbose=False) -> None:
+def print_job_help(jobs: dict, pager: str | bool = False, verbose=False) -> None:
     if verbose:
-        return print_job_help_verbose(jobs)
+        return print_job_help_verbose(jobs, pager=pager)
 
-    _width = max(len(j) for j in jobs) + 22
+    width: int = max(len(j) for j in jobs) + 22
+
     console.print()
     for job, config in jobs.items():
         console.print(
-            f" :white_circle:{f'[bold cyan]{job}[/] [dim]':.<{_width}}[/] {config.get('help', '')}",
+            f" :white_circle:{f'[bold cyan]{job}[/] [dim]':.<{width}}[/] {config.get('help', '')}",
             highlight=False,
         )
     console.print()
 
 
-def print_job_help_verbose(jobs: dict) -> None:
+def print_job_help_verbose(jobs: dict, pager: bool | str = False) -> None:
     table: Table = Table(
         show_header=False,
         padding=2,
@@ -357,7 +358,11 @@ def print_job_help_verbose(jobs: dict) -> None:
 
         table.add_row(*row, style=f"white on {row_styles[idx % 2]}")
 
-    console.print(table)
+    if not pager:
+        console.print(table)
+    else:
+        with console.pager(styles=pager == "color"):
+            console.print(table)
 
 
 # ==============================================================================

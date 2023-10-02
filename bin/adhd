@@ -46,7 +46,7 @@ from lib.util import (
     get_local_env,
     print_job_help,
 )
-from plugins import BasePlugin, list_plugins, load_plugins
+from plugins import BasePlugin, load_plugins, print_plugin_help
 
 # ==============================================================================
 
@@ -110,6 +110,7 @@ def main(
     silent: bool = project_config.get("silent", False)
 
     # display list of possible jobs
+    pager: str | bool = project_config.get("pager", False)
     if set(command) == set(("help", "jobs")):
         jobs = {
             name: get_job(
@@ -121,11 +122,11 @@ def main(
             )
             for name, job in project_config["jobs"].items()
         }
-        print_job_help(jobs, verbose=verbose)
+        print_job_help(jobs, pager=pager, verbose=verbose)
         raise SystemExit
 
     if set(command) == set(("help", "plugins")):
-        list_plugins()
+        print_plugin_help(pager=pager, verbose=verbose)
         raise SystemExit
 
     if explain:
