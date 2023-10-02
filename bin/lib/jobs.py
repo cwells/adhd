@@ -142,12 +142,15 @@ def get_jobs(
         console.print(f"No command given.")
         sys.exit(1)
 
-    elif load_or_unload_plugin(_cmd, plugins, project_config, process_env):
+    if load_or_unload_plugin(_cmd, plugins, project_config, process_env):
         pass
 
     elif _cmd in jobs:  # pre-defined jobs
         # TODO: use rest of cli as job arguments or sequential jobs?
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
+            if load_or_unload_plugin(dep, plugins, project_config, process_env):
+                continue
+
             job_config: ConfigBox = jobs.get(dep, {})
             try:
                 yield get_job(dep, job_config, project_config, process_env)
