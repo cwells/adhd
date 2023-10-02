@@ -73,9 +73,6 @@ class Plugin(BasePlugin):
         self,
         config: ConfigBox,
         env: dict[str, Any],
-        silent: bool = False,
-        verbose: bool = False,
-        debug: bool = False,
     ) -> MetadataType:
         "Start the ngrok agent."
 
@@ -84,15 +81,17 @@ class Plugin(BasePlugin):
             sys.exit(1)
 
         subscribed: bool = config.get("subscribed", False)
+        active_tunnels: list[dict] = [t for t in self.list_tunnels(config.config)]
 
-        for tunnel in self.list_tunnels(config.config):
-            if tunnel["up"] and not silent:
-                console.print(f"{Style.SKIPPED}tunnel {tunnel['name']}.")
-            else:
-                self.start_tunnel(tunnel["name"], config, env, silent=silent, verbose=verbose, debug=debug)
+        if not any(t for t in active_tunnels if t["up"]) or subscribed:
+            for tunnel in active_tunnels:
+                if tunnel["up"] and not self.silent:
+                    console.print(f"{Style.SKIPPED}tunnel {tunnel['name']}.")
+                else:
+                    self.start_tunnel(tunnel["name"], config, env)
 
-            if not subscribed:  # free tier only allows one active tunnel
-                break
+                if not subscribed:  # free tier only allows one active tunnel
+                    break
 
         # update plugin.metadata
         self.metadata["vars"].update({"tunnels": self.list_tunnels(config)})
@@ -104,9 +103,6 @@ class Plugin(BasePlugin):
         tunnel: str | None,
         config: ConfigBox,
         env: dict[str, Any],
-        silent: bool = False,
-        verbose: bool = False,
-        debug: bool = False,
     ) -> None:
         "Use the ngrok agent rather than API as we exit and can't be our own agent."
 
@@ -123,7 +119,7 @@ class Plugin(BasePlugin):
             tmpfile.flush()
             tmpfile.seek(0)
 
-            if not silent:
+            if not self.silent:
                 console.print(rf"{Style.STARTING} ngrok tunnel \[[bold blue]{tunnel}[/]].")
 
             shell(f"ngrok --config {tmpfile.name} start {tunnel} &", env=env, interactive=True)

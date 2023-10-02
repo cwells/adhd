@@ -88,6 +88,9 @@ def load_plugin(
     plugin: BasePlugin,
     project_config: ConfigBox,
     process_env: dict,
+    silent: bool = False,
+    verbose: bool = False,
+    debug: bool = False,
 ) -> None:
     "Load a plugin, if enabled."
 

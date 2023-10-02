@@ -87,6 +87,9 @@ def load_or_unload_plugin(
     plugins: dict[str, BasePlugin],
     project_config: ConfigBox,
     process_env: dict[str, Any],
+    silent: bool = False,
+    verbose: bool = False,
+    debug: bool = False,
 ) -> bool:
     "If cmd is a plugin, attempt to load/unload or call one of its methods."
 
@@ -96,7 +99,14 @@ def load_or_unload_plugin(
         plugin_name = plugin_cmd["plugin"]
         if plugin := plugins.get(f"mod_{plugin_name}"):
             if plugin_cmd["action"] == "plugin":
-                load_plugin(plugin, project_config, process_env)
+                load_plugin(
+                    plugin,
+                    project_config,
+                    process_env,
+                    silent=silent,
+                    verbose=verbose,
+                    debug=debug,
+                )
                 if method := plugin_cmd.get("method"):
                     call_plugin_method(plugin, method, project_config, process_env)
             elif plugin_cmd["action"] == "unplug":
