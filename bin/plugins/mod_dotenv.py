@@ -5,11 +5,12 @@ Import one or more .env files into the runtime environment.
 """
 
 example = """
-dotenv:
-  autoload: true
-  files:
-  - !path [ ~/projects/.env ]
-  - !path [ ~/projects/.dev.env ]
+plugins:
+  dotenv:
+    autoload: true
+    files:
+    - !path [ ~/projects/.env ]
+    - !path [ ~/projects/.dev.env ]
 """
 
 required_modules: dict[str, str] = {"dotenv": "python-dotenv"}

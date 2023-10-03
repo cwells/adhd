@@ -7,9 +7,10 @@ The [blue]autoload[/] attribute is not effective for this plugin as it must be r
 """
 
 example = """
-include:
-- file1.yaml
-- !path [ "~", projects/file2.yaml ]
+plugins:
+  include:
+  - file1.yaml
+  - !path [ "~", projects/file2.yaml ]
 """
 
 required_modules: dict[str, str] = {}

@@ -5,6 +5,7 @@ Session will be cached in [cyan]tmp[/] for [cyan]expiry[/] seconds and you won't
 
 The [cyan]profile[/] is a profile from "~/.aws/credentials".
 
+[bold]MFA[/]
 The attribute [cyan]mfa.device[/] is either the entire ARN for the device, or the part of the ARN after the final slash.
 
 For example, given the ARN:
@@ -12,18 +13,36 @@ For example, given the ARN:
     "arn:aws:iam::123456789012:mfa/MyDevice"
 
 You can use either "MyDevice" or "arn:aws:iam::123456789012:mfa/MyDevice" as the value for [cyan]mfa.device[/].
+
+[bold]Assuming roles:[/]
+You can call [cyan]plugin:aws.assume_role[/] [bold cyan]role[/] as a dependency, where [cyan]role[/] is defined in [cyan]aws.roles[/].
+[cyan]arn[/] can be either a complete ARN, or just the identifier after the final slash, in which case the provided account id will be used to assemble the ARN.
 """
 
 example = """
-aws:
-  autoload: true
-  profile: default
-  username: "<username>"
-  account: "<account id>"
-  region: "<region>"
-  mfa:
-    device: "<device>"
-    expiry: 86400
+plugins:
+  aws:
+    autoload: true
+    profile: default
+    username: joe.doe
+    account: 123456789012
+    region: us-west-2
+    mfa:
+      device: joes_phone
+      expiry: 86400
+    roles:
+      admin:
+        arn: arn:aws:iam::098765432109:role/admin
+        expiry: 43200
+
+jobs:
+  infra/admin:
+    help: Enter a shell and assume admin role
+    run: ${SHELL}
+    interactive: true
+    silent: true
+    after:
+    - plugin:aws.assume_role admin
 """
 
 required_modules: dict[str, str] = {"boto3": "boto3"}
@@ -74,7 +93,7 @@ class Plugin(BasePlugin):
         region: str = config.get("region", "us-east-1")
         mfa: dict[str, Any] = config.get("mfa", {})
         mfa_device: str | None = mfa.get("device")
-        mfa_expiry: int = int(mfa.get("expiry", 86400))
+        mfa_expiry: int = min(int(mfa.get("expiry", 86400)), 86400)
         tmpdir: Path = get_resolved_path(config.get("tmp", "/tmp"), env=env)
         secure_paths: dict[Path, int] = {tmpdir: 0o0700}
 
@@ -175,31 +194,44 @@ class Plugin(BasePlugin):
     def assume_role(self, args: list[str], config: ConfigBox, env: dict[str, Any]) -> MetadataType:
         session_name: str = args[0]
         roles: dict[str, dict[str, str]] = self.config.get("roles", {})
-        arn: str | None = roles.get(session_name, {}).get("arn")
-        profile: str = config.get("profile", "default")
+        role_arn_prefix: str = f"arn:aws:iam::{config['account']}:role"
+        role: str | None = roles.get(session_name, {}).get("arn")
+        expiry: int = min(int(roles.get(session_name, {}).get("expiry", 43200)), 43200)
 
-        if arn:
-            session: boto3.Session = boto3.Session(
-                profile_name=self.profile,
-                aws_access_key_id=self.metadata["env"]["AWS_ACCESS_KEY_ID"],
-                aws_secret_access_key=self.metadata["env"]["AWS_SECRET_ACCESS_KEY"],
-                aws_session_token=self.metadata["env"]["AWS_SESSION_TOKEN"],
-            )  # type: ignore
-            sts: boto3.client.STS = session.client("sts")  # type: ignore
-            assumed_role_object = sts.assume_role(RoleArn=arn, RoleSessionName=session_name)
-            credentials = assumed_role_object["Credentials"]
+        if not role:
+            console.print(f"{Style.ERROR}Missing role.")
+            sys.exit(2)
 
-            self.metadata["env"].update(
-                {
-                    "AWS_PROFILE": self.profile,
-                    "AWS_DEFAULT_REGION": self.region,
-                    "AWS_ACCESS_KEY_ID": credentials["AccessKeyId"],
-                    "AWS_SECRET_ACCESS_KEY": credentials["SecretAccessKey"],
-                    "AWS_SESSION_TOKEN": credentials["SessionToken"],
-                    "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS": "true",
-                }
+        session: boto3.Session = boto3.Session(  # type: ignore
+            profile_name=self.profile,
+            aws_access_key_id=self.metadata["env"]["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=self.metadata["env"]["AWS_SECRET_ACCESS_KEY"],
+            aws_session_token=self.metadata["env"]["AWS_SESSION_TOKEN"],
+        )  # type: ignore
+        sts: boto3.client.STS = session.client("sts")  # type: ignore
+        role_arn: str = role if role.startswith("arn:aws:iam::") else f"{role_arn_prefix}/{role}"
+
+        try:
+            assumed_role: dict[str, Any] = sts.assume_role(
+                RoleArn=role_arn,
+                RoleSessionName=session_name,
+                DurationSeconds=expiry,
             )
+        except Exception as e:
+            console.print(f"{Style.ERROR}Unable to assume role: {e}")
+            sys.exit(2)
 
-            return self.metadata
+        credentials: dict[str, Any] = assumed_role["Credentials"]
 
-        return {}
+        self.metadata["env"].update(
+            {
+                "AWS_PROFILE": self.profile,
+                "AWS_DEFAULT_REGION": self.region,
+                "AWS_ACCESS_KEY_ID": credentials["AccessKeyId"],
+                "AWS_SECRET_ACCESS_KEY": credentials["SecretAccessKey"],
+                "AWS_SESSION_TOKEN": credentials["SessionToken"],
+                "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS": "true",
+            }
+        )
+
+        return self.metadata

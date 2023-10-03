@@ -9,11 +9,12 @@ If [cyan]virtualenv[/] package is missing, plugin will still work with an existi
 """
 
 example = """
-python:
-  autoload: true
-  venv: ~/myproject/.venv
-  requirements: ~/myproject/requirements.txt
-  packages: [ requests, PyYAML==5.4.1 ]
+plugins:
+  python:
+    autoload: true
+    venv: ~/myproject/.venv
+    requirements: [ requirements.txt, dev-requirements.txt ]
+    packages: [ requests, PyYAML==5.4.1 ]
 """
 
 required_modules: dict[str, str] = {"virtualenv": "virtualenv"}

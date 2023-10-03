@@ -14,20 +14,21 @@ While this plugin allows you to define multple tunnels, the ngrok free tier only
 """
 
 example = """
-ngrok:
-  autoload: true
-  subscribed: false
-  config:
-    authtoken: "<auth_token>"
-    api_key: "<api_key>"
-    version: "2"
-    log: ~/ngrok.log
-    tunnels:
-      django:
-        addr: 8000
-        schemes: [ https ]
-        inspect: false
-        proto: http
+plugins:
+  ngrok:
+    autoload: true
+    subscribed: false
+    config:
+      authtoken: "<auth_token>"
+      api_key: "<api_key>"
+      version: "2"
+      log: ~/ngrok.log
+      tunnels:
+        django:
+          addr: 8000
+          schemes: [ https ]
+          inspect: false
+          proto: http
 """
 
 required_modules: dict[str, str] = {"ngrok": "ngrok-api", "psutil": "psutil"}
