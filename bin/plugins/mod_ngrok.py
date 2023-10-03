@@ -10,7 +10,11 @@ While this plugin allows you to define multple tunnels, the ngrok free tier only
 
 [blue]console_ui[/] is autoload set to [blue]false[/].
 
-[cyan]unplug:ngrok[/] should be called when destroying the stack as otherwise the tunnel will remain up.
+[cyan]unplug:ngrok[/] should be called when stopping the stack as otherwise the tunnel will remain up.
+
+[bold]Public methods:[/]
+:white_circle:[cyan]plugin:ngrok.status[/]: Prints the status of defined tunnels. Does not require plugin to be loaded.
+
 """
 
 example = """

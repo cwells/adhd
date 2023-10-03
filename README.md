@@ -424,7 +424,7 @@ and then run
 
 You can get a list of available plugins and their help with:
 
-    $ adhd example --help-plugins
+    $ adhd example help plugins
 
     ⚫ mod_aws Configure AWS session with MFA.
 
@@ -477,7 +477,7 @@ will be available from that point forward.
   ```yaml
     jobs:
       aws/shell:
-        help: Disable AWS authentication.
+        help: Shell with AWS authentication.
         after: plugin:aws
   ```
 
@@ -486,7 +486,7 @@ Some plugins support unloading as a dependency using `unplug` instead of `plugin
   ```yaml
     jobs:
       safe/shell:
-        help: Disable AWS authentication.
+        help: Shell without AWS authentication.
         after: unplug:aws
   ```
 
@@ -516,8 +516,7 @@ You may also call plugins and their methods from the cli:
     # check the tunnel stqtus
     $ adhd example plugin:ngrok.status
 
-Obviouosly, calling a plugin method causes the plugin to be loaded, if it wasn't
-already.
+Some plugin methods may require the plugin to have been loaded, others not. See the plugin documentation.
 
 # TODO
 

@@ -14,9 +14,8 @@ For example, given the ARN:
 
 You can use either "MyDevice" or "arn:aws:iam::123456789012:mfa/MyDevice" as the value for [cyan]mfa.device[/].
 
-[bold]Assuming roles:[/]
-You can call [cyan]plugin:aws.assume_role[/] [bold cyan]role[/] as a dependency, where [cyan]role[/] is defined in [cyan]aws.roles[/].
-[cyan]arn[/] can be either a complete ARN, or just the identifier after the final slash, in which case the provided account id will be used to assemble the ARN.
+[bold]Public methods:[/]
+:white_circle:[cyan]plugin:aws.assume_role[/] [bold cyan]role[/]: Assume a role defined in the plugin config. The credentials for assumed roles are not cached and will not be available in other sessions. The plugin must be loaded prior to calling this method.
 """
 
 example = """

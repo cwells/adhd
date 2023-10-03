@@ -230,7 +230,7 @@ def print_plugin_help_verbose(plugins: dict[str, BasePlugin], pager: str | bool 
     for plugin, module in plugins.items():
         doc: str = (module.__doc__ or "No description available.").strip("\n")
         row: list[str] = [
-            f":white_circle:[bold cyan]{module.Plugin.key}[/] {doc}\n",  # type: ignore
+            f"[bold]:white_circle:[/][bold cyan][u]{module.Plugin.key}[/u][/] {doc}\n",  # type: ignore
         ]
 
         required_modules: str = "[/], [cyan]".join(module.required_modules.values())  # type: ignore
