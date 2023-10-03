@@ -102,16 +102,18 @@ def load_or_unload_plugin(
         plugin_name = plugin_cmd["plugin"]
         if plugin := plugins.get(f"mod_{plugin_name}"):
             if plugin_cmd["action"] == "plugin":
-                load_plugin(
-                    plugin,
-                    project_config,
-                    process_env,
-                    silent=silent,
-                    verbose=verbose,
-                    debug=debug,
-                )
                 if method := plugin_cmd.get("method"):
                     call_plugin_method(plugin, method, args, project_config, process_env)
+                else:
+                    load_plugin(
+                        plugin,
+                        project_config,
+                        process_env,
+                        silent=silent,
+                        verbose=verbose,
+                        debug=debug,
+                    )
+
             elif plugin_cmd["action"] == "unplug":
                 unload_plugin(plugin, project_config, process_env)
 
@@ -147,7 +149,7 @@ def get_jobs(
         sys.exit(1)
 
     if load_or_unload_plugin(command, plugins, project_config, process_env):
-        pass
+        return
 
     elif _cmd in jobs:  # pre-defined jobs
         if confirm := jobs[_cmd].get("confirm"):
@@ -155,8 +157,6 @@ def get_jobs(
             if not rich.prompt.Confirm.ask(_confirm, default=False, console=console):
                 if rich.prompt.Confirm.ask("Would you like to abort?", default=True, console=console):
                     raise SystemExit("Aborted by user request.\n")
-
-        #  TODO: run skip test here to prevent deps from running?
 
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
             if load_or_unload_plugin(tuple(dep.split()), plugins, project_config, process_env):
