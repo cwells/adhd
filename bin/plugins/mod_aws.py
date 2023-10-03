@@ -33,7 +33,7 @@ plugins:
     roles:
       admin:
         arn: arn:aws:iam::098765432109:role/admin
-        expiry: 43200
+        expiry: 3600
 
 jobs:
   infra/admin:
