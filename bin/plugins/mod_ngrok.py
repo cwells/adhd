@@ -69,11 +69,7 @@ class Plugin(BasePlugin):
     enabled: bool = bool(ngrok)
     has_run: bool = False
 
-    def load(
-        self,
-        config: ConfigBox,
-        env: dict[str, Any],
-    ) -> MetadataType:
+    def load(self, config: ConfigBox, env: dict[str, Any]) -> MetadataType:
         "Start the ngrok agent."
 
         if not self.enabled:
@@ -158,10 +154,10 @@ class Plugin(BasePlugin):
                 }
 
     @public
-    def status(self, config: ConfigBox, env: dict[str, Any]) -> None:
+    def status(self, args: tuple[str, ...], config: ConfigBox, env: dict[str, Any]) -> None:
         console.print("\n[bold]Ngrok public endpoints:[/]")
 
-        for t in self.list_tunnels(config.plugins.ngrok.config):
+        for t in self.list_tunnels(config.config):
             if t["up"]:
                 console.print(
                     "[bold green]:black_circle:[/][white]{name} tunnel is[/]"

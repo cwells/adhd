@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 from typing import Any, Generator, Literal
 
+import rich.prompt
 from plugins import BasePlugin, call_plugin_method, load_plugin, unload_plugin
 
 from .util import (
@@ -83,7 +84,7 @@ def get_plugin_cmd(cmd: str) -> dict | None:
 
 
 def load_or_unload_plugin(
-    cmd: str,
+    command: tuple[str, ...],
     plugins: dict[str, BasePlugin],
     project_config: ConfigBox,
     process_env: dict[str, Any],
@@ -94,6 +95,9 @@ def load_or_unload_plugin(
     "If cmd is a plugin, attempt to load/unload or call one of its methods."
 
     plugin: BasePlugin | None = None
+
+    cmd: str = command[0]
+    args: tuple[str, ...] = command[1:]
 
     if plugin_cmd := get_plugin_cmd(cmd):
         plugin_name = plugin_cmd["plugin"]
@@ -108,7 +112,7 @@ def load_or_unload_plugin(
                     debug=debug,
                 )
                 if method := plugin_cmd.get("method"):
-                    call_plugin_method(plugin, method, project_config, process_env)
+                    call_plugin_method(plugin, method, args, project_config, process_env)
             elif plugin_cmd["action"] == "unplug":
                 unload_plugin(plugin, project_config, process_env)
 
@@ -137,18 +141,26 @@ def get_jobs(
     jobs: dict[str, Any] = project_config.get("jobs", {})
 
     _cmd: str = command[0]
+    _args: list[str] = command[1:]  # TODO: use these if they exist
 
     if not command:
         console.print(f"No command given.")
         sys.exit(1)
 
-    if load_or_unload_plugin(_cmd, plugins, project_config, process_env):
+    if load_or_unload_plugin(command, plugins, project_config, process_env):
         pass
 
     elif _cmd in jobs:  # pre-defined jobs
-        # TODO: use rest of cli as job arguments or sequential jobs?
+        if confirm := jobs[_cmd].get("confirm"):
+            _confirm = realize(confirm, workdir=workdir, env=process_env)
+            if not rich.prompt.Confirm.ask(_confirm, default=False, console=console):
+                if rich.prompt.Confirm.ask("Would you like to abort?", default=True, console=console):
+                    raise SystemExit("Aborted by user request.\n")
+
+        #  TODO: run skip test here to prevent deps from running?
+
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
-            if load_or_unload_plugin(dep, plugins, project_config, process_env):
+            if load_or_unload_plugin(dep.split(), plugins, project_config, process_env):
                 continue
 
             job_config: ConfigBox = jobs.get(dep, {})

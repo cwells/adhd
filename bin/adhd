@@ -191,15 +191,6 @@ def main(
             if not silent:
                 console.print(f'{Style.SKIPPED}[bold blue]{job["name"]}[/]')
             continue
-        elif confirm := job.get("confirm"):
-            if not rich.prompt.Confirm.ask(confirm, default=False, console=console):
-                if not rich.prompt.Confirm.ask(
-                    "Would you like to continue?",
-                    console=console,
-                    choices=["continue", "abort"],
-                    default="abort",
-                ):
-                    raise SystemExit("Aborted by user request.\n")
         else:
             if not silent:
                 console.print(f"{Style.STARTING}[bold blue]{job['name']}[/]")

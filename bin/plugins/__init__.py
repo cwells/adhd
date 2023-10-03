@@ -67,6 +67,7 @@ def public(method: Callable) -> Callable:
 def call_plugin_method(
     plugin: BasePlugin,
     method: str,
+    args: tuple[str, ...],
     project_config: ConfigBox,
     process_env: dict[str, Any],
 ) -> Any:
@@ -76,7 +77,13 @@ def call_plugin_method(
 
     if _method := getattr(plugin, method):
         if getattr(_method, "is_public", False):
-            return _method(config=project_config, env=process_env)
+            data = _method(args=args, config=project_config["plugins"][plugin.key], env=process_env)
+            if data:  # plugins can update runtime environment
+                process_env.update(data.get("env", {}))
+                project_config.update(data.get("conf", {}))
+                project_config.plugins[plugin.key].setdefault("__vars__", {})
+                project_config.plugins[plugin.key]["__vars__"].update(data.get("vars", {}))
+            return
 
     raise NotImplementedError(f"Unknown plugin function: {method}")
 

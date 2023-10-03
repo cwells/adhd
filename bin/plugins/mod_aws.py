@@ -33,14 +33,17 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+from types import ModuleType
 from typing import Any
 
 import yaml
 from lib.boot import missing_modules
 from lib.util import ConfigBox, Style, check_permissions, console, get_resolved_path
-from plugins import BasePlugin, MetadataType
+
+from plugins import BasePlugin, MetadataType, public
 
 missing: list[str]
+boto3: ModuleType | None
 
 if missing := missing_modules(required_modules):
     console.print(f"Plugin [bold blue]AWS[/] disabled, missing modules: {', '.join(missing)}\n")
@@ -112,6 +115,10 @@ class Plugin(BasePlugin):
             }
         )
 
+        self.config = config
+        self.profile = profile
+        self.region = region
+
         return self.metadata
 
     def cache_session(
@@ -163,3 +170,36 @@ class Plugin(BasePlugin):
 
         if cache_file.exists():
             cache_file.unlink()
+
+    @public
+    def assume_role(self, args: list[str], config: ConfigBox, env: dict[str, Any]) -> MetadataType:
+        session_name: str = args[0]
+        roles: dict[str, dict[str, str]] = self.config.get("roles", {})
+        arn: str | None = roles.get(session_name, {}).get("arn")
+        profile: str = config.get("profile", "default")
+
+        if arn:
+            session: boto3.Session = boto3.Session(
+                profile_name=self.profile,
+                aws_access_key_id=self.metadata["env"]["AWS_ACCESS_KEY_ID"],
+                aws_secret_access_key=self.metadata["env"]["AWS_SECRET_ACCESS_KEY"],
+                aws_session_token=self.metadata["env"]["AWS_SESSION_TOKEN"],
+            )  # type: ignore
+            sts: boto3.client.STS = session.client("sts")  # type: ignore
+            assumed_role_object = sts.assume_role(RoleArn=arn, RoleSessionName=session_name)
+            credentials = assumed_role_object["Credentials"]
+
+            self.metadata["env"].update(
+                {
+                    "AWS_PROFILE": self.profile,
+                    "AWS_DEFAULT_REGION": self.region,
+                    "AWS_ACCESS_KEY_ID": credentials["AccessKeyId"],
+                    "AWS_SECRET_ACCESS_KEY": credentials["SecretAccessKey"],
+                    "AWS_SESSION_TOKEN": credentials["SessionToken"],
+                    "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS": "true",
+                }
+            )
+
+            return self.metadata
+
+        return {}

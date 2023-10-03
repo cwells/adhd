@@ -50,6 +50,7 @@ class Plugin(BasePlugin):
 
         if _venv := config.get("venv"):
             venv: Path = get_resolved_path(_venv, env=env)
+
             if _req := config.get("requirements"):
                 if isinstance(_req, str):
                     _req = [_req]
@@ -75,7 +76,7 @@ class Plugin(BasePlugin):
         return self.metadata
 
     def initialize_venv(
-        self, venv: Path, requirements: Path | None, packages: list[str] | None, env: dict[str, str]
+        self, venv: Path, requirements: list[Path] | None, packages: list[str] | None, env: dict[str, str]
     ) -> dict[str, str]:
         "Create the virtual environment if it doesn't exist, return env vars needed for venv."
 
@@ -138,7 +139,7 @@ class Plugin(BasePlugin):
 
         bin_dir: Path = venv / "bin"
         python: Path = bin_dir / "python"
-        pip_log: Path = venv / f"{requirements}.log"
+        pip_log: Path = venv / f"{requirements.name}.log"
 
         if not pip_log.exists() or (requirements.stat().st_mtime > pip_log.stat().st_mtime):
             shell(
