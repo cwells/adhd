@@ -120,7 +120,7 @@ def load_or_unload_plugin(
 
 
 def get_jobs(
-    command: list[str] | tuple[str, ...],
+    command: tuple[str, ...],
     project_config: ConfigBox,
     process_env: dict,
     plugins: dict[str, BasePlugin],
@@ -141,7 +141,7 @@ def get_jobs(
     jobs: dict[str, Any] = project_config.get("jobs", {})
 
     _cmd: str = command[0]
-    _args: list[str] = command[1:]  # TODO: use these if they exist
+    _args: tuple[str, ...] = command[1:]  # TODO: use these if they exist
 
     if not command:
         console.print(f"No command given.")
@@ -160,7 +160,7 @@ def get_jobs(
         #  TODO: run skip test here to prevent deps from running?
 
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
-            if load_or_unload_plugin(dep.split(), plugins, project_config, process_env):
+            if load_or_unload_plugin(tuple(dep.split()), plugins, project_config, process_env):
                 continue
 
             job_config: ConfigBox = jobs.get(dep, {})

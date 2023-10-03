@@ -196,7 +196,7 @@ def print_plugin_help(pager: str | bool = False, verbose=False) -> None:
         module = importlib.import_module(f"plugins.{module_file.stem}")
         if not module.Plugin.enabled:
             continue
-        plugins[module_file.stem] = module
+        plugins[module_file.stem] = module  # type: ignore
 
     if verbose:
         return print_plugin_help_verbose(plugins, pager=pager)
@@ -230,11 +230,11 @@ def print_plugin_help_verbose(plugins: dict[str, BasePlugin], pager: str | bool 
     for plugin, module in plugins.items():
         doc: str = (module.__doc__ or "No description available.").strip("\n")
         row: list[str] = [
-            f":white_circle:[bold cyan]{module.Plugin.key}[/] {doc}\n",
+            f":white_circle:[bold cyan]{module.Plugin.key}[/] {doc}\n",  # type: ignore
         ]
 
-        required_modules: str = "[/], [cyan]".join(module.required_modules.values())
-        required_binaries: str = "[/], [cyan]".join(module.required_binaries)
+        required_modules: str = "[/], [cyan]".join(module.required_modules.values())  # type: ignore
+        required_binaries: str = "[/], [cyan]".join(module.required_binaries)  # type: ignore
 
         if required_modules or required_binaries:
             row.append("[bold white]Requirements:[/]")
