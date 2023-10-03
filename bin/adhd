@@ -75,7 +75,7 @@ def main(
     env: list[tuple[str, str]],
     plugin: list[tuple[str, bool]],
     project: str,
-    command: tuple[str] | list[str],
+    command: tuple[str],
     explain: bool,
     verbose: bool,
     debug: bool,
@@ -250,7 +250,7 @@ def main(
     if explain:
         console.print()
     elif not silent:
-        console.print(f"{Style.FINISHED}Finished all jobs.")
+        console.print(f"[bold white]Complete.[/]")
 
     sys.exit(returncode)
 

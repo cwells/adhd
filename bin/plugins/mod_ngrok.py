@@ -1,5 +1,5 @@
 """
-Configure Ngrok agent.
+Configure ngrok agent.
 
 This plugin's config mirrors the ngrok config as documented here:
 
@@ -74,7 +74,7 @@ class Plugin(BasePlugin):
         "Start the ngrok agent."
 
         if not self.enabled:
-            console.print(f"{Style.ERROR}Ngrok support is disabled. Please install ngrok-api package.")
+            console.print(f"{Style.ERROR}ngrok support is disabled. Please install ngrok-api package.")
             sys.exit(1)
 
         subscribed: bool = config.get("subscribed", False)
@@ -120,13 +120,12 @@ class Plugin(BasePlugin):
                 console.print(rf"{Style.STARTING} ngrok tunnel \[[bold blue]{tunnel}[/]].")
 
             shell(f"ngrok --config {tmpfile.name} start {tunnel} &", env=env, interactive=True)
-            time.sleep(1)  # give ngrok time to read config before it's gone
+            time.sleep(3)  # give ngrok time to read config before it's gone
+
+        self.has_run = True
 
     def unload(self, config: ConfigBox, env: dict[str, Any]) -> None:
-        "We can't manage individual tunnels on free plan, so just kill the process."
-
-        if not self.has_run:
-            return
+        "We can't manage individual tunnels on free plan, so just kill the entire process."
 
         if any(t["up"] for t in self.list_tunnels(config.plugins.ngrok.config)):
             for proc in psutil.process_iter():  # type: ignore
@@ -156,18 +155,16 @@ class Plugin(BasePlugin):
 
     @public
     def status(self, args: tuple[str, ...], config: ConfigBox, env: dict[str, Any]) -> None:
-        console.print("\n[bold]Ngrok public endpoints:[/]")
+        console.print("[dark_green]:earth_americas:[/][bold]ngrok public endpoints:[/]")
 
         for t in self.list_tunnels(config.config):
             if t["up"]:
                 console.print(
-                    "[bold green]:black_circle:[/][white]{name} tunnel is[/]"
+                    "  [bold green]:black_circle:[/][bold cyan]{name}[/] tunnel is"
                     " [bold green]up[/]:   [u]{public_url}[/u] -> [u]{addr}[/u]".format(**t)
                 )
             else:
                 console.print(
-                    "[bold red]:black_circle:[/][white]{name} tunnel is[/]"
+                    "  [bold red]:white_circle:[/][bold cyan]{name}[/] tunnel is"
                     " [bold red]down[/]: [u]{addr}[/u]".format(**t)
                 )
-
-        print()
