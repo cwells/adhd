@@ -191,7 +191,7 @@ class Plugin(BasePlugin):
             cache_file.unlink()
 
     @public
-    def assume_role(self, args: list[str], config: ConfigBox, env: dict[str, Any]) -> MetadataType:
+    def assume_role(self, args: tuple[str, ...], config: ConfigBox, env: dict[str, Any]) -> MetadataType:
         session_name: str = args[0]
         roles: dict[str, dict[str, str]] = self.config.get("roles", {})
         role_arn_prefix: str = f"arn:aws:iam::{config['account']}:role"
@@ -199,7 +199,7 @@ class Plugin(BasePlugin):
         expiry: int = min(int(roles.get(session_name, {}).get("expiry", 43200)), 43200)
 
         if not role:
-            console.print(f"{Style.ERROR}Missing role.")
+            console.print(f"{Style.ERROR}Incorrect or missing session_name: {session_name}")
             sys.exit(2)
 
         session: boto3.Session = boto3.Session(  # type: ignore

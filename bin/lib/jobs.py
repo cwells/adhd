@@ -95,7 +95,6 @@ def load_or_unload_plugin(
     "If cmd is a plugin, attempt to load/unload or call one of its methods."
 
     plugin: BasePlugin | None = None
-
     cmd: str = command[0]
     args: tuple[str, ...] = command[1:]
 
