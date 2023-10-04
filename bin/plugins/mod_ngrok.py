@@ -55,7 +55,6 @@ missing: list[str]
 if missing := missing_modules(required_modules):
     console.print(f"Plugin [bold blue]ngrok[/] disabled, missing modules: {', '.join(missing)}\n")
     ngrok = None
-    psutil = None
 else:
     import ngrok
     import psutil
@@ -63,7 +62,6 @@ else:
 if missing := missing_binaries(required_binaries):
     console.print(f"Plugin [bold blue]ngrok[/] disabled, missing binaries: {', '.join(missing)}\n")
     ngrok = None
-    psutil = None
 
 
 # ==============================================================================
@@ -132,9 +130,17 @@ class Plugin(BasePlugin):
         "We can't manage individual tunnels on free plan, so just kill the entire process."
 
         if any(t["up"] for t in self.list_tunnels(config.plugins.ngrok.config)):
-            for proc in psutil.process_iter():  # type: ignore
-                if proc.name() == "ngrok":
-                    proc.kill()
+            processes: list[psutil.Process] = [
+                proc for proc in psutil.process_iter(attrs=["name"]) if proc.name() == "ngrok"
+            ]
+            proc: psutil.Process
+            alive: list[psutil.Process]
+
+            for proc in processes:
+                proc.terminate()
+            _, alive = psutil.wait_procs(processes, timeout=6)
+            for proc in alive:
+                proc.kill()
 
     def list_tunnels(self, config: dict[str, Any]) -> Generator[dict[str, Any], None, None]:
         client = ngrok.Client(config.api_key)  # type: ignore
