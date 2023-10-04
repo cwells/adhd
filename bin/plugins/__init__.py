@@ -10,6 +10,7 @@ for a job (e.g. `after: plugin:python`).
 """
 
 import importlib
+import re
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, Literal
@@ -54,11 +55,15 @@ class BasePlugin:
 # ==============================================================================
 
 
-def public(method: Callable) -> Callable:
+def public(autoload: bool = False):
     "Decorator to mark a plugin method as public."
 
-    setattr(method, "is_public", True)
-    return method
+    def decorator(method: Callable) -> Callable:
+        setattr(method, "is_public", True)
+        setattr(method, "autoload", autoload)
+        return method
+
+    return decorator
 
 
 # ==============================================================================
@@ -259,3 +264,62 @@ def print_plugin_help_verbose(plugins: dict[str, BasePlugin], pager: str | bool 
     else:
         with console.pager(styles=pager == "color"):
             console.print(table)
+
+
+# ==============================================================================
+
+plugin_regex = re.compile(r"(?P<action>[^:]+):(?P<plugin>[^.]+)(\.(?P<method>.+))?")
+
+
+def get_plugin_cmd(cmd: str) -> dict | None:
+    if match := plugin_regex.match(cmd):
+        return match.groupdict()
+    return None
+
+
+def load_or_unload_plugin(
+    command: tuple[str, ...],
+    plugins: dict[str, BasePlugin],
+    project_config: ConfigBox,
+    process_env: dict[str, Any],
+    silent: bool = False,
+    verbose: bool = False,
+    debug: bool = False,
+) -> bool:
+    "If cmd is a plugin, attempt to load/unload or call one of its methods."
+
+    plugin: BasePlugin | None = None
+    cmd: str = command[0]
+    args: tuple[str, ...] = command[1:]
+
+    if plugin_cmd := get_plugin_cmd(cmd):
+        plugin_name = plugin_cmd["plugin"]
+        if plugin := plugins.get(f"mod_{plugin_name}"):
+            if plugin_cmd["action"] == "plugin":
+                if method := plugin_cmd.get("method"):
+                    if getattr(plugin, method).autoload:
+                        if verbose:
+                            console.print(f"{Style.START_LOAD}required plugin [bold cyan]{plugin.key}[/]")
+                        load_plugin(
+                            plugin,
+                            project_config,
+                            process_env,
+                            silent=silent,
+                            verbose=verbose,
+                            debug=debug,
+                        )
+                    call_plugin_method(plugin, method, args, project_config, process_env)
+                else:
+                    load_plugin(
+                        plugin,
+                        project_config,
+                        process_env,
+                        silent=silent,
+                        verbose=verbose,
+                        debug=debug,
+                    )
+
+            elif plugin_cmd["action"] == "unplug":
+                unload_plugin(plugin, project_config, process_env)
+
+    return bool(plugin)

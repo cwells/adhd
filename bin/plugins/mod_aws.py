@@ -189,13 +189,17 @@ class Plugin(BasePlugin):
         if cache_file.exists():
             cache_file.unlink()
 
-    @public
+    @public(autoload=True)
     def assume_role(self, args: tuple[str, ...], config: ConfigBox, env: dict[str, Any]) -> MetadataType:
         session_name: str = args[0]
         roles: dict[str, dict[str, str]] = self.config.get("roles", {})
         role_arn_prefix: str = f"arn:aws:iam::{config['account']}:role"
         role: str | None = roles.get(session_name, {}).get("arn")
         expiry: int = min(int(roles.get(session_name, {}).get("expiry", 43200)), 43200)
+
+        if not self.has_run:
+            console.print(f"{Style.ERROR}AWS plugin has not been loaded.")
+            sys.exit(2)
 
         if not role:
             console.print(f"{Style.ERROR}Incorrect or missing session_name: {session_name}")

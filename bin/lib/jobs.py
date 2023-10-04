@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Any, Generator, Literal
 
 import rich.prompt
-from plugins import BasePlugin, call_plugin_method, load_plugin, unload_plugin
+from plugins import BasePlugin, load_or_unload_plugin
 
 from .util import (
     ConfigBox,
@@ -74,50 +74,6 @@ def get_job(
 
 
 # ==============================================================================
-plugin_regex = re.compile(r"(?P<action>[^:]+):(?P<plugin>[^.]+)(\.(?P<method>.+))?")
-
-
-def get_plugin_cmd(cmd: str) -> dict | None:
-    if match := plugin_regex.match(cmd):
-        return match.groupdict()
-    return None
-
-
-def load_or_unload_plugin(
-    command: tuple[str, ...],
-    plugins: dict[str, BasePlugin],
-    project_config: ConfigBox,
-    process_env: dict[str, Any],
-    silent: bool = False,
-    verbose: bool = False,
-    debug: bool = False,
-) -> bool:
-    "If cmd is a plugin, attempt to load/unload or call one of its methods."
-
-    plugin: BasePlugin | None = None
-    cmd: str = command[0]
-    args: tuple[str, ...] = command[1:]
-
-    if plugin_cmd := get_plugin_cmd(cmd):
-        plugin_name = plugin_cmd["plugin"]
-        if plugin := plugins.get(f"mod_{plugin_name}"):
-            if plugin_cmd["action"] == "plugin":
-                if method := plugin_cmd.get("method"):
-                    call_plugin_method(plugin, method, args, project_config, process_env)
-                else:
-                    load_plugin(
-                        plugin,
-                        project_config,
-                        process_env,
-                        silent=silent,
-                        verbose=verbose,
-                        debug=debug,
-                    )
-
-            elif plugin_cmd["action"] == "unplug":
-                unload_plugin(plugin, project_config, process_env)
-
-    return bool(plugin)
 
 
 def get_jobs(
@@ -148,7 +104,15 @@ def get_jobs(
         console.print(f"No command given.")
         sys.exit(1)
 
-    if load_or_unload_plugin(command, plugins, project_config, process_env):
+    if load_or_unload_plugin(
+        command,
+        plugins,
+        project_config,
+        process_env,
+        verbose=verbose,
+        silent=silent,
+        debug=debug,
+    ):
         return
 
     elif _cmd in jobs:  # pre-defined jobs
@@ -159,7 +123,15 @@ def get_jobs(
                     raise SystemExit("Aborted by user request.\n")
 
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
-            if load_or_unload_plugin(tuple(dep.split()), plugins, project_config, process_env):
+            if load_or_unload_plugin(
+                tuple(dep.split()),
+                plugins,
+                project_config,
+                process_env,
+                verbose=verbose,
+                silent=silent,
+                debug=debug,
+            ):
                 continue
 
             job_config: ConfigBox = jobs.get(dep, {})

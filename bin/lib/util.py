@@ -197,12 +197,6 @@ def get_sorted_deps(command: str, commands: dict, workdir: Path, env: dict[str, 
         deps: dict[str, list] = {cmd: []}
 
         if _deps := commands.get(cmd, {}).get("after"):
-            # if (skip := commands[cmd].get("skip")) and skip(env=env, workdir=workdir) == 0:
-            #     _depstr: str = ", ".join([str(i) for i in (_deps if isinstance(_deps, list) else [_deps])])
-            #     console.print(f"Skipping dependencies for {cmd} -> {_depstr}")
-            #     # don't process this commands deps
-            #     return deps
-
             deps[cmd] = [_deps] if isinstance(_deps, str) else _deps
             for _d in deps[cmd]:
                 try:
