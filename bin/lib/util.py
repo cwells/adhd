@@ -65,6 +65,7 @@ class Style(Enum):
     ERROR = "[red]:black_circle:Error[/] "
     WARNING = "[bold orange4]:black_circle:Warning[/] "
     INFO = "[bold blue]:black_circle:[/] "
+    WAIT_INFO = "[bold blue]:white_circle:[/] "
     TASK_RUN = "  [white]:arrow_right_hook:  "
     TASK_SKIP = "  [white]:arrow_right_hook:[grey50]  "
     TASK_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Finished "
