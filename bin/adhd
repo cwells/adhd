@@ -3,6 +3,7 @@
 "Much of this code was intentional."
 
 import contextlib
+import logging
 import os
 import subprocess
 import sys
@@ -47,6 +48,8 @@ from lib.util import (
     print_job_help,
 )
 from plugins import BasePlugin, load_plugins, print_plugin_help
+
+logging.getLogger("requests").setLevel(logging.WARNING)
 
 # ==============================================================================
 
@@ -220,17 +223,19 @@ def main(
                     console.print(f"{Style.ERROR}loading executing {task}:\n")
                     _exit(e, verbose=verbose, debug=debug)
                 else:
-                    if not silent:
+                    if verbose:
                         console.print(f"{Style.FINISHED}[white]task(s)[/]", highlight=False)
-                        for idx, line in enumerate(task.split("\n")):
+                        for idx, line in enumerate(task.strip().split("\n")):
                             style = Style.TASK_RUN if idx == 0 else "     "
                             console.print(f"{style}[dark_goldenrod]{line}[/]", highlight=False)
 
             if returncode == 0:
                 if tts := job.get("sleep", 0):
                     if verbose:
-                        console.print(f"[bold]Sleeping for {tts} seconds.")
-                    time.sleep(tts)
+                        with console.status(f"Sleeping for {tts} seconds."):
+                            time.sleep(tts)
+                    else:
+                        time.sleep(tts)
             else:
                 console.print(f"{Style.ERROR}Error: {task} exited with non-zero status.")
                 if process is not None and process.stderr:

@@ -113,14 +113,14 @@ class Plugin(BasePlugin):
             console.print(f"{Style.ERROR}Tunnel definitions not found in ngrok config.")
             sys.exit(1)
 
-        with console.status("Loading ngrok plugin"):
+        with console.status("Loading ngrok plugin") as status:
             with NamedTemporaryFile(dir=tmpdir, mode="w+", suffix=".yml") as tmpfile:
                 yaml.dump(config.config.to_dict(), tmpfile, default_flow_style=False)
                 tmpfile.flush()
                 tmpfile.seek(0)
 
                 if not self.silent or self.verbose:
-                    console.print(rf"{Style.STARTING} ngrok tunnel \[[bold blue]{tunnel}[/]].")
+                    status.update(rf"Starting ngrok tunnel [bold blue]{tunnel}[/].")
 
                 shell(f"ngrok --config {tmpfile.name} start {tunnel} &", env=env, interactive=True)
                 time.sleep(3)  # give ngrok time to read config before it's gone
@@ -132,22 +132,20 @@ class Plugin(BasePlugin):
 
         with console.status("Terminating ngrok tunnels") as status:
             while any(t["up"] for t in self.list_tunnels(config.plugins.ngrok.config)):
-                if self.verbose:
-                    console.print(f"{Style.WAIT_INFO}Waiting for tunnels to stop")
                 processes: list[psutil.Process] = [
                     proc for proc in psutil.process_iter(attrs=["name"]) if proc.name() == "ngrok"
                 ]
                 proc: psutil.Process
                 alive: list[psutil.Process]
 
+                if self.verbose:
+                    status.update(f"Waiting for tunnels to stop")
+
                 for proc in processes:
                     proc.terminate()
                 _, alive = psutil.wait_procs(processes, timeout=3)
                 for proc in alive:
                     proc.kill()
-
-            if self.verbose:
-                console.print(f"{Style.INFO}Tunnels are down")
 
         if not self.silent or self.verbose:
             self.status(tuple(), config.plugins.ngrok, env)
@@ -178,16 +176,16 @@ class Plugin(BasePlugin):
 
     @public()
     def status(self, args: tuple[str, ...], config: ConfigBox, env: dict[str, Any]) -> None:
-        console.print("[dark_green]:earth_americas:[/][bold]ngrok public endpoints:[/]")
+        console.print("[bold cyan]:earth_americas:[/][bold]ngrok public endpoints:[/]")
 
         for t in self.list_tunnels(config.config):
             if t["up"]:
                 console.print(
-                    "  [bold green]:black_circle:[/][bold cyan]{name}[/] tunnel is"
+                    "  [bold green]:black_circle:[/]tunnel [bold cyan]{name}[/] is"
                     " [bold green]up[/]:   [u]{public_url}[/u] -> [u]{addr}[/u]".format(**t)
                 )
             else:
                 console.print(
-                    "  [bold red]:white_circle:[/][bold cyan]{name}[/] tunnel is"
+                    f"  {Style.DOWN}tunnel [bold cyan]{{name}}[/] is"
                     " [bold red]down[/]: [u]{addr}[/u]".format(**t)
                 )

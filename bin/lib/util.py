@@ -57,6 +57,8 @@ class LazyValue:
 
 
 class Style(Enum):
+    UP = "[bright green]:black_circle:[/]"
+    DOWN = "[dim]:black_circle:[/]"
     RUN = "[green]:black_circle:Run[/]"
     SKIP = "[yellow]:white_circle:Skip[/]"
     STARTING = "[green]:white_circle:Starting[/] "
