@@ -169,7 +169,7 @@ def print_plugin_help(pager: str | bool = False, verbose=False) -> None:
     width: int = max(len(p) for p in plugins) + 22
 
     console.print()
-    for plugin, module in plugins.items():
+    for plugin, module in sorted(plugins.items()):
         doc: str = (module.__doc__ or "No description available.").strip("\n").split("\n")[0]
         console.print(
             f" :white_circle:{f'[bold cyan]{plugin}[/] [dim]':.<{width}}[/] {doc}",

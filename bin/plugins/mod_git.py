@@ -7,7 +7,7 @@ The [blue]autoload[/] attribute is not effective for this plugin as it must be r
 example = """
 plugins:
   git:
-    repo: https://github.com/cwells/adhd
+    remote: https://github.com/cwells/adhd
     local: ~/projects/adhd
     branch: master
 """
