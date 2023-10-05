@@ -98,12 +98,11 @@ class Plugin(BasePlugin):
 
             with console.status(f"Building Python virtual environment"):
                 virtualenv.cli_run([str(venv)], options=None, setup_logging=True, env=env)
-            style = Style.FINISHED
+            console.print(f"{Style.FINISHED}building Python virtual environment [yellow]{venv}[/]")
 
         else:
-            style = Style.SKIPPED
-
-        console.print(f"{style}building Python virtual environment [yellow]{venv}[/]")
+            if not self.silent or self.verbose:
+                console.print(f"{Style.SKIPPED}building Python virtual environment [yellow]{venv}[/]")
 
         if requirements:
             with console.status(f"Installing requirements") as status:
