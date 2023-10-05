@@ -102,7 +102,7 @@ class Plugin(BasePlugin):
                     setup_logging=True,
                     env=env,
                 )
-            if not self.silent:
+            if not self.silent or self.verbose:
                 console.print(f"{Style.FINISHED}building Python virtual environment [yellow]{venv}[/]")
 
         if requirements:
@@ -110,14 +110,14 @@ class Plugin(BasePlugin):
                 for _req in requirements:
                     status.update(f"Installing requirements from [yellow]{_req}[/]")
                     installed: bool = self.install_requirements(venv, _req, env)
-                    if not self.silent:
+                    if not self.silent or self.verbose:
                         style: Style = (Style.SKIPPED, Style.FINISHED)[installed]
                         console.print(f"{style}installing Python requirements from [yellow]{_req}[/]")
 
         if packages:
             with console.status(f"Installing additional packages"):
                 self.install_packages(venv, packages, env)
-            if not self.silent:
+            if not self.silent or self.verbose:
                 console.print(f"{Style.FINISHED}installing Python packages")
 
         return env

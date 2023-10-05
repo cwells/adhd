@@ -69,7 +69,7 @@ def load_plugin(
     plugin_config: ConfigBox | None = project_config.get(f"plugins.{plugin.key}")
 
     if not plugin_config or getattr(plugin, "has_run", False):
-        if not plugin.silent:
+        if not plugin.silent or plugin.verbose:
             console.print(f"{Style.SKIP_LOAD}plugin [cyan]{plugin.key}[/] is already loaded")
         return
 
@@ -89,7 +89,7 @@ def load_plugin(
 
     plugin.has_run = True
 
-    if not plugin.silent:
+    if not plugin.silent or plugin.verbose:
         console.print(f"{Style.FINISH_LOAD}plugin: [cyan]{plugin.key}[/]")
 
 

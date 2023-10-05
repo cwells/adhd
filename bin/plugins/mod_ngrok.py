@@ -84,7 +84,7 @@ class Plugin(BasePlugin):
 
         if not any(t for t in active_tunnels if t["up"]) or subscribed:
             for tunnel in active_tunnels:
-                if tunnel["up"] and not self.silent:
+                if tunnel["up"] and not self.silent or self.verbose:
                     console.print(f"{Style.SKIPPED}tunnel {tunnel['name']}.")
                 else:
                     self.start_tunnel(tunnel["name"], config, env)
@@ -118,7 +118,7 @@ class Plugin(BasePlugin):
             tmpfile.flush()
             tmpfile.seek(0)
 
-            if not self.silent:
+            if not self.silent or self.verbose:
                 console.print(rf"{Style.STARTING} ngrok tunnel \[[bold blue]{tunnel}[/]].")
 
             shell(f"ngrok --config {tmpfile.name} start {tunnel} &", env=env, interactive=True)
