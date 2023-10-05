@@ -1,7 +1,5 @@
 """
 Clone a git repository.
-
-The [blue]autoload[/] attribute is not effective for this plugin as it must be run at boot time.
 """
 
 example = """
@@ -57,22 +55,34 @@ class Plugin(BasePlugin):
         branch: str | None
 
         if not (remote := config.get("remote")):
-            console.print(f"{Style.ERROR}Missing key: [bold cyan]remote[/]")
+            console.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.remote[/]")
+            sys.exit(2)
+
+        if not (branch := config.get("branch")):
+            console.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.branch[/]")
             sys.exit(2)
 
         if _local := config.get("local"):
             local = Path(_local).expanduser().resolve()
         else:
-            console.print(f"{Style.ERROR}Missing key: [bold cyan]local[/]")
+            console.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.local[/]")
             sys.exit(2)
 
-        if not (branch := config.get("branch")):
-            console.print(f"{Style.ERROR}Missing key: [bold cyan]branch[/]")
-            sys.exit(2)
+        self.remote: str = remote
+        self.local: Path = local
+        self.branch: str = branch
 
+        if local.exists() and any(local.iterdir()):
+            console.print(f"{Style.ERROR}git: [bold cyan]{local}[/] exists and is not empty")
+            sys.exit(2)
+        else:
+            with console.status(f"Cloning git repository {remote} into {local}"):
+                self.clone(config, env)
+            console.print(f"{Style.FINISHED}cloning git repository into {remote}")
+        return self.metadata
+
+    def clone(self, config: ConfigBox, env: dict[str, Any]) -> None:
         try:
-            repo = git.Repo.clone_from(remote, local, branch=branch)  # type: ignore
+            repo = git.Repo.clone_from(self.remote, self.local, branch=self.branch)  # type: ignore
         except Exception as e:
             _exit(e)
-
-        return self.metadata
