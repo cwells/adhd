@@ -84,7 +84,7 @@ class Plugin(BasePlugin):
 
         if not any(t for t in active_tunnels if t["up"]) or subscribed:
             for tunnel in active_tunnels:
-                if tunnel["up"] and not self.silent or self.verbose:
+                if tunnel["up"] and (not self.silent or self.verbose):
                     console.print(f"{Style.SKIPPED}tunnel {tunnel['name']}.")
                 else:
                     self.start_tunnel(tunnel["name"], config, env)
@@ -113,16 +113,17 @@ class Plugin(BasePlugin):
             console.print(f"{Style.ERROR}Tunnel definitions not found in ngrok config.")
             sys.exit(1)
 
-        with NamedTemporaryFile(dir=tmpdir, mode="w+", suffix=".yml") as tmpfile:
-            yaml.dump(config.config.to_dict(), tmpfile, default_flow_style=False)
-            tmpfile.flush()
-            tmpfile.seek(0)
+        with console.status("Loading ngrok plugin"):
+            with NamedTemporaryFile(dir=tmpdir, mode="w+", suffix=".yml") as tmpfile:
+                yaml.dump(config.config.to_dict(), tmpfile, default_flow_style=False)
+                tmpfile.flush()
+                tmpfile.seek(0)
 
-            if not self.silent or self.verbose:
-                console.print(rf"{Style.STARTING} ngrok tunnel \[[bold blue]{tunnel}[/]].")
+                if not self.silent or self.verbose:
+                    console.print(rf"{Style.STARTING} ngrok tunnel \[[bold blue]{tunnel}[/]].")
 
-            shell(f"ngrok --config {tmpfile.name} start {tunnel} &", env=env, interactive=True)
-            time.sleep(3)  # give ngrok time to read config before it's gone
+                shell(f"ngrok --config {tmpfile.name} start {tunnel} &", env=env, interactive=True)
+                time.sleep(3)  # give ngrok time to read config before it's gone
 
         self.has_run = True
 
@@ -150,6 +151,9 @@ class Plugin(BasePlugin):
 
         if not self.silent or self.verbose:
             self.status(tuple(), config.plugins.ngrok, env)
+
+        if not self.silent or self.verbose:
+            console.print(f"{Style.FINISH_UNLOAD}ngrok")
 
     def list_tunnels(self, config: dict[str, Any]) -> Generator[dict[str, Any], None, None]:
         client = ngrok.Client(config.api_key)  # type: ignore

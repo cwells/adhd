@@ -103,22 +103,23 @@ class Plugin(BasePlugin):
             console.print(f"{Style.ERROR}Missing MFA device.")
             sys.exit(2)
 
-        session: boto3.Session = boto3.Session(profile_name=profile)  # type: ignore
-        device_arn_prefix: str = f"arn:aws:iam::{config['account']}:mfa"
-        device_arn: str = (
-            mfa_device if mfa_device.startswith(device_arn_prefix) else f"{device_arn_prefix}/{mfa_device}"
-        )
-        token: dict[str, Any] = self.cache_session(
-            session=session,
-            profile=profile,
-            device_arn=device_arn,
-            expiry=mfa_expiry,
-            tmpdir=tmpdir,
-        )
-        response_code: int = token["ResponseMetadata"]["HTTPStatusCode"]
+        with console.status("Loading AWS plugin"):
+            session: boto3.Session = boto3.Session(profile_name=profile)  # type: ignore
+            device_arn_prefix: str = f"arn:aws:iam::{config['account']}:mfa"
+            device_arn: str = (
+                mfa_device if mfa_device.startswith(device_arn_prefix) else f"{device_arn_prefix}/{mfa_device}"
+            )
+            token: dict[str, Any] = self.cache_session(
+                session=session,
+                profile=profile,
+                device_arn=device_arn,
+                expiry=mfa_expiry,
+                tmpdir=tmpdir,
+            )
+            response_code: int = token["ResponseMetadata"]["HTTPStatusCode"]
 
-        if response_code != 200:
-            console.print(f"{Style.ERROR}Unable to obtain token. Status code {response_code}, exiting.")
+            if response_code != 200:
+                console.print(f"{Style.ERROR}Unable to obtain token. Status code {response_code}, exiting.")
 
         credentials = token["Credentials"]
 

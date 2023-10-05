@@ -86,24 +86,24 @@ class Plugin(BasePlugin):
             "VIRTUAL_ENV": str(venv),
             "PATH": os.pathsep.join([str(bin_dir), env["PATH"]]),
         }
+        style: Style
 
         env.update(venv_env)
         bin_dir.mkdir(parents=True, exist_ok=True)
 
         if not (bin_dir / "python").exists():
             if virtualenv is None:
-                console.print(f"{Style.ERROR}Virtualenv creation is disabled. Please install virtualenv package.")
+                console.print(f"{Style.ERROR}Virtualenv creation is disabled. Please install virtualenv package")
                 sys.exit(1)
 
             with console.status(f"Building Python virtual environment"):
-                virtualenv.cli_run(
-                    [str(venv)],
-                    options=None,
-                    setup_logging=True,
-                    env=env,
-                )
-            if not self.silent or self.verbose:
-                console.print(f"{Style.FINISHED}building Python virtual environment [yellow]{venv}[/]")
+                virtualenv.cli_run([str(venv)], options=None, setup_logging=True, env=env)
+            style = Style.FINISHED
+
+        else:
+            style = Style.SKIPPED
+
+        console.print(f"{style}building Python virtual environment [yellow]{venv}[/]")
 
         if requirements:
             with console.status(f"Installing requirements") as status:
@@ -111,7 +111,7 @@ class Plugin(BasePlugin):
                     status.update(f"Installing requirements from [yellow]{_req}[/]")
                     installed: bool = self.install_requirements(venv, _req, env)
                     if not self.silent or self.verbose:
-                        style: Style = (Style.SKIPPED, Style.FINISHED)[installed]
+                        style = (Style.SKIPPED, Style.FINISHED)[installed]
                         console.print(f"{style}installing Python requirements from [yellow]{_req}[/]")
 
         if packages:

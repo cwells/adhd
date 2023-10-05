@@ -64,7 +64,7 @@ class Style(Enum):
     SKIPPED = "[bold yellow]:white_circle:Skipped[/] "
     ERROR = "[red]:black_circle:Error[/] "
     WARNING = "[bold orange4]:black_circle:Warning[/] "
-    INFO = "[bold blue]:black_circle:[/] "
+    INFO = "[bold blue]:black_circle:[/]"
     WAIT_INFO = "[bold blue]:white_circle:[/] "
     TASK_RUN = "  [white]:arrow_right_hook:  "
     TASK_SKIP = "  [white]:arrow_right_hook:[grey50]  "
@@ -72,7 +72,7 @@ class Style(Enum):
     START_LOAD = "[bold green]:white_circle:[/]Loading "
     FINISH_LOAD = "[bold green]:black_circle:[/]Loaded "
     SKIP_LOAD = "[bold yellow]:white_circle:[/]Skipped "
-    FINISH_UNLOAD = "[bold yellow]:black_circle:[/]Unloaded "
+    FINISH_UNLOAD = "[dim]:black_circle:[/]Unloaded "
     OPEN_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Opened "
 
     def __str__(self):
