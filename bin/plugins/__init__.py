@@ -11,6 +11,7 @@ for a job (e.g. `after: plugin:python`).
 
 import importlib
 import re
+import sys
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Callable, Literal
@@ -50,47 +51,6 @@ class BasePlugin:
 
         prompt: str = f"[bold]?[/] [bold blue]plugin:{self.key}[/] -> [bold]{msg}[/]"
         return rich.prompt.Prompt.ask(prompt)
-
-
-# ==============================================================================
-
-
-def public(autoload: bool = False):
-    "Decorator to mark a plugin method as public."
-
-    def decorator(method: Callable) -> Callable:
-        setattr(method, "is_public", True)
-        setattr(method, "autoload", autoload)
-        return method
-
-    return decorator
-
-
-# ==============================================================================
-
-
-def call_plugin_method(
-    plugin: BasePlugin,
-    method: str,
-    args: tuple[str, ...],
-    project_config: ConfigBox,
-    process_env: dict[str, Any],
-) -> Any:
-    "If plugin has method and it's public, call it."
-
-    _method: Callable | None
-
-    if _method := getattr(plugin, method):
-        if getattr(_method, "is_public", False):
-            data = _method(args=args, config=project_config["plugins"][plugin.key], env=process_env)
-            if data:  # plugins can update runtime environment
-                process_env.update(data.get("env", {}))
-                project_config.update(data.get("conf", {}))
-                project_config.plugins[plugin.key].setdefault("__vars__", {})
-                project_config.plugins[plugin.key]["__vars__"].update(data.get("vars", {}))
-            return
-
-    raise NotImplementedError(f"Unknown plugin function: {method}")
 
 
 # ==============================================================================
@@ -268,6 +228,47 @@ def print_plugin_help_verbose(plugins: dict[str, BasePlugin], pager: str | bool 
 
 # ==============================================================================
 
+
+def public(autoload: bool = False):
+    "Decorator to mark a plugin method as public. If autoload is true, load plugin first."
+
+    def decorator(method: Callable) -> Callable:
+        setattr(method, "is_public", True)
+        setattr(method, "autoload", autoload)
+        return method
+
+    return decorator
+
+
+# ==============================================================================
+
+
+def call_plugin_method(
+    plugin: BasePlugin,
+    method: str,
+    args: tuple[str, ...],
+    project_config: ConfigBox,
+    process_env: dict[str, Any],
+) -> Any:
+    "If plugin has method and it's public, call it."
+
+    _method: Callable | None
+
+    if _method := getattr(plugin, method):
+        if getattr(_method, "is_public", False):
+            data = _method(args=args, config=project_config["plugins"][plugin.key], env=process_env)
+            if data:  # plugins can update runtime environment
+                process_env.update(data.get("env", {}))
+                project_config.update(data.get("conf", {}))
+                project_config.plugins[plugin.key].setdefault("__vars__", {})
+                project_config.plugins[plugin.key]["__vars__"].update(data.get("vars", {}))
+            return
+
+    raise NotImplementedError(f"Unknown plugin function: {method}")
+
+
+# ==============================================================================
+
 plugin_regex = re.compile(r"(?P<action>[^:]+):(?P<plugin>[^.]+)(\.(?P<method>.+))?")
 
 
@@ -297,18 +298,22 @@ def load_or_unload_plugin(
         if plugin := plugins.get(f"mod_{plugin_name}"):
             if plugin_cmd["action"] == "plugin":
                 if method := plugin_cmd.get("method"):
-                    if getattr(plugin, method).autoload:
-                        if verbose:
-                            console.print(f"{Style.START_LOAD}required plugin [bold cyan]{plugin.key}[/]")
-                        load_plugin(
-                            plugin,
-                            project_config,
-                            process_env,
-                            silent=silent,
-                            verbose=verbose,
-                            debug=debug,
-                        )
-                    call_plugin_method(plugin, method, args, project_config, process_env)
+                    if _method := getattr(plugin, method):
+                        if _method.autoload:
+                            if verbose:
+                                console.print(f"{Style.START_LOAD}required plugin [bold cyan]{plugin.key}[/]")
+                            load_plugin(
+                                plugin,
+                                project_config,
+                                process_env,
+                                silent=silent,
+                                verbose=verbose,
+                                debug=debug,
+                            )
+                        call_plugin_method(plugin, method, args, project_config, process_env)
+                    else:
+                        console.print(f"Invalid method {plugin}.{method}")
+                        sys.exit(2)
                 else:
                     load_plugin(
                         plugin,

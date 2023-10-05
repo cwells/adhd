@@ -129,18 +129,24 @@ class Plugin(BasePlugin):
     def unload(self, config: ConfigBox, env: dict[str, Any]) -> None:
         "We can't manage individual tunnels on free plan, so just kill the entire process."
 
-        if any(t["up"] for t in self.list_tunnels(config.plugins.ngrok.config)):
-            processes: list[psutil.Process] = [
-                proc for proc in psutil.process_iter(attrs=["name"]) if proc.name() == "ngrok"
-            ]
-            proc: psutil.Process
-            alive: list[psutil.Process]
+        with console.status("Terminating ngrok tunnels") as status:
+            while any(t["up"] for t in self.list_tunnels(config.plugins.ngrok.config)):
+                processes: list[psutil.Process] = [
+                    proc for proc in psutil.process_iter(attrs=["name"]) if proc.name() == "ngrok"
+                ]
+                proc: psutil.Process
+                alive: list[psutil.Process]
 
-            for proc in processes:
-                proc.terminate()
-            _, alive = psutil.wait_procs(processes, timeout=6)
-            for proc in alive:
-                proc.kill()
+                for proc in processes:
+                    proc.terminate()
+                _, alive = psutil.wait_procs(processes, timeout=6)
+                for proc in alive:
+                    proc.kill()
+
+            status.update("Done.")
+
+        if not self.silent:
+            self.status(tuple(), config.plugins.ngrok, env)
 
     def list_tunnels(self, config: dict[str, Any]) -> Generator[dict[str, Any], None, None]:
         client = ngrok.Client(config.api_key)  # type: ignore
@@ -163,7 +169,7 @@ class Plugin(BasePlugin):
                     "up": False,
                 }
 
-    @public
+    @public()
     def status(self, args: tuple[str, ...], config: ConfigBox, env: dict[str, Any]) -> None:
         console.print("[dark_green]:earth_americas:[/][bold]ngrok public endpoints:[/]")
 

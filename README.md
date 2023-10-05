@@ -516,7 +516,8 @@ You may also call plugins and their methods from the cli:
     # check the tunnel stqtus
     $ adhd example plugin:ngrok.status
 
-Some plugin methods may require the plugin to have been loaded, others not. See the plugin documentation.
+Some plugin methods may require the plugin to be loaded first. If so, they will
+automatically load the plugin. This is noted in the plugin's help.
 
 # TODO
 

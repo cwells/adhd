@@ -198,7 +198,7 @@ class Plugin(BasePlugin):
         expiry: int = min(int(roles.get(session_name, {}).get("expiry", 43200)), 43200)
 
         if not self.has_run:
-            console.print(f"{Style.ERROR}AWS plugin has not been loaded.")
+            console.print(f"{Style.ERROR}AWS plugin has not been loaded. Autoload failed?")
             sys.exit(2)
 
         if not role:
