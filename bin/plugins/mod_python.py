@@ -111,7 +111,7 @@ class Plugin(BasePlugin):
                     status.update(f"Installing requirements from [yellow]{_req}[/]")
                     installed: bool = self.install_requirements(venv, _req, env)
                     if not self.silent or self.verbose:
-                        style = (Style.SKIPPED, Style.FINISHED)[installed]
+                        style = (Style.SKIP, Style.FINISHED)[installed]
                         console.print(f"{style}installing Python requirements from [yellow]{_req}[/]")
 
         if packages:

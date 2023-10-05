@@ -72,6 +72,11 @@ class Plugin(BasePlugin):
         self.local: Path = local
         self.branch: str = branch
 
+        if (local / ".git").exists():
+            if self.verbose:
+                console.print(f"{Style.SKIP}git.clone: [bold cyan]{local}[/] is already initialized.")
+            return self.metadata
+
         if local.exists() and any(local.iterdir()):
             console.print(f"{Style.ERROR}git: [bold cyan]{local}[/] exists and is not empty")
             sys.exit(2)
