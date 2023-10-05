@@ -76,7 +76,7 @@ class Plugin(BasePlugin):
         "Start the ngrok agent."
 
         if not self.enabled:
-            console.print(f"{Style.ERROR}ngrok support is disabled. Please install ngrok-api package.")
+            console.print(f"{Style.ERROR}ngrok support is disabled. Please install plugin requirements.")
             sys.exit(1)
 
         subscribed: bool = config.get("subscribed", False)

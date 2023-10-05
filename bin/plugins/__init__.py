@@ -179,7 +179,6 @@ def print_plugin_help(pager: str | bool = False, verbose=False) -> None:
 
 
 def print_plugin_help_verbose(plugins: dict[str, BasePlugin], pager: str | bool = False) -> None:
-    plugins_dir: Path = get_program_bin() / "plugins"
     table: Table = Table(
         show_header=False,
         padding=2,
@@ -192,10 +191,10 @@ def print_plugin_help_verbose(plugins: dict[str, BasePlugin], pager: str | bool 
     table.add_column("Example", justify="left")
 
     idx: int = 0
-    for plugin, module in plugins.items():
+    for plugin, module in sorted(plugins.items()):
         doc: str = (module.__doc__ or "No description available.").strip("\n")
         row: list[str] = [
-            f"[bold]:white_circle:[/][bold cyan][u]{module.Plugin.key}[/u][/] {doc}\n",  # type: ignore
+            f"[bold]:gear: [/][bold cyan][u]{module.Plugin.key}[/u][/] {doc}\n",  # type: ignore
         ]
 
         required_modules: str = "[/], [cyan]".join(module.required_modules.values())  # type: ignore
