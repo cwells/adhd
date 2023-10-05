@@ -7,6 +7,7 @@ yarl==1.9.2
 
 # plugin requirements - opotional
 boto3==1.28.43
+GitPython==3.1.37
 python-dotenv==0.21.1
-# ngrok-api==0.10.0
+ngrok-api==0.10.0
 virtualenv==20.24.5
