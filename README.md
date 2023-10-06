@@ -2,7 +2,8 @@
 
 `adhd` is a small Python program for managing development environments for
 multiple Python projects (it can reasonably be used for most anything, but it
-has a Python-oriented focus on features).
+has a Python-oriented focus on features). It started as a way to manage environment
+variables in a more controlled way than .env files, and grew into what it is now.
 
 If you're the sort of person who works on a lot of individual development
 projects, each with its own unique build/run/deploy steps, `adhd` provides
@@ -72,8 +73,6 @@ The `adhd` CLI has the following interface:
       --home / --no-home   Change to project HOME directory
       -e, --env ENV        Define env var(s) from CLI
       -p, --plugin PLUGIN  Manage plugins using plugin:[on|off]
-      --help-jobs          Display available jobs and help text
-      --help-plugins       Display available plugins and help text
       --explain            Display help text from job and its dependencies
       -v, --verbose        Send stdout of all jobs to console
       --debug              Generate extremely verbose output
@@ -121,8 +120,7 @@ This will:
 
 # Configuration
 
-
-An typical config dir will look something like this:
+A typical config dir will look something like this:
 
       .adhd
       ├── bin/
