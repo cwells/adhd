@@ -29,9 +29,8 @@ if missing := missing_modules(required_modules):
     sys.exit(1)
 
 import click
-import rich.console
-import rich.prompt
 import yaml
+from lib.boot import missing_binaries
 from lib.jobs import get_job, get_jobs
 from lib.loader import get_loader
 from lib.shell import shell
@@ -50,6 +49,7 @@ from lib.util import (
 from plugins import BasePlugin, load_plugins, print_plugin_help
 
 logging.getLogger("requests").setLevel(logging.WARNING)
+
 
 # ==============================================================================
 
@@ -109,6 +109,14 @@ def main(
     except Exception as e:
         console.print(f"{Style.ERROR}loading configuration {project}:\n")
         _exit(e, verbose=verbose, debug=debug)
+
+    required_binaries: list[str] | None
+    if required_binaries := project_config.get("requirements"):
+        if missing := missing_binaries(required_binaries):
+            console.print(
+                f"This project requires the following programs be installed: [bold cyan]{'[/], [bold cyan]'.join(missing)}[/]\n"
+            )
+            sys.exit(1)
 
     silent: bool = project_config.get("silent", False)
 
