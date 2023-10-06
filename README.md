@@ -146,7 +146,7 @@ venv: Optional[str]           # path to virtual environment
 tmp: Optional[str]            # path to store temporary files
 requirements: Optional[list[str]]  # list of required binaries
 
-plugins:  # dictionary of plugin configurations. see "adhd help plugins --verbose"
+plugins:  # dictionary of plugin configurations. see "adhd example help plugins --verbose"
   <identifier>: { <plugin configuration> }
 
 jobs:
