@@ -126,7 +126,7 @@ An typical config dir will look something like this:
 
       .adhd
       ├── bin/
-      │   ├── adhd/
+      │   ├── adhd
       │   ├── lib/
       │   └── plugins/
       ├── projects/
