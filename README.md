@@ -141,24 +141,13 @@ An typical config dir will look something like this:
 Each project file will have the following form:
 
 ```yaml
-home: [str]                   # path to project directory
+home: str                     # path to project directory
 venv: Optional[str]           # path to virtual environment
 tmp: Optional[str]            # path to store temporary files
+requirements: Optional[list[str]]  # list of required binaries
 
-plugins:
-  python:
-    autoload: [bool]            # autoload load this plugin on startup
-    venv: [str]                 # path to project's virtual env
-    requirements: [str]         # path to requirements.txt
-
-  aws:
-    autoload: [bool]            # autoload load this plugin on startup
-    profile: [str]              # AWS CLI profile (from ~/.aws/credentials)
-    username: [str]             # AWS username
-    account: [str]              # AWS account ID
-    mfa:
-      device: [str]             # last part of MFA device's ARN
-      expiry: [int]             # TTL in seconds for token expiry
+plugins:  # dictionary of plugin configurations. see "adhd help plugins --verbose"
+  <identifier>: { <plugin configuration> }
 
 jobs:
   <identifier>:
