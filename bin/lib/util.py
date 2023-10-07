@@ -280,11 +280,11 @@ def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> dict[
     """
 
     home: str | LazyValue = project_config.get("home", ".")
-    env: dict[str, str] = ConfigBox()
+    env: dict[str, str] = {}
     workdir: Path = get_resolved_path(home, env=project_config["env"])
 
     if "env" not in project_config:
-        project_config["env"] = ConfigBox()
+        project_config["env"] = {}
 
     env = resolve_dependencies(project_config["env"], workdir)
 

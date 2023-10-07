@@ -36,12 +36,12 @@ def get_job(
     tmpdir: Path = get_resolved_path(tmp, env=env)
     cmd: Any = realize(job_config.get("run", []), workdir=workdir, env=env)
     tasks: list = cmd if isinstance(cmd, list) else [cmd]
-    task_env: dict[str, str] = resolve_dependencies(job_config.get("env", ConfigBox()), workdir)
+    task_env: dict[str, str] = resolve_dependencies({**process_env, **job_config.get("env", {})}, workdir=workdir)
     after: list[str] = _after if isinstance((_after := job_config.get("after", [])), list) else [_after]
 
     job: ConfigBox = ConfigBox(
         {
-            "env": {**env, **task_env},
+            "env": realize({**env, **task_env}, workdir=workdir, env=env),
             "help": realize(job_config.get("help", "No help available."), workdir=workdir, env=env),
             "name": command,
             "tasks": tasks,
