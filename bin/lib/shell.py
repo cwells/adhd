@@ -33,8 +33,8 @@ def shell(
             cwd=workdir if workdir and workdir.exists() else None,
             env={k: str(v) for k, v in env.items()},
             capture_output=capture,
-            stdout=subprocess.DEVNULL if not (interactive or capture) else None,
-            stderr=subprocess.DEVNULL if not (interactive or capture) else None,
+            stdout=subprocess.PIPE if not (interactive or capture) else None,
+            stderr=subprocess.PIPE if not (interactive or capture) else None,
         )
     except Exception as e:
         raise RuntimeError(f"Error executing [yellow]{command}[/]: {e}", getattr(e, "errno", 1))

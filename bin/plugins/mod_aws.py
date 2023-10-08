@@ -76,7 +76,6 @@ else:
 class Plugin(BasePlugin):
     key: str = "aws"
     enabled: bool = boto3 is not None
-    has_run: bool = False
 
     def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         """

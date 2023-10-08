@@ -18,8 +18,9 @@ required_modules: dict[str, str] = {
     "box": "python-box",
     "click": "click",
     "rich": "rich",
+    "ruamel.yaml": "ruamel.yaml",
     "toposort": "toposort",
-    "yaml": "PyYAML",
+    # "yaml": "PyYAML",
     "yarl": "yarl",
 }
 
@@ -55,9 +56,9 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 # ==============================================================================
 
 
-def read_project_config(project: str) -> dict[str, Any]:
+def read_project_config(project: str, debug: bool = False) -> dict[str, Any]:
     with open(project) as config_file:
-        return ConfigBox(yaml.load(config_file, Loader=get_loader()))
+        return ConfigBox(yaml.load(config_file, Loader=get_loader(debug=debug)))
 
 
 # ==============================================================================
@@ -103,7 +104,7 @@ def main(
 
     # read configuration
     try:
-        project_config.update(read_project_config(project))
+        project_config.update(read_project_config(project, debug=debug))
         process_env.update(get_local_env(project_config, options_env))
     except Exception as e:
         console.print(f"{Style.ERROR}loading configuration {project}:\n")
@@ -169,7 +170,7 @@ def main(
 
         if explain:
             skip: bool = job.get("skip") and force is False
-            style = (Style.RUN, Style.SKIP)[skip]
+            style = (Style.RUN, Style.SKIPPED)[skip]
             text: str = job.get("help", "No description.")
             console.print(f"{style} [bold cyan]{job['name']}[/]: [cyan]{text}")
             if verbose:
@@ -203,10 +204,12 @@ def main(
             continue
 
         ctx: contextlib.AbstractContextManager = (
-            contextlib.nullcontext() if debug else console.status(f"{Style.RUN} [bold blue]{job['name']}[/]")
+            contextlib.nullcontext()
+            if debug or verbose or interactive
+            else console.status(f"{Style.RUN} [bold blue]{job['name']}[/]")
         )
         with ctx as status:
-            if debug:
+            if debug or verbose:
                 console.print(f"{Style.RUN} [bold blue]{job['name']}[/]")
             # each job can be composed of multiple tasks
             for task in job["tasks"]:
@@ -236,7 +239,7 @@ def main(
                     if tts := job.get("sleep", 0):
                         if verbose:
                             msg: str = f"Sleeping for {tts} seconds."
-                            if debug:
+                            if debug or verbose:
                                 console.print(msg)
                             else:
                                 status.update(msg)

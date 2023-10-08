@@ -84,7 +84,7 @@ def load_plugin(
 
     plugin_config: ConfigBox | None = project_config.get(f"plugins.{plugin.key}")
 
-    if not plugin_config or plugin.has_run:
+    if not plugin_config:
         return
 
     if "tmp" not in plugin_config:
@@ -101,10 +101,10 @@ def load_plugin(
         project_config.plugins[plugin.key].setdefault("__vars__", {})
         project_config.plugins[plugin.key]["__vars__"].update(data.get("vars", {}))
 
-    plugin.has_run = True
-
     for fn in plugin.events.load:
         fn()
+
+    plugin.has_run = True
 
     if not plugin.silent or plugin.verbose:
         console.print(f"{Style.FINISH_LOAD}plugin: [cyan]{plugin.key}[/]")
@@ -116,19 +116,16 @@ def load_plugin(
 def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: ConfigBox) -> None:
     "Unload plugin, if supported."
 
-    if not plugin.has_run:
-        return
-
     plugin.unload(project_config, process_env)
 
     if env := plugin.metadata.get("env"):
         for k in env:
             process_env.pop(k, None)
 
-    plugin.has_run = False
-
     for fn in plugin.events.unload:
         fn()
+
+    plugin.has_run = False
 
     if not plugin.silent or plugin.verbose or plugin.debug:
         console.print(f"{Style.FINISH_UNLOAD}plugin: [cyan]{plugin.key}[/]")

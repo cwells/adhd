@@ -32,7 +32,6 @@ from plugins import BasePlugin, MetadataType
 class Plugin(BasePlugin):
     key: str = "python"
     enabled: bool = True
-    has_run: bool = False
 
     def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         "Activate Python virtualenv."

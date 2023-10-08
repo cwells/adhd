@@ -71,7 +71,6 @@ if missing := missing_binaries(required_binaries):
 class Plugin(BasePlugin):
     key: str = "ngrok"
     enabled: bool = bool(ngrok)
-    has_run: bool = False
 
     def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         "Start the ngrok agent."
@@ -111,7 +110,7 @@ class Plugin(BasePlugin):
         config.config["console_ui"] = False
 
         if not config.config.get("tunnels", []):
-            self.print(f"Tunnel definitions not found in ngrok config.", Style.ERROR)
+            self.print_error(f"Tunnel definitions not found in ngrok config.")
             sys.exit(1)
 
         with console.status("Loading ngrok plugin") as status:
