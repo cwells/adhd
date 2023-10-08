@@ -60,7 +60,6 @@ class Style(Enum):
     UP = "[bright green]:black_circle:[/]"
     DOWN = "[dim]:black_circle:[/]"
     RUN = "[green]Run[/]"
-    SKIP = "[yellow]:white_circle:Skipped[/] "
     STARTING = "[green]Starting[/] "
     FINISHED = "[bold green]:black_circle:Finished[/] "
     SKIPPED = "[dim]:black_circle:[/][yellow]Skipped[/] "
