@@ -33,12 +33,22 @@ class BasePlugin:
     enabled: bool = False
     metadata: MetadataType
     has_run: bool = False
+    events: ConfigBox
 
     def __init__(self, silent=False, verbose=False, debug=False) -> None:
         self.silent = silent
         self.debug = debug
         self.verbose = verbose
         self.metadata = {"conf": {}, "env": {}, "vars": {}}
+        self.events = ConfigBox(
+            {
+                "load": None,
+                "unload": None,
+                "exit": None,
+            }
+        )
+        for k in self.events:
+            self.events[k] = []
 
     def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         raise NotImplementedError("You must override the load method.")
@@ -51,9 +61,9 @@ class BasePlugin:
         prompt: str = f"[bold]?[/] [bold blue]plugin:{self.key}[/] -> [bold]{msg}[/]"
         return rich.prompt.Prompt.ask(prompt)
 
-    def print(self, msg: str) -> None:
+    def print(self, msg: str, style: Style = Style.INFO) -> None:
         "Output prefixed with plugin identifier."
-        console.print(f"Plugin [bold cyan]{self.key}[/] {msg}")
+        console.print(f"{style}[cyan]{self.key}[/] {msg}")
 
 
 # ==============================================================================
@@ -68,9 +78,7 @@ def load_plugin(
 
     plugin_config: ConfigBox | None = project_config.get(f"plugins.{plugin.key}")
 
-    if not plugin_config or getattr(plugin, "has_run", False):
-        if not plugin.silent or plugin.verbose or plugin.debug:
-            console.print(f"{Style.SKIP_LOAD}plugin [cyan]{plugin.key}[/] is already loaded")
+    if not plugin_config or plugin.has_run:
         return
 
     if "tmp" not in plugin_config:
@@ -89,6 +97,9 @@ def load_plugin(
 
     plugin.has_run = True
 
+    for fn in plugin.events.load:
+        fn()
+
     if not plugin.silent or plugin.verbose:
         console.print(f"{Style.FINISH_LOAD}plugin: [cyan]{plugin.key}[/]")
 
@@ -99,6 +110,9 @@ def load_plugin(
 def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: ConfigBox) -> None:
     "Unload plugin, if supported."
 
+    if not plugin.has_run:
+        return
+
     plugin.unload(project_config, process_env)
 
     if env := plugin.metadata.get("env"):
@@ -107,8 +121,26 @@ def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: Co
 
     plugin.has_run = False
 
+    for fn in plugin.events.unload:
+        fn()
+
     if not plugin.silent or plugin.verbose or plugin.debug:
         console.print(f"{Style.FINISH_UNLOAD}plugin: [cyan]{plugin.key}[/]")
+
+
+# ==============================================================================
+
+
+def notify_plugins(
+    event: str,
+    plugins: dict[str, BasePlugin],
+    project_config: ConfigBox,
+    process_env: ConfigBox,
+) -> None:
+    for key, plugin in plugins.items():
+        if plugin.has_run:
+            for fn in plugin.events.get(event, []):
+                fn()
 
 
 # ==============================================================================
@@ -145,9 +177,19 @@ def load_plugins(
         ):
             continue
 
-        load_plugin(plugin, project_config=project_config, process_env=process_env)
+        if not plugin.has_run:
+            load_plugin(plugin, project_config=project_config, process_env=process_env)
 
     return plugins
+
+
+# ==============================================================================
+
+
+def unload_plugins(plugins: dict[str, BasePlugin], project_config: ConfigBox, process_env: ConfigBox):
+    for key, plugin in plugins.items():
+        if plugin.has_run:
+            unload_plugin(plugin, project_config, process_env)
 
 
 # ==============================================================================
@@ -296,7 +338,7 @@ def load_or_unload_plugin(
                 if method := plugin_cmd.get("method"):
                     if _method := getattr(plugin, method):
                         if _method.autoload:
-                            if plugin.verbose:
+                            if plugin.verbose or plugin.debug:
                                 console.print(f"{Style.START_LOAD}required plugin [bold cyan]{plugin.key}[/]")
                             load_plugin(plugin, project_config, process_env)
                         call_plugin_method(plugin, method, args, project_config, process_env)

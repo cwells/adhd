@@ -85,7 +85,7 @@ class Plugin(BasePlugin):
         """
 
         if not self.enabled:  # we were unable to import module
-            self.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
+            self.print(f"support is disabled. Please install boto3 package.", Style.ERROR)
             sys.exit(1)
 
         profile: str = config.get("profile", "default")
@@ -100,7 +100,7 @@ class Plugin(BasePlugin):
             sys.exit(2)
 
         if not mfa_device:
-            self.print(f"{Style.ERROR}Missing MFA device.")
+            self.print("Missing MFA device.", Style.ERROR)
             sys.exit(2)
 
         session: boto3.Session = boto3.Session(profile_name=profile)  # type: ignore
@@ -118,7 +118,7 @@ class Plugin(BasePlugin):
         response_code: int = token["ResponseMetadata"]["HTTPStatusCode"]
 
         if response_code != 200:
-            self.print(f"{Style.ERROR}Unable to obtain token. Status code {response_code}, exiting.")
+            self.print(f"Unable to obtain token. Status code {response_code}, exiting.", Style.ERROR)
 
         credentials = token["Credentials"]
 
@@ -150,7 +150,7 @@ class Plugin(BasePlugin):
         "Caches session data until expiry, then prompts for new MFA code."
 
         if not self.enabled:  # we were unable to import module
-            self.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
+            self.print("support is disabled. Please install boto3 package.", Style.ERROR)
             sys.exit(1)
 
         sts: boto3.client.STS = session.client("sts")  # type: ignore
@@ -198,11 +198,11 @@ class Plugin(BasePlugin):
         expiry: int = min(int(roles.get(session_name, {}).get("expiry", 43200)), 43200)
 
         if not self.has_run:
-            self.print(f"{Style.ERROR}AWS plugin has not been loaded. Autoload failed?")
+            self.print(" plugin has not been loaded.", Style.ERROR)
             sys.exit(2)
 
         if not role:
-            self.print(f"{Style.ERROR}Incorrect or missing session_name: {session_name}")
+            self.print(f"Incorrect or missing session_name: {session_name}", Style.ERROR)
             sys.exit(2)
 
         session: boto3.Session = boto3.Session(  # type: ignore
@@ -221,7 +221,7 @@ class Plugin(BasePlugin):
                 DurationSeconds=expiry,
             )
         except Exception as e:
-            self.print(f"{Style.ERROR}Unable to assume role: {e}")
+            self.print(f"Unable to assume role: {e}", Style.ERROR)
             sys.exit(2)
 
         credentials: dict[str, Any] = assumed_role["Credentials"]

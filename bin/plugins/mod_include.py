@@ -16,10 +16,9 @@ plugins:
 required_modules: dict[str, str] = {}
 required_binaries: list[str] = []
 
-from typing import Any
 
 import yaml
-from lib.util import ConfigBox, console
+from lib.util import ConfigBox, Style
 from plugins import BasePlugin, MetadataType
 
 # ==============================================================================
@@ -39,7 +38,7 @@ class Plugin(BasePlugin):
             with open(_include, "r") as f:
                 conf.update(yaml.load(f.read(), Loader=yaml.FullLoader))
             if verbose:
-                self.print(f"Included {_include}")
+                self.print(f"Included {_include}", Style.FINISHED)
 
         # self.metadata["conf"].update(conf)
 

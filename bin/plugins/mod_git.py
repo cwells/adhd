@@ -46,7 +46,7 @@ class Plugin(BasePlugin):
         "Clone a git repo."
 
         if not self.enabled:
-            self.print(f"{Style.ERROR}git support is disabled. Please install plugin requirements.")
+            self.print(f"support is disabled. Please install plugin requirements.", Style.ERROR)
             sys.exit(1)
 
         repo: git.Repo  # type: ignore
@@ -55,17 +55,17 @@ class Plugin(BasePlugin):
         branch: str | None
 
         if not (remote := config.get("remote")):
-            self.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.remote[/]")
+            self.print(f"missing key: [bold cyan]plugins.git.remote[/]", Style.ERROR)
             sys.exit(2)
 
         if not (branch := config.get("branch")):
-            self.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.branch[/]")
+            self.print(f"missing key: [bold cyan]plugins.git.branch[/]", Style.ERROR)
             sys.exit(2)
 
         if _local := config.get("local"):
             local = Path(_local).expanduser().resolve()
         else:
-            self.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.local[/]")
+            self.print(f"missing key: [bold cyan]plugins.git.local[/]", Style.ERROR)
             sys.exit(2)
 
         self.remote: str = remote
@@ -74,16 +74,16 @@ class Plugin(BasePlugin):
 
         if (local / ".git").exists():
             if self.verbose:
-                self.print(f"{Style.SKIP}git.clone: [bold cyan]{local}[/] is already initialized.")
+                self.print(f"git.clone: [bold cyan]{local}[/] is already initialized.", Style.SKIP)
             return self.metadata
 
         if local.exists() and any(local.iterdir()):
-            self.print(f"{Style.ERROR}git: [bold cyan]{local}[/] exists and is not empty")
+            self.print(f"[bold cyan]{local}[/] exists and is not empty", Style.ERROR)
             sys.exit(2)
         else:
             with console.status(f"Cloning git repository {remote} into {local}"):
                 self.clone(config, env)
-            self.print(f"{Style.FINISHED}cloning git repository into {remote}")
+            self.print(f"cloning git repository into {remote}", Style.FINISHED)
         return self.metadata
 
     def clone(self, config: ConfigBox, env: ConfigBox) -> None:

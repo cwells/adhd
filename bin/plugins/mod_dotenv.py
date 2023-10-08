@@ -45,7 +45,7 @@ class Plugin(BasePlugin):
         "Import .env files. The circle is complete."
 
         if not self.enabled:  # we were unable to import module
-            self.print(f"{Style.ERROR}dotenv support is disabled. Please install python-dotenv package.")
+            self.print("support is disabled. Please install python-dotenv package.", Style.ERROR)
             sys.exit(1)
 
         conf: ConfigBox = ConfigBox()
@@ -62,13 +62,13 @@ class Plugin(BasePlugin):
         for filename in files:
             path: Path = Path(filename).expanduser().resolve()
             if not path.exists():
-                self.print(f"{Style.ERROR}No such .env file {path}")
+                self.print(f"No such .env file {path}", Style.ERROR)
                 continue
 
             if _env := dotenv_values(dotenv_path=path):  # type: ignore
                 conf.update(_env)
             if verbose:
-                self.print(f"Imported environment from {filename}")
+                self.print(f"Imported environment from {filename}", Style.FINISHED)
 
         self.metadata["conf"].update(conf)
 

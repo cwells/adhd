@@ -46,7 +46,8 @@ from lib.util import (
     get_local_env,
     print_job_help,
 )
-from plugins import BasePlugin, load_plugins, print_plugin_help
+from plugins import BasePlugin, load_plugins, print_plugin_help, notify_plugins
+
 
 logging.getLogger("requests").setLevel(logging.WARNING)
 
@@ -259,7 +260,9 @@ def main(
     if explain:
         console.print()
     elif not silent:
-        console.print(f"[bold white]Complete.[/]")
+        console.print(f"[bold white]Complete.[/]\n")
+
+    notify_plugins("exit", plugins, project_config, process_env)
 
     sys.exit(returncode)
 

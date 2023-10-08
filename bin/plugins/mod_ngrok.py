@@ -40,14 +40,15 @@ required_binaries: list[str] = ["ngrok"]
 
 import sys
 import time
+from functools import partial
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Generator
+from typing import Any, Callable, Generator
 
 import yaml
 from lib.boot import missing_binaries, missing_modules
 from lib.shell import shell
-from lib.util import ConfigBox, Style, console
+from lib.util import ConfigBox, Style, console, ConfigBox
 from plugins import BasePlugin, MetadataType, public
 
 missing: list[str]
@@ -76,7 +77,7 @@ class Plugin(BasePlugin):
         "Start the ngrok agent."
 
         if not self.enabled:
-            self.print(f"{Style.ERROR}ngrok support is disabled. Please install plugin requirements.")
+            self.print(f"support is disabled. Please install plugin requirements.", Style.ERROR)
             sys.exit(1)
 
         subscribed: bool = config.get("subscribed", False)
@@ -85,12 +86,14 @@ class Plugin(BasePlugin):
         if not any(t for t in active_tunnels if t["up"]) or subscribed:
             for tunnel in active_tunnels:
                 if tunnel["up"] and (not self.silent or self.verbose):
-                    self.print(f"{Style.SKIPPED}tunnel {tunnel['name']}.")
+                    self.print(f"tunnel {tunnel['name']}.", Style.SKIPPED)
                 else:
                     self.start_tunnel(tunnel["name"], config, env)
 
                 if not subscribed:  # free tier only allows one active tunnel
                     break
+
+        self.events.exit.append(partial(self.status, tuple(), config, env))
 
         # update plugin.metadata
         self.metadata["vars"].update({"tunnels": self.list_tunnels(config)})
@@ -110,7 +113,7 @@ class Plugin(BasePlugin):
         config.config["console_ui"] = False
 
         if not config.config.get("tunnels", []):
-            self.print(f"{Style.ERROR}Tunnel definitions not found in ngrok config.")
+            self.print(f"Tunnel definitions not found in ngrok config.", Style.ERROR)
             sys.exit(1)
 
         with console.status("Loading ngrok plugin") as status:
@@ -119,13 +122,11 @@ class Plugin(BasePlugin):
                 tmpfile.flush()
                 tmpfile.seek(0)
 
-                if not self.silent or self.verbose:
+                if not self.silent or self.verbose or self.debug:
                     status.update(rf"Starting ngrok tunnel [bold blue]{tunnel}[/].")
 
                 shell(f"ngrok --config {tmpfile.name} start {tunnel} &", env=env, interactive=True)
                 time.sleep(3)  # give ngrok time to read config before it's gone
-
-        self.has_run = True
 
     def unload(self, config: ConfigBox, env: ConfigBox) -> None:
         "We can't manage individual tunnels on free plan, so just kill the entire process."
@@ -148,14 +149,11 @@ class Plugin(BasePlugin):
                     proc.kill()
 
         if not self.silent or self.verbose:
-            self.status(tuple(), config.plugins.ngrok, env)
-
-        if not self.silent or self.verbose:
-            self.print(f"{Style.FINISH_UNLOAD}ngrok")
+            self.print("", Style.FINISH_UNLOAD)
 
     def list_tunnels(self, config: dict[str, Any]) -> Generator[dict[str, Any], None, None]:
-        client = ngrok.Client(config.api_key)  # type: ignore
-        tunnels = {t.forwards_to: t for t in client.tunnels.list()}
+        client: ngrok.Client = ngrok.Client(config.api_key)  # type: ignore
+        tunnels: dict = {t.forwards_to: t for t in client.tunnels.list()}
 
         for t in config["tunnels"]:
             addr = config["tunnels"][t]["addr"]
@@ -176,16 +174,16 @@ class Plugin(BasePlugin):
 
     @public()
     def status(self, args: tuple[str, ...], config: ConfigBox, env: ConfigBox) -> None:
-        self.print("[bold cyan]:earth_americas:[/][bold]ngrok public endpoints:[/]")
+        self.print("public endpoints:", Style.PLUGIN)
 
         for t in self.list_tunnels(config.config):
             if t["up"]:
-                self.print(
+                console.print(
                     "  [bold green]:black_circle:[/]tunnel [bold cyan]{name}[/] is"
                     " [bold green]up[/]:   [u]{addr}[/u] <- [u]{public_url}[/u]".format(**t)
                 )
             else:
-                self.print(
+                console.print(
                     f"  {Style.DOWN}tunnel [bold cyan]{{name}}[/] is"
                     " [bold red]down[/]: [u]{addr}[/u]".format(**t)
                 )
