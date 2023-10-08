@@ -65,6 +65,12 @@ class BasePlugin:
         "Output prefixed with plugin identifier."
         console.print(f"{style}[cyan]{self.key}[/] {msg}")
 
+    def print_success(self, msg: str) -> None:
+        console.print(f"[cyan]{self.key}[/] {Style.SUCCESS}{msg}[/]")
+
+    def print_error(self, msg: str) -> None:
+        console.print(f"[cyan]{self.key}[/] {Style.ERROR}{msg}[/]")
+
 
 # ==============================================================================
 

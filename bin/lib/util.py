@@ -65,6 +65,7 @@ class Style(Enum):
     FINISHED = "[bold green]:black_circle:Finished[/] "
     SKIPPED = "[dim]:black_circle:[/][yellow]Skipped[/] "
     ERROR = "[red]:black_circle:Error[/] "
+    SUCCESS = "[bold green]Finished[/] "
     WARNING = "[bold orange4]:black_circle:Warning[/] "
     INFO = "[bold blue]:black_circle:[/]"
     PLUGIN = "[bold cyan]:electric_plug:[/]"

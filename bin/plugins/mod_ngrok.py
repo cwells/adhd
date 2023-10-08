@@ -43,7 +43,7 @@ import time
 from functools import partial
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Callable, Generator
+from typing import Any, Generator
 
 import yaml
 from lib.boot import missing_binaries, missing_modules
@@ -94,8 +94,6 @@ class Plugin(BasePlugin):
                     break
 
         self.events.exit.append(partial(self.status, tuple(), config, env))
-
-        # update plugin.metadata
         self.metadata["vars"].update({"tunnels": self.list_tunnels(config)})
 
         return self.metadata

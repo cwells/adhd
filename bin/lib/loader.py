@@ -9,7 +9,7 @@ import yaml
 from yarl import URL
 
 from .shell import shell
-from .util import LazyValue, get_resolved_path, ConfigBox
+from .util import LazyValue, get_resolved_path, ConfigBox, realize, console
 
 # ==============================================================================
 
@@ -22,6 +22,7 @@ builtins: dict[str, Any] = {
 
 
 def find_deps(value) -> set[str]:
+    "Locate all env vars in a string and mark them as dependencies."
     deps: set[str] = set()
 
     if isinstance(value, str):
@@ -55,19 +56,15 @@ def populate_env_var(
         full_value: str = value
         for g in future.dependencies:
             if _v := os.environ.get(g, env.get(g, builtins.get(g))):
-                full_value = full_value.replace(f"${{{g}}}", str(_v))
+                full_value = full_value.replace(f"${{{g}}}", realize(_v, workdir=workdir, env=env))
         return full_value
     return value
 
 
 def construct_env_vars(loader: yaml.FullLoader, node: yaml.ScalarNode) -> LazyValue:
     "Returns a LazyValue that will call populate_env_var() later."
-
     value: str = str(loader.construct_scalar(node))
-    deps: set[str] = set()
-    if match := re.findall(r"\${(\w+)}", value):
-        deps.update(match)
-    return LazyValue(populate_env_var, value, deps)
+    return LazyValue(populate_env_var, value, find_deps(value))
 
 
 # ==============================================================================
@@ -100,6 +97,7 @@ def eval_shell_cmd(
 ) -> Any:
     "Do the actual work of shelling out."
 
+    value = populate_env_var(future, value, env, workdir)
     return shell(value, env=env or {}, workdir=workdir) if isinstance(value, str) else value
 
 
