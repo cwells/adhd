@@ -40,17 +40,20 @@ class BasePlugin:
         self.verbose = verbose
         self.metadata = {"conf": {}, "env": {}, "vars": {}}
 
-    def load(self, config: ConfigBox, env: dict[str, Any]) -> MetadataType:
+    def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         raise NotImplementedError("You must override the load method.")
 
-    def unload(self, config: ConfigBox, env: dict[str, Any]) -> None:
+    def unload(self, config: ConfigBox, env: ConfigBox) -> None:
         console.print(f"Plugin [bold blue]{self.key}[/] does not support unloading.")
 
     def prompt(self, msg: str) -> str:
         "Prompt the user with a y/n question."
-
         prompt: str = f"[bold]?[/] [bold blue]plugin:{self.key}[/] -> [bold]{msg}[/]"
         return rich.prompt.Prompt.ask(prompt)
+
+    def print(self, msg: str) -> None:
+        "Output prefixed with plugin identifier."
+        console.print(f"Plugin [bold cyan]{self.key}[/] {msg}")
 
 
 # ==============================================================================
@@ -59,17 +62,14 @@ class BasePlugin:
 def load_plugin(
     plugin: BasePlugin,
     project_config: ConfigBox,
-    process_env: dict,
-    silent: bool = False,
-    verbose: bool = False,
-    debug: bool = False,
+    process_env: ConfigBox,
 ) -> None:
     "Load a plugin, if enabled."
 
     plugin_config: ConfigBox | None = project_config.get(f"plugins.{plugin.key}")
 
     if not plugin_config or getattr(plugin, "has_run", False):
-        if not plugin.silent or plugin.verbose:
+        if not plugin.silent or plugin.verbose or plugin.debug:
             console.print(f"{Style.SKIP_LOAD}plugin [cyan]{plugin.key}[/] is already loaded")
         return
 
@@ -96,7 +96,7 @@ def load_plugin(
 # ==============================================================================
 
 
-def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: dict[str, Any]) -> None:
+def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: ConfigBox) -> None:
     "Unload plugin, if supported."
 
     plugin.unload(project_config, process_env)
@@ -107,7 +107,7 @@ def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: di
 
     plugin.has_run = False
 
-    if not plugin.silent:
+    if not plugin.silent or plugin.verbose or plugin.debug:
         console.print(f"{Style.FINISH_UNLOAD}plugin: [cyan]{plugin.key}[/]")
 
 
@@ -116,7 +116,7 @@ def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: di
 
 def load_plugins(
     project_config: ConfigBox,
-    process_env: dict,
+    process_env: ConfigBox,
     enabled: dict[str, bool],  # passed from cli
     silent: bool = False,
     verbose: bool = False,
@@ -132,9 +132,9 @@ def load_plugins(
         module: ModuleType = importlib.import_module(f"plugins.{mod.stem}")
         importlib.reload(module)
         plugins[mod.stem] = module.Plugin(
-            silent=project_config.get(f"plugins.{module.Plugin.key}.silent", silent),
-            verbose=project_config.get(f"plugins.{module.Plugin.key}.verbose", verbose),
-            debug=project_config.get(f"plugins.{module.Plugin.key}.debug", debug),
+            silent=silent or project_config.get(f"plugins.{module.Plugin.key}.silent", False),
+            verbose=verbose or project_config.get(f"plugins.{module.Plugin.key}.verbose", False),
+            debug=debug or project_config.get(f"plugins.{module.Plugin.key}.debug", False),
         )
 
     for plugin in plugins.values():
@@ -247,7 +247,7 @@ def call_plugin_method(
     method: str,
     args: tuple[str, ...],
     project_config: ConfigBox,
-    process_env: dict[str, Any],
+    process_env: ConfigBox,
 ) -> Any:
     "If plugin has method and it's public, call it."
 
@@ -281,10 +281,7 @@ def load_or_unload_plugin(
     command: tuple[str, ...],
     plugins: dict[str, BasePlugin],
     project_config: ConfigBox,
-    process_env: dict[str, Any],
-    silent: bool = False,
-    verbose: bool = False,
-    debug: bool = False,
+    process_env: ConfigBox,
 ) -> bool:
     "If cmd is a plugin, attempt to load/unload or call one of its methods."
 
@@ -299,29 +296,15 @@ def load_or_unload_plugin(
                 if method := plugin_cmd.get("method"):
                     if _method := getattr(plugin, method):
                         if _method.autoload:
-                            if verbose:
+                            if plugin.verbose:
                                 console.print(f"{Style.START_LOAD}required plugin [bold cyan]{plugin.key}[/]")
-                            load_plugin(
-                                plugin,
-                                project_config,
-                                process_env,
-                                silent=silent,
-                                verbose=verbose,
-                                debug=debug,
-                            )
+                            load_plugin(plugin, project_config, process_env)
                         call_plugin_method(plugin, method, args, project_config, process_env)
                     else:
                         console.print(f"Invalid method {plugin}.{method}")
                         sys.exit(2)
                 else:
-                    load_plugin(
-                        plugin,
-                        project_config,
-                        process_env,
-                        silent=silent,
-                        verbose=verbose,
-                        debug=debug,
-                    )
+                    load_plugin(plugin, project_config, process_env)
 
             elif plugin_cmd["action"] == "unplug":
                 unload_plugin(plugin, project_config, process_env)

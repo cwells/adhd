@@ -42,11 +42,11 @@ class Plugin(BasePlugin):
     enabled: bool = bool(git)
     has_run: bool = False
 
-    def load(self, config: ConfigBox, env: dict[str, Any], verbose: bool = False) -> MetadataType:
+    def load(self, config: ConfigBox, env: ConfigBox, verbose: bool = False) -> MetadataType:
         "Clone a git repo."
 
         if not self.enabled:
-            console.print(f"{Style.ERROR}git support is disabled. Please install plugin requirements.")
+            self.print(f"{Style.ERROR}git support is disabled. Please install plugin requirements.")
             sys.exit(1)
 
         repo: git.Repo  # type: ignore
@@ -55,17 +55,17 @@ class Plugin(BasePlugin):
         branch: str | None
 
         if not (remote := config.get("remote")):
-            console.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.remote[/]")
+            self.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.remote[/]")
             sys.exit(2)
 
         if not (branch := config.get("branch")):
-            console.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.branch[/]")
+            self.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.branch[/]")
             sys.exit(2)
 
         if _local := config.get("local"):
             local = Path(_local).expanduser().resolve()
         else:
-            console.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.local[/]")
+            self.print(f"{Style.ERROR}Missing key: [bold cyan]plugins.git.local[/]")
             sys.exit(2)
 
         self.remote: str = remote
@@ -74,19 +74,19 @@ class Plugin(BasePlugin):
 
         if (local / ".git").exists():
             if self.verbose:
-                console.print(f"{Style.SKIP}git.clone: [bold cyan]{local}[/] is already initialized.")
+                self.print(f"{Style.SKIP}git.clone: [bold cyan]{local}[/] is already initialized.")
             return self.metadata
 
         if local.exists() and any(local.iterdir()):
-            console.print(f"{Style.ERROR}git: [bold cyan]{local}[/] exists and is not empty")
+            self.print(f"{Style.ERROR}git: [bold cyan]{local}[/] exists and is not empty")
             sys.exit(2)
         else:
             with console.status(f"Cloning git repository {remote} into {local}"):
                 self.clone(config, env)
-            console.print(f"{Style.FINISHED}cloning git repository into {remote}")
+            self.print(f"{Style.FINISHED}cloning git repository into {remote}")
         return self.metadata
 
-    def clone(self, config: ConfigBox, env: dict[str, Any]) -> None:
+    def clone(self, config: ConfigBox, env: ConfigBox) -> None:
         try:
             repo = git.Repo.clone_from(self.remote, self.local, branch=self.branch)  # type: ignore
         except Exception as e:

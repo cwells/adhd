@@ -59,9 +59,9 @@ class LazyValue:
 class Style(Enum):
     UP = "[bright green]:black_circle:[/]"
     DOWN = "[dim]:black_circle:[/]"
-    RUN = "[green]:black_circle:Run[/]"
+    RUN = "[green]:white_circle:Run[/]"
     SKIP = "[yellow]:white_circle:Skipped[/] "
-    STARTING = "[green]:white_circle:Starting[/] "
+    STARTING = "[green]Starting[/] "
     FINISHED = "[bold green]:black_circle:Finished[/] "
     SKIPPED = "[bold yellow]:white_circle:Skipped[/] "
     ERROR = "[red]:black_circle:Error[/] "
@@ -166,7 +166,7 @@ def _exit(exc: Exception, returncode: int = 1, verbose: bool = False, debug: boo
 # ==============================================================================
 
 
-def resolve_dependencies(env: dict[str, Any], workdir: Path) -> dict[str, Any]:
+def resolve_dependencies(env: ConfigBox, workdir: Path) -> ConfigBox:
     deps: dict[str, set] = {k: set() for k in env}
 
     # build dependency tree
@@ -190,7 +190,7 @@ def resolve_dependencies(env: dict[str, Any], workdir: Path) -> dict[str, Any]:
 # ==============================================================================
 
 
-def get_sorted_deps(command: str, commands: dict, workdir: Path, env: dict[str, Any]) -> list[str]:
+def get_sorted_deps(command: str, commands: dict, workdir: Path, env: ConfigBox) -> list[str]:
     """
     Build a dependency tree of jobs that require other jobs,
     and return a flattened list of job execution order.
@@ -272,7 +272,7 @@ def nested_update(dst: ConfigBox, src: ConfigBox) -> ConfigBox:
 # ==============================================================================
 
 
-def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> dict[str, str]:
+def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> ConfigBox:
     """
     Get env from config (yaml source), then override with any preset local env vars.
     Env vars are resolved based on dependency resolution. A variable that depends on
@@ -280,13 +280,11 @@ def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> dict[
     """
 
     home: str | LazyValue = project_config.get("home", ".")
-    env: dict[str, str] = {}
+    env: ConfigBox = ConfigBox()
     workdir: Path = get_resolved_path(home, env=project_config["env"])
 
-    if "env" not in project_config:
-        project_config["env"] = {}
-
-    env = resolve_dependencies(project_config["env"], workdir)
+    project_config.setdefault("env", ConfigBox())
+    env = ConfigBox(resolve_dependencies(project_config["env"], workdir))
 
     return env
 
@@ -365,7 +363,7 @@ def print_job_help_verbose(jobs: dict, pager: bool | str = False) -> None:
 # ==============================================================================
 
 
-def get_resolved_path(path: str | LazyValue, env: dict[str, Any] | None, workdir: Path | None = None) -> Path:
+def get_resolved_path(path: str | LazyValue, env: ConfigBox | None, workdir: Path | None = None) -> Path:
     "Resolves string or LazyValue into fully-qualified path."
 
     workdir = Path(".") if not workdir else workdir

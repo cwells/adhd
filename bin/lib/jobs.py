@@ -24,24 +24,27 @@ def get_job(
     command: tuple[str, ...] | list[str] | str,
     job_config: ConfigBox,
     project_config: ConfigBox,
-    process_env: dict[str, str],
+    process_env: ConfigBox,
     informational: bool = False,  # don't _eval values that we don't need
 ) -> ConfigBox:
     "Build a job structure from configuration."
 
-    env: dict[str, Any] = {**process_env, **job_config.get("env", {})}
+    env: ConfigBox = ConfigBox({**process_env, **job_config.get("env", {})})
     home: str | LazyValue = job_config.get("home") or project_config.get("home", ".")
     tmp: str | LazyValue = job_config.get("tmp") or project_config.get("tmp", "./tmp")
     workdir: Path = get_resolved_path(home, env=env)
     tmpdir: Path = get_resolved_path(tmp, env=env)
     cmd: Any = realize(job_config.get("run", []), workdir=workdir, env=env)
     tasks: list = cmd if isinstance(cmd, list) else [cmd]
-    task_env: dict[str, str] = resolve_dependencies({**process_env, **job_config.get("env", {})}, workdir=workdir)
+    task_env: dict[str, str] = resolve_dependencies(
+        ConfigBox({**process_env, **job_config.get("env", {})}),
+        workdir=workdir,
+    )
     after: list[str] = _after if isinstance((_after := job_config.get("after", [])), list) else [_after]
 
     job: ConfigBox = ConfigBox(
         {
-            "env": realize({**env, **task_env}, workdir=workdir, env=env),
+            "env": ConfigBox(realize({**env, **task_env}, workdir=workdir, env=env)),
             "help": realize(job_config.get("help", "No help available."), workdir=workdir, env=env),
             "name": command,
             "tasks": tasks,
@@ -79,7 +82,7 @@ def get_job(
 def get_jobs(
     command: tuple[str, ...],
     project_config: ConfigBox,
-    process_env: dict,
+    process_env: ConfigBox,
     plugins: dict[str, BasePlugin],
     silent: bool = False,
     verbose: bool = False,
@@ -104,15 +107,7 @@ def get_jobs(
         console.print(f"No command given.")
         sys.exit(1)
 
-    if load_or_unload_plugin(
-        command,
-        plugins,
-        project_config,
-        process_env,
-        verbose=verbose,
-        silent=silent,
-        debug=debug,
-    ):
+    if load_or_unload_plugin(command, plugins, project_config, process_env):
         return
 
     elif _cmd in jobs:  # pre-defined jobs
@@ -123,15 +118,7 @@ def get_jobs(
                     raise SystemExit("Aborted by user request.\n")
 
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
-            if load_or_unload_plugin(
-                tuple(dep.split()),
-                plugins,
-                project_config,
-                process_env,
-                verbose=verbose,
-                silent=silent,
-                debug=debug,
-            ):
+            if load_or_unload_plugin(tuple(dep.split()), plugins, project_config, process_env):
                 continue
 
             job_config: ConfigBox = jobs.get(dep, {})

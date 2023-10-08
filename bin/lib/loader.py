@@ -9,7 +9,7 @@ import yaml
 from yarl import URL
 
 from .shell import shell
-from .util import LazyValue, get_resolved_path
+from .util import LazyValue, get_resolved_path, ConfigBox
 
 # ==============================================================================
 
@@ -37,7 +37,7 @@ def find_deps(value) -> set[str]:
 def populate_env_var(
     future: LazyValue,
     value: Any,
-    env: dict[str, Any] | None = None,
+    env: ConfigBox | None = None,
     workdir: Path | None = None,
 ) -> Any:
     """
@@ -49,7 +49,7 @@ def populate_env_var(
         return value
 
     if env is None:
-        env = {}
+        env = ConfigBox()
 
     if future.dependencies:
         full_value: str = value
@@ -73,17 +73,17 @@ def construct_env_vars(loader: yaml.FullLoader, node: yaml.ScalarNode) -> LazyVa
 # ==============================================================================
 
 
-def shell_eq_0(command: str, workdir: Path, env: dict[str, Any] | None = None) -> bool:
+def shell_eq_0(command: str, workdir: Path, env: ConfigBox | None = None) -> bool:
     "Executes command in subshell and return True if exit code is zero."
     return shell(command=command, workdir=workdir, env=env).returncode == 0
 
 
-def shell_neq_0(command: str, workdir: Path, env: dict[str, Any] | None = None) -> bool:
+def shell_neq_0(command: str, workdir: Path, env: ConfigBox | None = None) -> bool:
     "Executes command in subshell and return True if exit code is non-zero."
     return shell(command=command, workdir=workdir, env=env).returncode != 0
 
 
-def shell_stdout(command: str, workdir: Path, env: dict[str, Any] | None = None) -> str:
+def shell_stdout(command: str, workdir: Path, env: ConfigBox | None = None) -> str:
     "Executes command in subshell and returns output from command."
     result = shell(command=command, workdir=workdir, env=env, capture=True)
     if isinstance(result.stdout, bytes):
@@ -96,7 +96,7 @@ def eval_shell_cmd(
     future: LazyValue,
     value: str,
     workdir: Path,
-    env: dict[str, Any] | None = None,
+    env: ConfigBox | None = None,
 ) -> Any:
     "Do the actual work of shelling out."
 
@@ -119,7 +119,7 @@ def eval_cat(
     future: LazyValue,
     value: list,
     workdir: Path | None = None,
-    env: dict[str, Any] | None = None,
+    env: ConfigBox | None = None,
 ) -> str:
     evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
 
@@ -138,7 +138,7 @@ def construct_cat(sep: str, loader: yaml.FullLoader, node: yaml.SequenceNode) ->
 # ==============================================================================
 
 
-def eval_path(future: LazyValue, value: list, workdir: Path, env: dict[str, Any] | None = None) -> str:
+def eval_path(future: LazyValue, value: list, workdir: Path, env: ConfigBox | None = None) -> str:
     evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
     path: Path = get_resolved_path("/".join(evaled), env=env, workdir=workdir)
 
@@ -167,7 +167,7 @@ def construct_path(loader: yaml.FullLoader, node: yaml.SequenceNode) -> LazyValu
 # ==============================================================================
 
 
-def eval_exists(exists: bool, future: LazyValue, value: list, workdir: Path, env: dict[str, Any]) -> bool:
+def eval_exists(exists: bool, future: LazyValue, value: list, workdir: Path, env: ConfigBox) -> bool:
     evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
     path: Path = get_resolved_path("/".join(evaled), env=env, workdir=workdir)
 
@@ -196,7 +196,7 @@ def construct_exists(exists: bool, loader: yaml.FullLoader, node: yaml.SequenceN
 # ==============================================================================
 
 
-def eval_url(exists: bool, future: LazyValue, value: list, workdir: Path, env: dict[str, Any]) -> str:
+def eval_url(exists: bool, future: LazyValue, value: list, workdir: Path, env: ConfigBox) -> str:
     evaled: list[str] = [v(env=env, workdir=workdir) if isinstance(v, LazyValue) else v for v in value]
 
     url: URL = URL("/".join(evaled))

@@ -72,11 +72,11 @@ class Plugin(BasePlugin):
     enabled: bool = bool(ngrok)
     has_run: bool = False
 
-    def load(self, config: ConfigBox, env: dict[str, Any]) -> MetadataType:
+    def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         "Start the ngrok agent."
 
         if not self.enabled:
-            console.print(f"{Style.ERROR}ngrok support is disabled. Please install plugin requirements.")
+            self.print(f"{Style.ERROR}ngrok support is disabled. Please install plugin requirements.")
             sys.exit(1)
 
         subscribed: bool = config.get("subscribed", False)
@@ -85,7 +85,7 @@ class Plugin(BasePlugin):
         if not any(t for t in active_tunnels if t["up"]) or subscribed:
             for tunnel in active_tunnels:
                 if tunnel["up"] and (not self.silent or self.verbose):
-                    console.print(f"{Style.SKIPPED}tunnel {tunnel['name']}.")
+                    self.print(f"{Style.SKIPPED}tunnel {tunnel['name']}.")
                 else:
                     self.start_tunnel(tunnel["name"], config, env)
 
@@ -101,7 +101,7 @@ class Plugin(BasePlugin):
         self,
         tunnel: str | None,
         config: ConfigBox,
-        env: dict[str, Any],
+        env: ConfigBox,
     ) -> None:
         "Use the ngrok agent rather than API as we exit and can't be our own agent."
 
@@ -110,7 +110,7 @@ class Plugin(BasePlugin):
         config.config["console_ui"] = False
 
         if not config.config.get("tunnels", []):
-            console.print(f"{Style.ERROR}Tunnel definitions not found in ngrok config.")
+            self.print(f"{Style.ERROR}Tunnel definitions not found in ngrok config.")
             sys.exit(1)
 
         with console.status("Loading ngrok plugin") as status:
@@ -127,7 +127,7 @@ class Plugin(BasePlugin):
 
         self.has_run = True
 
-    def unload(self, config: ConfigBox, env: dict[str, Any]) -> None:
+    def unload(self, config: ConfigBox, env: ConfigBox) -> None:
         "We can't manage individual tunnels on free plan, so just kill the entire process."
 
         with console.status("Terminating ngrok tunnels") as status:
@@ -151,7 +151,7 @@ class Plugin(BasePlugin):
             self.status(tuple(), config.plugins.ngrok, env)
 
         if not self.silent or self.verbose:
-            console.print(f"{Style.FINISH_UNLOAD}ngrok")
+            self.print(f"{Style.FINISH_UNLOAD}ngrok")
 
     def list_tunnels(self, config: dict[str, Any]) -> Generator[dict[str, Any], None, None]:
         client = ngrok.Client(config.api_key)  # type: ignore
@@ -175,17 +175,17 @@ class Plugin(BasePlugin):
                 }
 
     @public()
-    def status(self, args: tuple[str, ...], config: ConfigBox, env: dict[str, Any]) -> None:
-        console.print("[bold cyan]:earth_americas:[/][bold]ngrok public endpoints:[/]")
+    def status(self, args: tuple[str, ...], config: ConfigBox, env: ConfigBox) -> None:
+        self.print("[bold cyan]:earth_americas:[/][bold]ngrok public endpoints:[/]")
 
         for t in self.list_tunnels(config.config):
             if t["up"]:
-                console.print(
+                self.print(
                     "  [bold green]:black_circle:[/]tunnel [bold cyan]{name}[/] is"
-                    " [bold green]up[/]:   [u]{public_url}[/u] -> [u]{addr}[/u]".format(**t)
+                    " [bold green]up[/]:   [u]{addr}[/u] <- [u]{public_url}[/u]".format(**t)
                 )
             else:
-                console.print(
+                self.print(
                     f"  {Style.DOWN}tunnel [bold cyan]{{name}}[/] is"
                     " [bold red]down[/]: [u]{addr}[/u]".format(**t)
                 )

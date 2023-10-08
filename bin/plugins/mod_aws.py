@@ -78,14 +78,14 @@ class Plugin(BasePlugin):
     enabled: bool = boto3 is not None
     has_run: bool = False
 
-    def load(self, config: ConfigBox, env: dict[str, Any]) -> MetadataType:
+    def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         """
         If aws configured, prompt for 2fa code, authenticate with AWS, then
         store auth token and temp credentials in cache.
         """
 
         if not self.enabled:  # we were unable to import module
-            console.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
+            self.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
             sys.exit(1)
 
         profile: str = config.get("profile", "default")
@@ -100,7 +100,7 @@ class Plugin(BasePlugin):
             sys.exit(2)
 
         if not mfa_device:
-            console.print(f"{Style.ERROR}Missing MFA device.")
+            self.print(f"{Style.ERROR}Missing MFA device.")
             sys.exit(2)
 
         session: boto3.Session = boto3.Session(profile_name=profile)  # type: ignore
@@ -118,7 +118,7 @@ class Plugin(BasePlugin):
         response_code: int = token["ResponseMetadata"]["HTTPStatusCode"]
 
         if response_code != 200:
-            console.print(f"{Style.ERROR}Unable to obtain token. Status code {response_code}, exiting.")
+            self.print(f"{Style.ERROR}Unable to obtain token. Status code {response_code}, exiting.")
 
         credentials = token["Credentials"]
 
@@ -150,7 +150,7 @@ class Plugin(BasePlugin):
         "Caches session data until expiry, then prompts for new MFA code."
 
         if not self.enabled:  # we were unable to import module
-            console.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
+            self.print(f"{Style.ERROR}AWS support is disabled. Please install boto3 package.")
             sys.exit(1)
 
         sts: boto3.client.STS = session.client("sts")  # type: ignore
@@ -179,7 +179,7 @@ class Plugin(BasePlugin):
 
         return data
 
-    def unload(self, config: ConfigBox, env: dict[str, Any]) -> None:
+    def unload(self, config: ConfigBox, env: ConfigBox) -> None:
         "Remove cached credentials, unset environment."
 
         profile: str = config.get("profile", "default")
@@ -190,7 +190,7 @@ class Plugin(BasePlugin):
             cache_file.unlink()
 
     @public(autoload=True)
-    def assume_role(self, args: tuple[str, ...], config: ConfigBox, env: dict[str, Any]) -> MetadataType:
+    def assume_role(self, args: tuple[str, ...], config: ConfigBox, env: ConfigBox) -> MetadataType:
         session_name: str = args[0]
         roles: dict[str, dict[str, str]] = self.config.get("roles", {})
         role_arn_prefix: str = f"arn:aws:iam::{config['account']}:role"
@@ -198,11 +198,11 @@ class Plugin(BasePlugin):
         expiry: int = min(int(roles.get(session_name, {}).get("expiry", 43200)), 43200)
 
         if not self.has_run:
-            console.print(f"{Style.ERROR}AWS plugin has not been loaded. Autoload failed?")
+            self.print(f"{Style.ERROR}AWS plugin has not been loaded. Autoload failed?")
             sys.exit(2)
 
         if not role:
-            console.print(f"{Style.ERROR}Incorrect or missing session_name: {session_name}")
+            self.print(f"{Style.ERROR}Incorrect or missing session_name: {session_name}")
             sys.exit(2)
 
         session: boto3.Session = boto3.Session(  # type: ignore
@@ -221,7 +221,7 @@ class Plugin(BasePlugin):
                 DurationSeconds=expiry,
             )
         except Exception as e:
-            console.print(f"{Style.ERROR}Unable to assume role: {e}")
+            self.print(f"{Style.ERROR}Unable to assume role: {e}")
             sys.exit(2)
 
         credentials: dict[str, Any] = assumed_role["Credentials"]

@@ -41,11 +41,11 @@ class Plugin(BasePlugin):
     enabled: bool = dotenv_values is not None
     has_run: bool = False
 
-    def load(self, config: ConfigBox, env: dict[str, Any], verbose: bool = False) -> MetadataType:
+    def load(self, config: ConfigBox, env: ConfigBox, verbose: bool = False) -> MetadataType:
         "Import .env files. The circle is complete."
 
         if not self.enabled:  # we were unable to import module
-            console.print(f"{Style.ERROR}dotenv support is disabled. Please install python-dotenv package.")
+            self.print(f"{Style.ERROR}dotenv support is disabled. Please install python-dotenv package.")
             sys.exit(1)
 
         conf: ConfigBox = ConfigBox()
@@ -62,13 +62,13 @@ class Plugin(BasePlugin):
         for filename in files:
             path: Path = Path(filename).expanduser().resolve()
             if not path.exists():
-                console.print(f"{Style.ERROR}No such .env file {path}")
+                self.print(f"{Style.ERROR}No such .env file {path}")
                 continue
 
             if _env := dotenv_values(dotenv_path=path):  # type: ignore
                 conf.update(_env)
             if verbose:
-                console.print(f"Imported environment from {filename}")
+                self.print(f"Imported environment from {filename}")
 
         self.metadata["conf"].update(conf)
 

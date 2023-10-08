@@ -4,8 +4,6 @@ Configure Python virtual environment.
 This plugin will create a virtual environment and install requirements.txt. It also configures the proper environment variables so that you can enter the virtual environment just by spawning a shell, e.g. "adhd example /bin/bash". You can also specify packages to be installed via the [cyan]packages[/] attribute.
 
 This plugin will also check the timestamp of your project's "requirements.txt" and if it detects a newer version, will reinstall project requirements.
-
-If [cyan]virtualenv[/] package is missing, plugin will still work with an existing virtual environment, but won't be able to create a new one.
 """
 
 example = """
@@ -17,23 +15,15 @@ plugins:
     packages: [ requests, PyYAML==5.4.1 ]
 """
 
-required_modules: dict[str, str] = {"virtualenv": "virtualenv"}
+required_modules: dict[str, str] = {}
 required_binaries: list[str] = []
 
 import os
-import sys
 from pathlib import Path
 
-from lib.boot import missing_modules
 from lib.shell import shell
 from lib.util import ConfigBox, Style, console, get_resolved_path
 from plugins import BasePlugin, MetadataType
-
-if missing_modules(required_modules):
-    console.print(f"{Style.WARNING}virtualenv module not found:[/] Python venv creation disabled.")
-    virtualenv = None
-else:
-    import virtualenv
 
 
 # ==============================================================================
@@ -44,7 +34,7 @@ class Plugin(BasePlugin):
     enabled: bool = True
     has_run: bool = False
 
-    def load(self, config: ConfigBox, env: dict[str, str]) -> MetadataType:
+    def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         "Activate Python virtualenv."
 
         requirements: list[Path] = []
@@ -77,32 +67,34 @@ class Plugin(BasePlugin):
         return self.metadata
 
     def initialize_venv(
-        self, venv: Path, requirements: list[Path] | None, packages: list[str] | None, env: dict[str, str]
+        self,
+        venv: Path,
+        requirements: list[Path] | None,
+        packages: list[str] | None,
+        env: ConfigBox,
     ) -> dict[str, str]:
         "Create the virtual environment if it doesn't exist, return env vars needed for venv."
 
         bin_dir: Path = venv / "bin"
-        venv_env: dict[str, str] = {
-            "VIRTUAL_ENV": str(venv),
-            "PATH": os.pathsep.join([str(bin_dir), env["PATH"]]),
-        }
+        venv_env: ConfigBox = ConfigBox(
+            {
+                "VIRTUAL_ENV": str(venv),
+                "PATH": os.pathsep.join([str(bin_dir), env["PATH"]]),
+            }
+        )
         style: Style
 
         env.update(venv_env)
         bin_dir.mkdir(parents=True, exist_ok=True)
 
         if not (bin_dir / "python").exists():
-            if virtualenv is None:
-                console.print(f"{Style.ERROR}Virtualenv creation is disabled. Please install virtualenv package")
-                sys.exit(1)
-
             with console.status(f"Building Python virtual environment"):
-                virtualenv.cli_run([str(venv)], options=None, setup_logging=True, env=env)
-            console.print(f"{Style.FINISHED}building Python virtual environment [yellow]{venv}[/]")
+                shell(f"python -m venv {venv}", workdir=venv, env=env, interactive=True)
+            self.print(f"{Style.FINISHED}building Python virtual environment [yellow]{venv}[/]")
 
         else:
             if not self.silent or self.verbose:
-                console.print(f"{Style.SKIPPED}building Python virtual environment [yellow]{venv}[/]")
+                self.print(f"{Style.SKIPPED}building Python virtual environment [yellow]{venv}[/]")
 
         if requirements:
             with console.status(f"Installing requirements") as status:
@@ -111,17 +103,17 @@ class Plugin(BasePlugin):
                     installed: bool = self.install_requirements(venv, _req, env)
                     if not self.silent or self.verbose:
                         style = (Style.SKIP, Style.FINISHED)[installed]
-                        console.print(f"{style}installing Python requirements from [yellow]{_req}[/]")
+                        self.print(f"{style}installing Python requirements from [yellow]{_req}[/]")
 
         if packages:
             with console.status(f"Installing additional packages"):
                 self.install_packages(venv, packages, env)
             if not self.silent or self.verbose:
-                console.print(f"{Style.FINISHED}installing Python packages")
+                self.print(f"{Style.FINISHED}installing Python packages")
 
         return env
 
-    def install_packages(self, venv: Path, packages: list[str], venv_env: dict[str, str]) -> int:
+    def install_packages(self, venv: Path, packages: list[str], venv_env: ConfigBox) -> int:
         "Install additional packages."
 
         bin_dir: Path = venv / "bin"
@@ -134,7 +126,7 @@ class Plugin(BasePlugin):
             env=venv_env,
         ).returncode
 
-    def install_requirements(self, venv: Path, requirements: Path, venv_env: dict[str, str]) -> bool:
+    def install_requirements(self, venv: Path, requirements: Path, venv_env: ConfigBox) -> bool:
         "Install requirements.txt into virtual env."
 
         bin_dir: Path = venv / "bin"

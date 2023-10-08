@@ -87,8 +87,8 @@ def main(
 ) -> None:
     "You may also type `help jobs` or `help plugins` for detailed information on those topics."
 
-    options_env: dict[str, str] = ConfigBox(env)
-    process_env: dict[str, str] = ConfigBox()
+    options_env: ConfigBox = ConfigBox(env)
+    process_env: ConfigBox = ConfigBox()
     project_config: ConfigBox = ConfigBox()
     plugins_enabled: dict[str, bool] = dict(plugin)
     plugins: dict[str, BasePlugin]
@@ -96,8 +96,6 @@ def main(
     task: str
     style: Style | str
     returncode: int = 0
-
-    verbose = True if debug else verbose
 
     if not check_project(project, fix_perms=fix_perms):
         sys.exit(1)
@@ -165,7 +163,7 @@ def main(
         verbose=verbose,
         debug=debug,
     ):
-        if debug:
+        if debug and verbose:
             console.print(job.to_dict())
 
         if explain:
@@ -202,52 +200,50 @@ def main(
             if not silent:
                 console.print(f'{Style.SKIPPED}[bold blue]{job["name"]}[/]')
             continue
-        else:
-            if not silent:
-                console.print(f"{Style.STARTING}[bold blue]{job['name']}[/]")
 
-        # each job can be composed of multiple tasks
-        for task in job["tasks"]:
-            process: subprocess.CompletedProcess | None = None
-            returncode = 0
+        ctx: contextlib.AbstractContextManager = (
+            contextlib.nullcontext() if debug else console.status(f"{Style.RUN} [bold blue]{job['name']}[/]")
+        )
+        with ctx as status:
+            if debug:
+                console.print(f"{Style.RUN} [bold blue]{job['name']}[/]")
+            # each job can be composed of multiple tasks
+            for task in job["tasks"]:
+                process: subprocess.CompletedProcess | None = None
+                returncode = 0
 
-            # don't use console.status unless capturing output
-            ctx: contextlib.AbstractContextManager = (
-                console.status(f"Running [yellow]{task}[/]")  # type: ignore
-                if capture or not (interactive or silent)
-                else contextlib.nullcontext()  # do-nothing context manager
-            )
-            with ctx:
                 try:
                     process = shell(
                         command=task,
                         workdir=workdir,
                         env=job["env"],
-                        capture=capture,
-                        interactive=interactive and not capture,
+                        interactive=interactive or debug,
                     )
-                    returncode = process.returncode
                 except Exception as e:
                     console.print(f"{Style.ERROR}loading executing {task}:\n")
                     _exit(e, verbose=verbose, debug=debug)
                 else:
-                    if verbose:
-                        console.print(f"{Style.FINISHED}[white]task(s)[/]", highlight=False)
-                        for idx, line in enumerate(task.strip().split("\n")):
-                            style = Style.TASK_RUN if idx == 0 else "     "
-                            console.print(f"{style}[dark_goldenrod]{line}[/]", highlight=False)
+                    returncode = process.returncode
 
-            if returncode == 0:
-                if tts := job.get("sleep", 0):
-                    if verbose:
-                        with console.status(f"Sleeping for {tts} seconds."):
-                            time.sleep(tts)
-                    else:
+                if verbose:
+                    console.print(f"{Style.FINISHED}[white]task(s)[/]", highlight=False)
+                    for idx, line in enumerate(task.strip().split("\n")):
+                        style = Style.TASK_RUN if idx == 0 else "     "
+                        console.print(f"{style}[dark_goldenrod]{line}[/]", highlight=False)
+
+                if returncode == 0:
+                    if tts := job.get("sleep", 0):
+                        if verbose:
+                            msg: str = f"Sleeping for {tts} seconds."
+                            if debug:
+                                console.print(msg)
+                            else:
+                                status.update(msg)
                         time.sleep(tts)
-            else:
-                console.print(f"{Style.ERROR}Error: {task} exited with non-zero status.")
-                if process is not None and process.stderr:
-                    console.print(f"{Style.ERROR}{process.stderr.decode('utf-8')}")
+                else:
+                    console.print(f"{Style.ERROR}Error: {task} exited with non-zero status.")
+                    if process is not None and isinstance(process.stderr, bytes):
+                        console.print(f"{Style.ERROR}{process.stderr.decode()}")
 
         # finally, open any uris specified in job config
         if uri := job.get("open"):

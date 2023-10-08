@@ -30,7 +30,7 @@ class Plugin(BasePlugin):
     enabled: bool = False
     has_run: bool = False
 
-    def load(self, config: ConfigBox, env: dict[str, Any], verbose: bool = False) -> MetadataType:
+    def load(self, config: ConfigBox, env: ConfigBox, verbose: bool = False) -> MetadataType:
         "Include YAML files"
 
         conf: ConfigBox = ConfigBox()
@@ -39,7 +39,7 @@ class Plugin(BasePlugin):
             with open(_include, "r") as f:
                 conf.update(yaml.load(f.read(), Loader=yaml.FullLoader))
             if verbose:
-                console.print(f"Included {_include}")
+                self.print(f"Included {_include}")
 
         # self.metadata["conf"].update(conf)
 
