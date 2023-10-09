@@ -63,7 +63,7 @@ class BasePlugin:
 
     def print(self, msg: str, style: Style = Style.INFO) -> None:
         "Output prefixed with plugin identifier."
-        console.print(f"{style}[cyan]{self.key}[/] {msg}")
+        console.print(f"  {style}{msg}")
 
     def print_success(self, msg: str) -> None:
         console.print(f"[cyan]{self.key}[/] {Style.SUCCESS}{msg}[/]")
@@ -87,6 +87,9 @@ def load_plugin(
     if not plugin_config:
         return
 
+    if not plugin.silent or plugin.verbose:
+        console.print(f"{Style.PLUGIN_LOADING}plugin: [cyan]{plugin.key}[/]")
+
     if "tmp" not in plugin_config:
         plugin_config["tmp"] = project_config.get("tmp", "/tmp")
 
@@ -107,7 +110,7 @@ def load_plugin(
     plugin.has_run = True
 
     if not plugin.silent or plugin.verbose:
-        console.print(f"{Style.PLUGIN_LOAD}plugin: [cyan]{plugin.key}[/]")
+        console.print(f"{Style.PLUGIN_LOADED}plugin: [cyan]{plugin.key}[/]")
 
 
 # ==============================================================================
@@ -341,8 +344,6 @@ def load_or_unload_plugin(
                 if method := plugin_cmd.get("method"):
                     if _method := getattr(plugin, method):
                         if _method.autoload:
-                            if plugin.verbose or plugin.debug:
-                                console.print(f"{Style.PLUGIN_LOAD}required plugin [bold cyan]{plugin.key}[/]")
                             load_plugin(plugin, project_config, process_env)
                         call_plugin_method(plugin, method, args, project_config, process_env)
                     else:

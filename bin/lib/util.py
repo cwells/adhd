@@ -69,10 +69,14 @@ class Style(Enum):
     TASK_SKIP = "  [white]:arrow_right_hook:[grey50]  "
     TASK_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Finished "
 
-    PLUGIN_LOAD = "[bold green]:white_circle:[/]Loading "
+    PLUGIN_LOADING = "[bold green]:white_circle:[/]Loading "
+    PLUGIN_LOADED = "[bold green]:black_circle:[/]Loaded "
     PLUGIN_UNLOAD = "[dim]:black_circle:[/]Unloaded "
     PLUGIN_INFO = "[bold cyan]:electric_plug:[/]"
-    PLUGIN_SKIP = "[dim]:white_circle[/]"
+    PLUGIN_SKIP = "[dim]:white_circle:[/]Skipped "
+    PLUGIN_METHOD_SUCCESS = "[bold green]:arrow_right_hook:[/] Finished "
+    PLUGIN_METHOD_SKIPPED = "[dim]:arrow_right_hook:[/] Skipped "
+    PLUGIN_METHOD_FAILED = "[dim]:arrow_right_hook:[/] [red]"
 
     OPEN_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Opened "
 

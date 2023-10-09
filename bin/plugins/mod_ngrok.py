@@ -147,9 +147,6 @@ class Plugin(BasePlugin):
                 for proc in alive:
                     proc.kill()
 
-        if not self.silent or self.verbose:
-            self.print("", Style.PLUGIN_UNLOAD)
-
     def list_tunnels(self, config: dict[str, Any]) -> Generator[dict[str, Any], None, None]:
         client: ngrok.Client = ngrok.Client(config.api_key)  # type: ignore
         tunnels: dict = {t.forwards_to: t for t in client.tunnels.list()}
@@ -173,7 +170,7 @@ class Plugin(BasePlugin):
 
     @public()
     def status(self, args: tuple[str, ...], config: ConfigBox, env: ConfigBox) -> None:
-        self.print("public endpoints:", Style.PLUGIN_INFO)
+        console.print(f"{Style.PLUGIN_INFO}[bold cyan]ngrok[/] public endpoints:")
 
         for t in self.list_tunnels(config.config):
             if t["up"]:
@@ -185,3 +182,5 @@ class Plugin(BasePlugin):
                 console.print(
                     f"  {Style.DOWN}tunnel " "[bold cyan]{name}[/] is [bold red]down[/]: [u]{addr}[/u]".format(**t)
                 )
+
+        console.print()
