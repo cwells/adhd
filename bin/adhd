@@ -98,7 +98,7 @@ def main(
     task: str
     style: Style | str
     returncode: int = 0
-    job_name_len: int = 20
+    job_name_len: int = 16
 
     if not check_project(project, fix_perms=fix_perms):
         sys.exit(1)
@@ -207,7 +207,9 @@ def main(
         ctx: contextlib.AbstractContextManager = (
             contextlib.nullcontext()
             if debug or verbose or interactive
-            else console.status(f"Running [bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]")
+            else console.status(
+                f"{Style.JOB_RUN_STATUS}[bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]"
+            )
         )
         with ctx as status:
             if debug or verbose:
@@ -254,8 +256,11 @@ def main(
                 webbrowser.open_new_tab(_u)
                 console.print(f"{Style.OPEN_FINISHED}[yellow]{_u}[/]", highlight=False)
 
-        if not silent:
-            console.print(f"{Style.JOB_UP}[bold blue]{job.name:<{job_name_len}}[/]")
+        if debug or verbose or not silent:
+            if debug:
+                console.print(f"{Style.JOB_UP}[bold blue]{job.name:<{job_name_len}}[/]")
+            else:
+                console.print(f"{Style.JOB_UP}[bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]")
 
     if explain:
         console.print()

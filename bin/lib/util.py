@@ -55,14 +55,17 @@ class LazyValue:
 
 # ==============================================================================
 
+state_len: int = 10
+
 
 class Style(Enum):
-    JOB_UP = "[green]:black_circle:[/]Finished "
-    JOB_DOWN = "[dim]:black_circle:[/]"
-    JOB_RUN = "[green]:black_circle:[/]Running "
-    JOB_SKIP = "[dim]:black_circle:Skipped[/] "
+    JOB_UP = f"[bold green]:black_circle:[/]{'Finished':<{state_len}}"
+    JOB_DOWN = f"[dim]:black_circle:[/]{'Stopped':<{state_len}}"
+    JOB_RUN = f"[green]:black_circle:[/]{'Running':<{state_len}}"
+    JOB_RUN_STATUS = f"{'Running':<{state_len}}"
+    JOB_SKIP = f"[green]:black_circle:[/][dim]{'Skipped':<{state_len}}[/]"
 
-    TASK_RUN = "  [white]:arrow_right_hook:  "
+    TASK_RUN = "  [white]:arrow_right_hook:[/]  "
     TASK_SKIP = "  [white]:arrow_right_hook:[grey50]  "
     TASK_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Finished "
 

@@ -183,6 +183,5 @@ class Plugin(BasePlugin):
                 )
             else:
                 console.print(
-                    f"  {Style.DOWN}tunnel "
-                    "[bold cyan]{{name}}[/] is [bold red]down[/]: [u]{addr}[/u]".format(**t)
+                    f"  {Style.DOWN}tunnel " "[bold cyan]{name}[/] is [bold red]down[/]: [u]{addr}[/u]".format(**t)
                 )
