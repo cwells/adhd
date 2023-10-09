@@ -89,11 +89,11 @@ class Plugin(BasePlugin):
         if not (bin_dir / "python").exists():
             with console.status(f"Building Python virtual environment"):
                 shell(f"python -m venv {venv}", workdir=venv, env=env, interactive=True)
-            self.print(f"building Python virtual environment [yellow]{venv}[/]", Style.FINISHED)
+            self.print(f"building Python virtual environment [yellow]{venv}[/]", Style.SUCCESS)
 
         else:
             if not self.silent or self.verbose:
-                self.print(f"building Python virtual environment [yellow]{venv}[/]", Style.SKIPPED)
+                self.print(f"building Python virtual environment [yellow]{venv}[/]", Style.SKIP)
 
         if requirements:
             with console.status(f"Installing requirements") as status:
@@ -101,14 +101,14 @@ class Plugin(BasePlugin):
                     status.update(f"Installing requirements from [yellow]{_req}[/]")
                     installed: bool = self.install_requirements(venv, _req, env)
                     if not self.silent or self.verbose:
-                        style = (Style.SKIPPED, Style.FINISHED)[installed]
+                        style = (Style.SKIP, Style.SUCCESS)[installed]
                         self.print(f"installing Python requirements from [yellow]{_req}[/]", style)
 
         if packages:
             with console.status(f"Installing additional packages"):
                 self.install_packages(venv, packages, env)
             if not self.silent or self.verbose:
-                self.print("installing Python packages", Style.FINISHED)
+                self.print("installing Python packages", Style.SUCCESS)
 
         return env
 

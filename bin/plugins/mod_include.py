@@ -38,7 +38,7 @@ class Plugin(BasePlugin):
             with open(_include, "r") as f:
                 conf.update(yaml.load(f.read(), Loader=yaml.FullLoader))
             if verbose:
-                self.print(f"Included {_include}", Style.FINISHED)
+                self.print(f"Included {_include}", Style.SUCCESS)
 
         # self.metadata["conf"].update(conf)
 

@@ -107,7 +107,7 @@ def load_plugin(
     plugin.has_run = True
 
     if not plugin.silent or plugin.verbose:
-        console.print(f"{Style.FINISH_LOAD}plugin: [cyan]{plugin.key}[/]")
+        console.print(f"{Style.PLUGIN_LOAD}plugin: [cyan]{plugin.key}[/]")
 
 
 # ==============================================================================
@@ -128,7 +128,7 @@ def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: Co
     plugin.has_run = False
 
     if not plugin.silent or plugin.verbose or plugin.debug:
-        console.print(f"{Style.FINISH_UNLOAD}plugin: [cyan]{plugin.key}[/]")
+        console.print(f"{Style.PLUGIN_UNLOAD}plugin: [cyan]{plugin.key}[/]")
 
 
 # ==============================================================================
@@ -342,7 +342,7 @@ def load_or_unload_plugin(
                     if _method := getattr(plugin, method):
                         if _method.autoload:
                             if plugin.verbose or plugin.debug:
-                                console.print(f"{Style.START_LOAD}required plugin [bold cyan]{plugin.key}[/]")
+                                console.print(f"{Style.PLUGIN_LOAD}required plugin [bold cyan]{plugin.key}[/]")
                             load_plugin(plugin, project_config, process_env)
                         call_plugin_method(plugin, method, args, project_config, process_env)
                     else:

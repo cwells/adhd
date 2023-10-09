@@ -57,26 +57,29 @@ class LazyValue:
 
 
 class Style(Enum):
-    UP = "[bright green]:black_circle:[/]"
-    DOWN = "[dim]:black_circle:[/]"
-    RUN = "[green]Run[/]"
-    STARTING = "[green]Starting[/] "
-    FINISHED = "[bold green]:black_circle:Finished[/] "
-    SKIPPED = "[dim]:black_circle:[/][yellow]Skipped[/] "
-    ERROR = "[red]:black_circle:Error[/] "
-    SUCCESS = "[bold green]Finished[/] "
-    WARNING = "[bold orange4]:black_circle:Warning[/] "
-    INFO = "[bold blue]:black_circle:[/]"
-    PLUGIN = "[bold cyan]:electric_plug:[/]"
-    WAIT_INFO = "[bold blue]:white_circle:[/]"
+    JOB_UP = "[green]:black_circle:[/]Finished "
+    JOB_DOWN = "[dim]:black_circle:[/]"
+    JOB_RUN = "[green]:black_circle:[/]Running "
+    JOB_SKIP = "[dim]:black_circle:[/][yellow]Skipped[/] "
+
     TASK_RUN = "  [white]:arrow_right_hook:  "
     TASK_SKIP = "  [white]:arrow_right_hook:[grey50]  "
     TASK_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Finished "
-    START_LOAD = "[bold green]:white_circle:[/]Loading "
-    FINISH_LOAD = "[bold green]:black_circle:[/]Loaded "
-    SKIP_LOAD = "[bold yellow]:white_circle:[/]Skipped "
-    FINISH_UNLOAD = "[dim]:black_circle:[/]Unloaded "
+
+    PLUGIN_LOAD = "[bold green]:white_circle:[/]Loading "
+    PLUGIN_UNLOAD = "[dim]:black_circle:[/]Unloaded "
+    PLUGIN_INFO = "[bold cyan]:electric_plug:[/]"
+    PLUGIN_SKIP = "[dim]:white_circle[/]"
+
     OPEN_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Opened "
+
+    ERROR = "[red]:black_circle:Error[/] "
+    WARNING = "[bold orange4]:black_circle:Warning[/] "
+    INFO = "[bold blue]:black_circle:[/]"
+    SUCCESS = "[bold green]Finished[/] "
+    UP = "[bold green]:black_circle:[/]"
+    DOWN = "[dim white]:black_circle:[/]"
+    SKIP = "[dim white]:white_circle:[/]"
 
     def __str__(self):
         return self.value

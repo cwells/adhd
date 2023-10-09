@@ -74,7 +74,7 @@ class Plugin(BasePlugin):
 
         if (local / ".git").exists():
             if self.verbose:
-                self.print(f"git.clone: [bold cyan]{local}[/] is already initialized.", Style.SKIPPED)
+                self.print(f"git.clone: [bold cyan]{local}[/] is already initialized.", Style.SKIP)
             return self.metadata
 
         if local.exists() and any(local.iterdir()):
@@ -83,7 +83,7 @@ class Plugin(BasePlugin):
         else:
             with console.status(f"Cloning git repository {remote} into {local}"):
                 self.clone(config, env)
-            self.print(f"cloning git repository into {remote}", Style.FINISHED)
+            self.print(f"cloning git repository into {remote}", Style.SUCCESS)
         return self.metadata
 
     def clone(self, config: ConfigBox, env: ConfigBox) -> None:

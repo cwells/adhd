@@ -170,7 +170,7 @@ def main(
 
         if explain:
             skip: bool = job.get("skip") and force is False
-            style = (Style.RUN, Style.SKIPPED)[skip]
+            style = (Style.JOB_RUN, Style.JOB_SKIP)[skip]
             text: str = job.get("help", "No description.")
             console.print(f"{style} [bold cyan]{job['name']}[/]: [cyan]{text}")
             if verbose:
@@ -184,7 +184,7 @@ def main(
             continue
 
         capture: bool = job.get("capture", False)
-        interactive: bool = job.get("interactive", False) or verbose
+        interactive: bool = job.get("interactive", False)
         silent = job.get("silent", False)
         workdir: Path = Path(job.get("workdir", ".")).expanduser().resolve()
 
@@ -200,19 +200,19 @@ def main(
         # skip / confirm
         if job.get("skip") and force is False:
             if not silent:
-                console.print(f'{Style.SKIPPED}[bold blue]{job["name"]}[/]')
+                console.print(f"{Style.JOB_SKIP}[bold blue]{job.name:<20}[/] [dim]{job.help}[/]")
             continue
 
         ctx: contextlib.AbstractContextManager = (
             contextlib.nullcontext()
             if debug or verbose or interactive
-            else console.status(f"{Style.RUN} [bold blue]{job['name']}[/]")
+            else console.status(f"{Style.JOB_RUN}[bold blue]{job.name:<20}[/] [dim]{job.help}[/]")
         )
         with ctx as status:
             if debug or verbose:
-                console.print(f"{Style.RUN} [bold blue]{job['name']}[/]")
+                console.print(f"{Style.JOB_RUN}[bold blue]{job.name:<20}[/] [dim]{job.help}[/]")
             # each job can be composed of multiple tasks
-            for task in job["tasks"]:
+            for task in job.tasks:
                 process: subprocess.CompletedProcess | None = None
                 returncode = 0
 
@@ -220,7 +220,7 @@ def main(
                     process = shell(
                         command=task,
                         workdir=workdir,
-                        env=job["env"],
+                        env=job.env,
                         interactive=interactive or debug,
                     )
                 except Exception as e:
@@ -230,19 +230,18 @@ def main(
                     returncode = process.returncode
 
                 if verbose:
-                    console.print(f"{Style.FINISHED}[white]task(s)[/]", highlight=False)
+                    console.print(f"{Style.JOB_UP}[white]task(s)[/]", highlight=False)
                     for idx, line in enumerate(task.strip().split("\n")):
                         style = Style.TASK_RUN if idx == 0 else "     "
                         console.print(f"{style}[dark_goldenrod]{line}[/]", highlight=False)
 
                 if returncode == 0:
                     if tts := job.get("sleep", 0):
-                        if verbose:
-                            msg: str = f"Sleeping for {tts} seconds."
-                            if debug or verbose:
-                                console.print(msg)
-                            else:
-                                status.update(msg)
+                        msg: str = f"{Style.WARNING}Sleeping for {tts} seconds."
+                        if debug or verbose:
+                            console.print(msg)
+                        else:
+                            status.update(msg)
                         time.sleep(tts)
                 else:
                     console.print(f"{Style.ERROR}Error: {task} exited with non-zero status.")
@@ -258,7 +257,7 @@ def main(
                 console.print(f"{Style.OPEN_FINISHED}[yellow]{_u}[/]", highlight=False)
 
         if not silent:
-            console.print(f"{Style.FINISHED}[bold blue]{job['name']}[/]")
+            console.print(f"{Style.JOB_UP}[bold blue]{job.name:<20}[/]")
 
     if explain:
         console.print()

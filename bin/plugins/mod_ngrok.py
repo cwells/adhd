@@ -44,6 +44,7 @@ from functools import partial
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any, Generator
+from types import ModuleType
 
 import yaml
 from lib.boot import missing_binaries, missing_modules
@@ -52,6 +53,7 @@ from lib.util import ConfigBox, Style, console, ConfigBox
 from plugins import BasePlugin, MetadataType, public
 
 missing: list[str]
+ngrok: ModuleType | None
 
 if missing := missing_modules(required_modules):
     console.print(f"Plugin [bold blue]ngrok[/] disabled, missing modules: {', '.join(missing)}\n")
@@ -85,7 +87,7 @@ class Plugin(BasePlugin):
         if not any(t for t in active_tunnels if t["up"]) or subscribed:
             for tunnel in active_tunnels:
                 if tunnel["up"] and (not self.silent or self.verbose):
-                    self.print(f"tunnel {tunnel['name']}.", Style.SKIPPED)
+                    self.print(f"tunnel {tunnel['name']}.", Style.PLUGIN_SKIP)
                 else:
                     self.start_tunnel(tunnel["name"], config, env)
 
@@ -146,7 +148,7 @@ class Plugin(BasePlugin):
                     proc.kill()
 
         if not self.silent or self.verbose:
-            self.print("", Style.FINISH_UNLOAD)
+            self.print("", Style.PLUGIN_UNLOAD)
 
     def list_tunnels(self, config: dict[str, Any]) -> Generator[dict[str, Any], None, None]:
         client: ngrok.Client = ngrok.Client(config.api_key)  # type: ignore
@@ -171,16 +173,16 @@ class Plugin(BasePlugin):
 
     @public()
     def status(self, args: tuple[str, ...], config: ConfigBox, env: ConfigBox) -> None:
-        self.print("public endpoints:", Style.PLUGIN)
+        self.print("public endpoints:", Style.PLUGIN_INFO)
 
         for t in self.list_tunnels(config.config):
             if t["up"]:
                 console.print(
-                    "  [bold green]:black_circle:[/]tunnel [bold cyan]{name}[/] is"
-                    " [bold green]up[/]:   [u]{addr}[/u] <- [u]{public_url}[/u]".format(**t)
+                    f"  {Style.UP}tunnel "
+                    "[bold cyan]{name}[/] is [bold green]up[/]:   [u]{addr}[/u] <- [u]{public_url}[/u]".format(**t)
                 )
             else:
                 console.print(
-                    f"  {Style.DOWN}tunnel [bold cyan]{{name}}[/] is"
-                    " [bold red]down[/]: [u]{addr}[/u]".format(**t)
+                    f"  {Style.DOWN}tunnel "
+                    "[bold cyan]{{name}}[/] is [bold red]down[/]: [u]{addr}[/u]".format(**t)
                 )

@@ -68,7 +68,7 @@ class Plugin(BasePlugin):
             if _env := dotenv_values(dotenv_path=path):  # type: ignore
                 conf.update(_env)
             if verbose:
-                self.print(f"Imported environment from {filename}", Style.FINISHED)
+                self.print(f"Imported environment from {filename}", Style.SUCCESS)
 
         self.metadata["conf"].update(conf)
 
