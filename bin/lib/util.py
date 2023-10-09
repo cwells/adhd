@@ -60,7 +60,7 @@ class Style(Enum):
     JOB_UP = "[green]:black_circle:[/]Finished "
     JOB_DOWN = "[dim]:black_circle:[/]"
     JOB_RUN = "[green]:black_circle:[/]Running "
-    JOB_SKIP = "[dim]:black_circle:[/][yellow]Skipped[/] "
+    JOB_SKIP = "[dim]:black_circle:Skipped[/] "
 
     TASK_RUN = "  [white]:arrow_right_hook:  "
     TASK_SKIP = "  [white]:arrow_right_hook:[grey50]  "

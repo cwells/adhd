@@ -98,6 +98,7 @@ def main(
     task: str
     style: Style | str
     returncode: int = 0
+    job_name_len: int = 20
 
     if not check_project(project, fix_perms=fix_perms):
         sys.exit(1)
@@ -200,17 +201,17 @@ def main(
         # skip / confirm
         if job.get("skip") and force is False:
             if not silent:
-                console.print(f"{Style.JOB_SKIP}[bold blue]{job.name:<20}[/] [dim]{job.help}[/]")
+                console.print(f"{Style.JOB_SKIP}[bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]")
             continue
 
         ctx: contextlib.AbstractContextManager = (
             contextlib.nullcontext()
             if debug or verbose or interactive
-            else console.status(f"{Style.JOB_RUN}[bold blue]{job.name:<20}[/] [dim]{job.help}[/]")
+            else console.status(f"Running [bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]")
         )
         with ctx as status:
             if debug or verbose:
-                console.print(f"{Style.JOB_RUN}[bold blue]{job.name:<20}[/] [dim]{job.help}[/]")
+                console.print(f"{Style.JOB_RUN}[bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]")
             # each job can be composed of multiple tasks
             for task in job.tasks:
                 process: subprocess.CompletedProcess | None = None
@@ -237,11 +238,8 @@ def main(
 
                 if returncode == 0:
                     if tts := job.get("sleep", 0):
-                        msg: str = f"{Style.WARNING}Sleeping for {tts} seconds."
                         if debug or verbose:
-                            console.print(msg)
-                        else:
-                            status.update(msg)
+                            console.print(f"{Style.WARNING}Sleeping for {tts} seconds.")
                         time.sleep(tts)
                 else:
                     console.print(f"{Style.ERROR}Error: {task} exited with non-zero status.")
@@ -257,7 +255,7 @@ def main(
                 console.print(f"{Style.OPEN_FINISHED}[yellow]{_u}[/]", highlight=False)
 
         if not silent:
-            console.print(f"{Style.JOB_UP}[bold blue]{job.name:<20}[/]")
+            console.print(f"{Style.JOB_UP}[bold blue]{job.name:<{job_name_len}}[/]")
 
     if explain:
         console.print()
