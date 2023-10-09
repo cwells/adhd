@@ -74,7 +74,7 @@ class Plugin(BasePlugin):
 
         if (local / ".git").exists():
             if self.verbose:
-                self.print(f"git.clone: [bold cyan]{local}[/] is already initialized.", Style.SKIP)
+                self.print(f"git.clone: [bold cyan]{local}[/] is already initialized.", Style.SKIPPED)
             return self.metadata
 
         if local.exists() and any(local.iterdir()):

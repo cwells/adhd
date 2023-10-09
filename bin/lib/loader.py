@@ -3,20 +3,23 @@ import re
 from datetime import datetime
 from functools import partial
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, cast
 
 try:
     import ruamel.yaml as yaml
+    from ruamel.yaml import ScalarNode, SequenceNode
+    from ruamel.yaml.loader import SafeLoader
 except ImportError:
     try:
         import yaml
+        from yaml import SafeLoader, ScalarNode, SequenceNode
     except ImportError:
-        raise SystemError("No YAML libraryfound.")
+        raise SystemError("No YAML library found.")
 
 from yarl import URL
 
 from .shell import shell
-from .util import LazyValue, get_resolved_path, ConfigBox, realize, console
+from .util import ConfigBox, LazyValue, console, get_resolved_path, realize
 
 # ==============================================================================
 
@@ -68,9 +71,9 @@ def populate_env_var(
     return realize(value, workdir=workdir, env=env)
 
 
-def construct_env_vars(loader: yaml.SafeLoader, node: yaml.ScalarNode) -> LazyValue:
+def construct_env_vars(loader: SafeLoader, node: ScalarNode) -> LazyValue:
     "Returns a LazyValue that will call populate_env_var() later."
-    value: str = str(loader.construct_scalar(node))
+    value: str = str(loader.construct_scalar(cast(Any, node)))
     return LazyValue(populate_env_var, value, find_deps(value))
 
 
@@ -135,10 +138,10 @@ def eval_shell_cmd(
     return shell(value, env=env or {}, workdir=workdir) if isinstance(value, str) else value
 
 
-def construct_shell(shell: Callable, loader: yaml.SafeLoader, node: yaml.ScalarNode) -> LazyValue:
+def construct_shell(shell: Callable, loader: SafeLoader, node: ScalarNode) -> LazyValue:
     "Execute a shell command."
 
-    value: str = str(loader.construct_scalar(node))
+    value: str = str(loader.construct_scalar(cast(Any, node)))
 
     return LazyValue(partial(eval_shell_cmd, shell), value, find_deps(value))
 
@@ -157,10 +160,10 @@ def eval_cat(
     return sep.join(evaled)
 
 
-def construct_cat(sep: str, loader: yaml.SafeLoader, node: yaml.SequenceNode) -> LazyValue:
+def construct_cat(sep: str, loader: SafeLoader, node: SequenceNode) -> LazyValue:
     "Concatenate list of strings together with `sep` between each item."
 
-    value: list = loader.construct_sequence(node)
+    value: list = loader.construct_sequence(cast(Any, node))
     return LazyValue(partial(eval_cat, sep), value, find_deps(value))
 
 
@@ -174,13 +177,13 @@ def eval_path(future: LazyValue, value: list, workdir: Path, env: ConfigBox | No
     return str(path)
 
 
-def construct_path(loader: yaml.SafeLoader, node: yaml.SequenceNode) -> LazyValue:
+def construct_path(loader: SafeLoader, node: SequenceNode) -> LazyValue:
     "Concatenate list of strings into normalized path."
 
     value: list = []
 
-    if isinstance(node, yaml.SequenceNode):
-        value = loader.construct_sequence(node)
+    if isinstance(node, SequenceNode):
+        value = loader.construct_sequence(cast(Any, node))
     else:
         _v = loader.construct_scalar(node)
         value = [_v]
@@ -201,13 +204,13 @@ def eval_exists(exists: bool, future: LazyValue, value: list, workdir: Path, env
     return path.exists() == exists
 
 
-def construct_exists(exists: bool, loader: yaml.SafeLoader, node: yaml.SequenceNode) -> LazyValue:
+def construct_exists(exists: bool, loader: SafeLoader, node: SequenceNode) -> LazyValue:
     "Check if all of a list of files exists."
 
     value: list = []
 
-    if isinstance(node, yaml.SequenceNode):
-        value = loader.construct_sequence(node)
+    if isinstance(node, SequenceNode):
+        value = loader.construct_sequence(cast(Any, node))
     else:
         _v = loader.construct_scalar(node)
         value = [_v]
@@ -228,13 +231,13 @@ def eval_url(exists: bool, future: LazyValue, value: list, workdir: Path, env: C
     return str(url)
 
 
-def construct_url(loader: yaml.SafeLoader, node: yaml.SequenceNode) -> LazyValue:
+def construct_url(loader: SafeLoader, node: SequenceNode) -> LazyValue:
     "Concatenate list of strings with no spaces and see if its a url. Exciting stuff."
 
     value: list[str] = []
 
-    if isinstance(node, yaml.SequenceNode):
-        value = loader.construct_sequence(node)
+    if isinstance(node, SequenceNode):
+        value = loader.construct_sequence(cast(Any, node))
     else:
         _v = str(loader.construct_scalar(node))
         value = [_v]
@@ -248,23 +251,23 @@ def construct_url(loader: yaml.SafeLoader, node: yaml.SequenceNode) -> LazyValue
 # ==============================================================================
 
 
-def construct_include(loader: yaml.SafeLoader, node: yaml.ScalarNode) -> Any:
+def construct_include(loader: SafeLoader, node: ScalarNode) -> Any:
     "Include another YAML file about here."
 
-    include: Path = Path(str(loader.construct_scalar(node))).expanduser().resolve()
+    include: Path = Path(str(loader.construct_scalar(cast(Any, node)))).expanduser().resolve()
 
     with open(include, "r") as f:
-        result = yaml.load(f, Loader=yaml.SafeLoader)
+        result = yaml.load(f, Loader=cast(Any, SafeLoader))
         return result
 
 
 # ==============================================================================
 
 
-def get_loader(debug: bool = False) -> type[yaml.SafeLoader]:
+def get_loader(debug: bool = False) -> type[SafeLoader]:
     "YAML loader with sweet custom tags."
 
-    loader: type[yaml.SafeLoader] = yaml.SafeLoader
+    loader: type[SafeLoader] = SafeLoader
 
     loader.add_constructor("!env", construct_env_vars)
     loader.add_constructor("!shell_eq_0", partial(construct_shell, partial(shell_eq_0, debug=debug)))

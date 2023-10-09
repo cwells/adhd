@@ -10,7 +10,7 @@ import sys
 import time
 import webbrowser
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from lib.boot import missing_modules
 
@@ -58,7 +58,7 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 
 def read_project_config(project: str, debug: bool = False) -> dict[str, Any]:
     with open(project) as config_file:
-        return ConfigBox(yaml.load(config_file, Loader=get_loader(debug=debug)))
+        return ConfigBox(yaml.load(config_file, Loader=cast(Any, get_loader(debug=debug))))
 
 
 # ==============================================================================
