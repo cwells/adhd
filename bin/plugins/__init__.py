@@ -87,8 +87,7 @@ def load_plugin(
     if not plugin_config:
         return
 
-    if not plugin.silent or plugin.verbose:
-        console.print(f"{Style.PLUGIN_LOADING}plugin: [cyan]{plugin.key}[/]")
+    console.print(f"{Style.PLUGIN_LOADING}plugin: [cyan]{plugin.key}[/]")
 
     if "tmp" not in plugin_config:
         plugin_config["tmp"] = project_config.get("tmp", "/tmp")
@@ -109,9 +108,6 @@ def load_plugin(
 
     plugin.has_run = True
 
-    if not plugin.silent or plugin.verbose:
-        console.print(f"{Style.PLUGIN_LOADED}plugin: [cyan]{plugin.key}[/]")
-
 
 # ==============================================================================
 
@@ -130,8 +126,7 @@ def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: Co
 
     plugin.has_run = False
 
-    if not plugin.silent or plugin.verbose or plugin.debug:
-        console.print(f"{Style.PLUGIN_UNLOAD}plugin: [cyan]{plugin.key}[/]")
+    console.print(f"{Style.PLUGIN_UNLOAD}plugin: [cyan]{plugin.key}[/]")
 
 
 # ==============================================================================

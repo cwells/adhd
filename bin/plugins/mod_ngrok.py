@@ -59,7 +59,7 @@ if missing := missing_modules(required_modules):
     console.print(f"Plugin [bold blue]ngrok[/] disabled, missing modules: {', '.join(missing)}\n")
     ngrok = None
 else:
-    import ngrok
+    import ngrok  # type: ignore
     import psutil
 
 if missing := missing_binaries(required_binaries):

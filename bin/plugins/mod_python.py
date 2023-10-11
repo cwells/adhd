@@ -100,14 +100,14 @@ class Plugin(BasePlugin):
                 for _req in requirements:
                     status.update(f"Installing requirements from [yellow]{_req}[/]")
                     installed: bool = self.install_requirements(venv, _req, env)
-                    if not self.silent or self.verbose:
+                    if not self.silent or installed or self.verbose or self.debug:
                         style: Style = (Style.PLUGIN_METHOD_SKIPPED, Style.PLUGIN_METHOD_SUCCESS)[installed]
                         self.print(f"installing Python requirements from [yellow]{_req}[/]", style)
 
         if packages:
             with console.status(f"Installing additional packages"):
                 self.install_packages(venv, packages, env)
-            if not self.silent or self.verbose:
+            if not self.silent or self.verbose or self.debug:
                 self.print("installing Python packages", Style.PLUGIN_METHOD_SUCCESS)
 
         return env
