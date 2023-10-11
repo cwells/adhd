@@ -5,7 +5,9 @@ This plugin will create a virtual environment and install requirements.txt. It a
 
 This plugin will also check the timestamp of your project's "requirements.txt" and if it detects a newer version, will reinstall project requirements.
 
-The optional [cyan]exe[/] attribute allows you to specify which python binary to use when building the virtualenv. This allows use with tools like `asdf`.
+The optional [cyan]exe[/] attribute allows you to specify which python binary to use when building the virtualenv. This allows use with tools like [cyan]asdf[/] and [cyan]pyenv[/].
+
+Note that you [bold]must[/] manage your Python installations using external tools such as [cyan]asdf[/]. This plugin does not install Python.
 """
 
 example = """
@@ -16,6 +18,21 @@ plugins:
     exe: ~/.asdf/installs/python/3.10.13/bin/python
     requirements: [ requirements.txt, dev-requirements.txt ]
     packages: [ requests, PyYAML==5.4.1 ]
+
+# If you need to manage multiple Python versions for
+# the same project, you can use something like this:
+
+define:
+- &asdf ~/.asdf/installs/python
+- &python "3.10.13"
+- &venv ~/.venv/myproject
+
+plugins:
+  python:
+    venv: !path [ *venv, *python ]
+    exe: !path [ *asdf, *python, bin/python ]
+
+# The virtualenv will be created at ~/.venv/myproject/3.10.13.
 """
 
 required_modules: dict[str, str] = {}
