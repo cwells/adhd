@@ -4,6 +4,8 @@ Configure Python virtual environment.
 This plugin will create a virtual environment and install requirements.txt. It also configures the proper environment variables so that you can enter the virtual environment just by spawning a shell, e.g. "adhd example /bin/bash". You can also specify packages to be installed via the [cyan]packages[/] attribute.
 
 This plugin will also check the timestamp of your project's "requirements.txt" and if it detects a newer version, will reinstall project requirements.
+
+The optional [cyan]exe[/] attribute allows you to specify which python binary to use when building the virtualenv. This allows use with tools like `asdf`.
 """
 
 example = """
@@ -11,6 +13,7 @@ plugins:
   python:
     autoload: true
     venv: ~/myproject/.venv
+    exe: ~/.asdf/installs/python/3.10.13/bin/python
     requirements: [ requirements.txt, dev-requirements.txt ]
     packages: [ requests, PyYAML==5.4.1 ]
 """
@@ -19,8 +22,10 @@ required_modules: dict[str, str] = {}
 required_binaries: list[str] = []
 
 import os
+import sys
 from pathlib import Path
 
+import shutil
 from lib.shell import shell
 from lib.util import ConfigBox, Style, console, get_resolved_path
 from plugins import BasePlugin, MetadataType
@@ -34,11 +39,25 @@ class Plugin(BasePlugin):
 
     key: str = "python"
     enabled: bool = True
+    exe: Path | None = None
 
     def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         "Activate Python virtualenv."
 
         requirements: list[Path] = []
+        exe: Path | None = None
+
+        if _exe := config.get("exe"):
+            exe = get_resolved_path(str(_exe), env=env)
+        else:
+            if _exe := shutil.which("python"):
+                exe = Path(_exe)
+
+        if not (exe and exe.exists()):
+            console.print(f"{Style.ERROR} Could not find Python executable.")
+            sys.exit(2)
+
+        self.exe = exe
 
         if _venv := config.get("venv"):
             venv: Path = get_resolved_path(_venv, env=env)
@@ -90,12 +109,14 @@ class Plugin(BasePlugin):
 
         if not (bin_dir / "python").exists():
             with console.status(f"Building virtual environment"):
-                shell(f"python -m venv {venv}", workdir=venv, env=env, interactive=True)
+                shell(f"{self.exe} -m venv {venv}", workdir=venv, env=env, interactive=True)
             self.print(f"building virtual environment [yellow]{venv}[/]", Style.PLUGIN_METHOD_SUCCESS)
 
         else:
             if not self.silent or self.verbose:
                 self.print(f"building virtual environment [yellow]{venv}[/]", Style.PLUGIN_METHOD_SKIPPED)
+
+        self.exe = bin_dir / "python"
 
         if requirements:
             with console.status(f"Installing requirements") as status:
@@ -117,12 +138,10 @@ class Plugin(BasePlugin):
     def install_packages(self, venv: Path, packages: list[str], venv_env: ConfigBox) -> int:
         "Install additional packages."
 
-        bin_dir: Path = venv / "bin"
-        python: Path = bin_dir / "python"
         packages_str: str = " ".join(packages)
 
         return shell(
-            f"{python} -m pip install {packages_str} --upgrade",
+            f"{self.exe} -m pip install {packages_str} --upgrade",
             workdir=venv,
             env=venv_env,
         ).returncode
@@ -130,13 +149,11 @@ class Plugin(BasePlugin):
     def install_requirements(self, venv: Path, requirements: Path, venv_env: ConfigBox) -> bool:
         "Install requirements.txt into virtual env."
 
-        bin_dir: Path = venv / "bin"
-        python: Path = bin_dir / "python"
         pip_log: Path = venv / f"{requirements.name}.log"
 
         if not pip_log.exists() or (requirements.stat().st_mtime > pip_log.stat().st_mtime):
             shell(
-                f"{python} -m pip install -r {requirements} --upgrade > {pip_log}.tmp && mv {pip_log}.tmp {pip_log}",
+                f"{self.exe} -m pip install -r {requirements} --upgrade > {pip_log}.tmp && mv {pip_log}.tmp {pip_log}",
                 workdir=venv,
                 env=venv_env,
             )

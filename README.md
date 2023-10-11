@@ -505,11 +505,3 @@ You may also call plugins and their methods from the cli:
 
 Some plugin methods may require the plugin to be loaded first. If so, they will
 automatically load the plugin. This is noted in the plugin's help.
-
-# TODO
-
-- additional planned plugins:
-  - `mod_git` - clone a project git repo.
-  - `mod_asdf` - select Python version.
-- get `!exists` and `!path` to operate in project home.
-- more verbosity when verbose.

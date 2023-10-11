@@ -175,7 +175,7 @@ class Plugin(BasePlugin):
 
             if not data or datetime.utcnow().replace(tzinfo=timezone.utc) > data["Credentials"]["Expiration"]:
                 while (
-                    len(code := self.prompt(f"Enter MFA code for [bold blue]{profile}[/]")) != 6
+                    len(code := self.prompt(f"Enter MFA code for [bold cyan]{profile}[/]")) != 6
                     or not code.isdigit()
                 ):
                     continue
