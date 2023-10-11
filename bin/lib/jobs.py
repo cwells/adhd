@@ -44,26 +44,31 @@ def get_job(
 
     job: ConfigBox = ConfigBox(
         {
+            "after": after,
             "env": ConfigBox(realize({**env, **task_env}, workdir=workdir, env=env)),
             "help": realize(job_config.get("help", "No help available."), workdir=workdir, env=env),
-            "open": realize(job_config.get("open"), workdir=workdir, env=env),
             "name": command,
+            "open": realize(job_config.get("open"), workdir=workdir, env=env),
             "tasks": tasks,
             "tmp": str(tmpdir),
             "workdir": str(workdir),
-            "after": after,
-            "skip": realize(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
-            "capture": realize(job_config.get("capture", False), workdir=workdir, env=env),
-            "confirm": realize(job_config.get("confirm"), workdir=workdir, env=env),
-            "interactive": realize(job_config.get("interactive", False), workdir=workdir, env=env),
-            "silent": realize(
-                job_config.get("silent", project_config.get("silent", False)), workdir=workdir, env=env
-            ),
-            "sleep": int(realize(job_config.get("sleep", 0), workdir=workdir, env=env)),
         }
     )
 
     if not explain:
+        job.update(  # these are potentially expensive, and may not run if deps aren't installed
+            {
+                "capture": realize(job_config.get("capture", False), workdir=workdir, env=env),
+                "confirm": realize(job_config.get("confirm"), workdir=workdir, env=env),
+                "interactive": realize(job_config.get("interactive", False), workdir=workdir, env=env),
+                "silent": realize(
+                    job_config.get("silent", project_config.get("silent", False)), workdir=workdir, env=env
+                ),
+                "skip": realize(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
+                "sleep": int(realize(job_config.get("sleep", 0), workdir=workdir, env=env)),
+            }
+        )
+
         if not (job["tasks"] or job_config.get("after") or job_config.get("open")):
             console.print(
                 f"{Style.ERROR}{command}: must have at least one command, dependency, or open directive."

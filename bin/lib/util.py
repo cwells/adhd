@@ -66,7 +66,7 @@ class Style(Enum):
     JOB_SKIP = f"[bold green]:white_circle:[/][dim]{'Skipped':<{state_len}}[/]"
 
     TASK_RUN = "  [white]:arrow_right_hook:[/]  "
-    TASK_SKIP = "  [white]:arrow_right_hook:[grey50]  "
+    TASK_SKIP = "  [white]:arrow_right_hook:[dim white]  "
     TASK_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Finished "
 
     PLUGIN_LOAD = "[bold green]:electric_plug:[/]Load plugin "

@@ -130,7 +130,7 @@ def main(
                 job,
                 project_config["jobs"],
                 process_env,
-                informational=True,
+                explain=True,
             )
             for name, job in project_config["jobs"].items()
         }
@@ -171,17 +171,13 @@ def main(
             console.print(job.to_dict())
 
         if explain:
-            skip: bool = job.get("skip") and force is False
-            style = (Style.EXPLAIN_RUN, Style.EXPLAIN_SKIP)[skip]
             text: str = job.get("help", "No description.")
-            console.print(f"{style} [bold cyan]{job['name']}[/]: [cyan]{text}")
+            console.print(f"[green]:white_circle:[/][bold cyan]{job['name']:<20}[/] [white]{text}[/]")
             if verbose:
-                style = (Style.TASK_RUN, Style.TASK_SKIP)[skip]
                 for task in job.get("tasks", []):
                     for idx, line in enumerate(task.split("\n")):
                         if _l := line.rstrip():
-                            _style = style if idx == 0 else f"     [{('white', 'grey50')[skip]}]"
-                            console.print(f"{_style}{_l}", highlight=False)
+                            console.print(f"{Style.TASK_SKIP}{_l}", highlight=False)
             continue
 
         capture: bool = job.get("capture", False)
