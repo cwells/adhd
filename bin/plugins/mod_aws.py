@@ -55,6 +55,7 @@ from types import ModuleType
 from typing import Any
 
 import ruamel.yaml as yaml
+
 from lib.boot import missing_modules
 from lib.util import ConfigBox, Style, check_permissions, console, get_resolved_path
 
@@ -169,11 +170,23 @@ class Plugin(BasePlugin):
         os.umask(0o0077)  # 0600
 
         with open(cache_file, "a+") as cached_data:
-            cached_data.seek(0)
+            data: dict[str, Any] = {}
+            prompt: bool = True
 
-            data: dict[str, Any] = yaml.load(cached_data, Loader=yaml.SafeLoader)
+            try:
+                cached_data.seek(0)
+                data = yaml.load(cached_data, Loader=yaml.SafeLoader)
+            except:
+                prompt = True
+            else:
+                if data:
+                    now: datetime = datetime.utcnow().replace(tzinfo=timezone.utc)
+                    expires: datetime = data["Credentials"]["Expiration"].replace(tzinfo=timezone.utc)
+                    prompt = now > expires
+                else:
+                    prompt = True
 
-            if not data or datetime.utcnow().replace(tzinfo=timezone.utc) > data["Credentials"]["Expiration"]:
+            if prompt:
                 while (
                     len(code := self.prompt(f"Enter MFA code for [bold cyan]{profile}[/]")) != 6
                     or not code.isdigit()
@@ -187,7 +200,7 @@ class Plugin(BasePlugin):
                 )
 
                 cached_data.seek(0)
-                cached_data.write(yaml.dump(data))
+                yaml.dump(data, cached_data)
 
         return data
 
