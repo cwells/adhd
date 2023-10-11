@@ -69,10 +69,10 @@ class Style(Enum):
     TASK_SKIP = "  [white]:arrow_right_hook:[dim white]  "
     TASK_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Finished "
 
-    PLUGIN_LOAD = "[bold green]:electric_plug:[/]Load plugin "
-    PLUGIN_UNLOAD = "[dim]:electric_plug:[/]Unload plugin "
+    PLUGIN_LOAD = f"[bold green]:electric_plug:[/]{'Load':<{state_len}}"
+    PLUGIN_UNLOAD = f"[dim]:electric_plug:[/]{'Unload':<{state_len}}"
     PLUGIN_INFO = "[bold cyan]:electric_plug:[/]"
-    PLUGIN_SKIP = "[dim]:electric_plug:[/]Skipped "
+    PLUGIN_SKIP = f"[dim]:electric_plug:[/]{'Skipped':<{state_len}}"
     PLUGIN_METHOD_SUCCESS = "[bold green]:arrow_right_hook:[/] Finished "
     PLUGIN_METHOD_SKIPPED = "[dim]:arrow_right_hook:[/] Skipped "
     PLUGIN_METHOD_FAILED = "[dim]:arrow_right_hook:[/] [red]"
