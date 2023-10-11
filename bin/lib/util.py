@@ -70,7 +70,7 @@ class Style(Enum):
     TASK_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Finished "
 
     PLUGIN_LOAD = f"[bold green]:electric_plug:[/]{'Load':<{state_len}}"
-    PLUGIN_UNLOAD = f"[dim]:electric_plug:[/]{'Unload':<{state_len}}"
+    PLUGIN_UNLOAD = f"[dim yellow]:electric_plug:[/]{'Unload':<{state_len}}"
     PLUGIN_INFO = "[bold cyan]:electric_plug:[/]"
     PLUGIN_SKIP = f"[dim]:electric_plug:[/]{'Skipped':<{state_len}}"
     PLUGIN_METHOD_SUCCESS = "[bold green]:arrow_right_hook:[/] Finished "
