@@ -137,18 +137,20 @@ def get_jobs(
 
     else:  # cli command
         cmd: str = " ".join(command)
-        yield {
-            "name": cmd,
-            "env": process_env,
-            "workdir": str(workdir),
-            "tmp": str(tmpdir),
-            "tasks": [cmd],
-            "sleep": 0,
-            "capture": False,
-            "interactive": True,
-            "silent": silent,
-            "verbose": verbose,
-            "debug": debug,
-            "skip": False,
-            "help": "I can't explain this.",
-        }
+        yield ConfigBox(
+            {
+                "name": cmd,
+                "env": process_env,
+                "workdir": str(workdir),
+                "tmp": str(tmpdir),
+                "tasks": [cmd],
+                "sleep": 0,
+                "capture": False,
+                "interactive": True,
+                "silent": silent,
+                "verbose": verbose,
+                "debug": debug,
+                "skip": False,
+                "help": "I can't explain this.",
+            }
+        )
