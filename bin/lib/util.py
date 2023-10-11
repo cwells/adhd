@@ -63,14 +63,14 @@ class Style(Enum):
     JOB_DOWN = f"[dim]:black_circle:[/]{'Stopped':<{state_len}}"
     JOB_RUN = f"[green]:black_circle:[/]{'Running':<{state_len}}"
     JOB_RUN_STATUS = f"{'Running':<{state_len}}"
-    JOB_SKIP = f"[green]:black_circle:[/][dim]{'Skipped':<{state_len}}[/]"
+    JOB_SKIP = f"[bold green]:white_circle:[/][dim]{'Skipped':<{state_len}}[/]"
 
     TASK_RUN = "  [white]:arrow_right_hook:[/]  "
     TASK_SKIP = "  [white]:arrow_right_hook:[grey50]  "
     TASK_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Finished "
 
-    PLUGIN_LOADING = "[bold green]:electric_plug:[/]Load "
-    PLUGIN_UNLOAD = "[dim]:electric_plug:[/]Unloaded "
+    PLUGIN_LOAD = "[bold green]:electric_plug:[/]Load plugin "
+    PLUGIN_UNLOAD = "[dim]:electric_plug:[/]Unload plugin "
     PLUGIN_INFO = "[bold cyan]:electric_plug:[/]"
     PLUGIN_SKIP = "[dim]:electric_plug:[/]Skipped "
     PLUGIN_METHOD_SUCCESS = "[bold green]:arrow_right_hook:[/] Finished "

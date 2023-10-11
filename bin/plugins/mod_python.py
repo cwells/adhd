@@ -87,13 +87,13 @@ class Plugin(BasePlugin):
         bin_dir.mkdir(parents=True, exist_ok=True)
 
         if not (bin_dir / "python").exists():
-            with console.status(f"Building Python virtual environment"):
+            with console.status(f"Building virtual environment"):
                 shell(f"python -m venv {venv}", workdir=venv, env=env, interactive=True)
-            self.print(f"building Python virtual environment [yellow]{venv}[/]", Style.PLUGIN_METHOD_SUCCESS)
+            self.print(f"building virtual environment [yellow]{venv}[/]", Style.PLUGIN_METHOD_SUCCESS)
 
         else:
             if not self.silent or self.verbose:
-                self.print(f"building Python virtual environment [yellow]{venv}[/]", Style.PLUGIN_METHOD_SKIPPED)
+                self.print(f"building virtual environment [yellow]{venv}[/]", Style.PLUGIN_METHOD_SKIPPED)
 
         if requirements:
             with console.status(f"Installing requirements") as status:
@@ -102,13 +102,13 @@ class Plugin(BasePlugin):
                     installed: bool = self.install_requirements(venv, _req, env)
                     if not self.silent or installed or self.verbose or self.debug:
                         style: Style = (Style.PLUGIN_METHOD_SKIPPED, Style.PLUGIN_METHOD_SUCCESS)[installed]
-                        self.print(f"installing Python requirements from [yellow]{_req}[/]", style)
+                        self.print(f"installing requirements [yellow]{_req}[/]", style)
 
         if packages:
             with console.status(f"Installing additional packages"):
                 self.install_packages(venv, packages, env)
             if not self.silent or self.verbose or self.debug:
-                self.print("installing Python packages", Style.PLUGIN_METHOD_SUCCESS)
+                self.print("installing packages", Style.PLUGIN_METHOD_SUCCESS)
 
         return env
 
@@ -134,7 +134,7 @@ class Plugin(BasePlugin):
 
         if not pip_log.exists() or (requirements.stat().st_mtime > pip_log.stat().st_mtime):
             shell(
-                f"{python} -m pip install -r {requirements} --upgrade > {pip_log}",
+                f"{python} -m pip install -r {requirements} --upgrade > {pip_log}.tmp && mv {pip_log}.tmp {pip_log}",
                 workdir=venv,
                 env=venv_env,
             )

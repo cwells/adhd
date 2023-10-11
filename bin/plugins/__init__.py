@@ -87,7 +87,7 @@ def load_plugin(
     if not plugin_config:
         return
 
-    console.print(f"{Style.PLUGIN_LOADING}plugin: [cyan]{plugin.key}[/]")
+    console.print(f"{Style.PLUGIN_LOAD}[cyan]{plugin.key}[/]")
 
     if "tmp" not in plugin_config:
         plugin_config["tmp"] = project_config.get("tmp", "/tmp")
@@ -118,15 +118,18 @@ def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: Co
     plugin.unload(project_config, process_env)
 
     if env := plugin.metadata.get("env"):
-        for k in env:
-            process_env.pop(k, None)
+        for k, v in env.items():
+            if v is None:
+                process_env.pop(k, None)
+            else:
+                process_env.env[k] = v
 
     for fn in plugin.events.unload:
         fn()
 
     plugin.has_run = False
 
-    console.print(f"{Style.PLUGIN_UNLOAD}plugin: [cyan]{plugin.key}[/]")
+    console.print(f"{Style.PLUGIN_UNLOAD}[cyan]{plugin.key}[/]")
 
 
 # ==============================================================================
@@ -212,10 +215,10 @@ def print_plugin_help(pager: str | bool = False, verbose=False) -> None:
     width: int = max(len(p) for p in plugins) + 22
 
     console.print()
-    for plugin, module in sorted(plugins.items()):
-        doc: str = (module.__doc__ or "No description available.").strip("\n").split("\n")[0]
+    for key, plugin in sorted(plugins.items()):
+        doc: str = (plugin.__doc__ or "No description available.").strip("\n").split("\n")[0]
         console.print(
-            f" :white_circle:{f'[bold cyan]{plugin}[/] [dim]':.<{width}}[/] {doc}",
+            f" :white_circle:{f'[bold cyan]{key}[/] [dim]':.<{width}}[/] {doc}",
             highlight=False,
         )
     console.print()

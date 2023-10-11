@@ -77,6 +77,16 @@ class Plugin(BasePlugin):
     key: str = "aws"
     enabled: bool = boto3 is not None
 
+    def __get_cache_path(self, config: ConfigBox, env: ConfigBox) -> Path:
+        "Return path to cached credentials."
+
+        profile: str = config.get("profile", "default")
+        tmpdir: Path = get_resolved_path(config.get("tmp", "/tmp"), env=env)
+        tmp: Path = Path(tmpdir).expanduser().resolve()
+        cache_file: Path = tmp / f"adhd-aws-{profile}.cache"
+
+        return cache_file
+
     def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         """
         If aws configured, prompt for 2fa code, authenticate with AWS, then
@@ -92,6 +102,7 @@ class Plugin(BasePlugin):
         mfa: dict[str, Any] = config.get("mfa", {})
         mfa_device: str | None = mfa.get("device")
         mfa_expiry: int = min(int(mfa.get("expiry", 86400)), 86400)
+        cache_file: Path = self.__get_cache_path(config, env)
         tmpdir: Path = get_resolved_path(config.get("tmp", "/tmp"), env=env)
         secure_paths: dict[Path, int] = {tmpdir: 0o0700}
 
@@ -109,10 +120,9 @@ class Plugin(BasePlugin):
         )
         token: dict[str, Any] = self.cache_session(
             session=session,
-            profile=profile,
             device_arn=device_arn,
             expiry=mfa_expiry,
-            tmpdir=tmpdir,
+            cache_file=cache_file,
         )
         response_code: int = token["ResponseMetadata"]["HTTPStatusCode"]
 
@@ -141,10 +151,9 @@ class Plugin(BasePlugin):
     def cache_session(
         self,
         session: boto3.Session,  # type: ignore
-        profile: str,
         device_arn: str,
+        cache_file: Path,
         expiry: int = 86400,
-        tmpdir: Path = Path("/tmp"),
     ) -> dict[str, Any]:
         "Caches session data until expiry, then prompts for new MFA code."
 
@@ -153,8 +162,6 @@ class Plugin(BasePlugin):
             sys.exit(1)
 
         sts: boto3.client.STS = session.client("sts")  # type: ignore
-        tmp: Path = Path(tmpdir).expanduser().resolve()
-        cache_file: Path = tmp / f"adhd-aws-{profile}.cache"
 
         os.umask(0o0077)  # 0600
 
@@ -178,15 +185,26 @@ class Plugin(BasePlugin):
 
         return data
 
-    def unload(self, config: ConfigBox, env: ConfigBox) -> None:
+    def unload(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         "Remove cached credentials, unset environment."
 
-        profile: str = config.get("profile", "default")
-        tmpdir: Path = get_resolved_path(config.get("tmp", "/tmp"), env=env)
-        cache_file: Path = tmpdir / f"adhd-aws-{profile}.cache"
+        cache_file: Path = self.__get_cache_path(config, env)
 
         if cache_file.exists():
             cache_file.unlink()
+
+        self.metadata["env"].update(
+            {
+                "AWS_PROFILE": None,
+                "AWS_DEFAULT_REGION": None,
+                "AWS_ACCESS_KEY_ID": None,
+                "AWS_SECRET_ACCESS_KEY": None,
+                "AWS_SESSION_TOKEN": None,
+                "AWS_IGNORE_CONFIGURED_ENDPOINT_URLS": None,
+            }
+        )
+
+        return self.metadata
 
     @public(autoload=True)
     def assume_role(self, args: tuple[str, ...], config: ConfigBox, env: ConfigBox) -> MetadataType:
