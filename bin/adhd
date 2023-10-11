@@ -177,7 +177,8 @@ def main(
                 for task in job.get("tasks", []):
                     for idx, line in enumerate(task.split("\n")):
                         if _l := line.rstrip():
-                            console.print(f"{Style.TASK_SKIP}{_l}", highlight=False)
+                            style = ["     [dim white]", Style.TASK_SKIP][idx == 0]
+                            console.print(f"{style}{_l}", highlight=False)
             continue
 
         capture: bool = job.get("capture", False)
