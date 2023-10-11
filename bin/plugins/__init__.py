@@ -217,7 +217,7 @@ def unload_plugins(plugins: dict[str, BasePlugin], project_config: ConfigBox, pr
 
 
 def explain_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: ConfigBox) -> None:
-    help: str = plugin.__doc__.split("\n")[0]
+    help: str = plugin.__doc__.split("\n")[0] if plugin.__doc__ else "No help available."
     console.print(f"[cyan]{plugin.key}[/] {help}")
 
 
