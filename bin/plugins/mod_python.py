@@ -98,7 +98,7 @@ class Plugin(BasePlugin):
         if requirements:
             with console.status(f"Installing requirements") as status:
                 for _req in requirements:
-                    status.update(f"Installing requirements from [yellow]{_req}[/]")
+                    status.update(f"Installing requirements [yellow]{_req}[/]")
                     installed: bool = self.install_requirements(venv, _req, env)
                     if not self.silent or installed or self.verbose or self.debug:
                         style: Style = (Style.PLUGIN_METHOD_SKIPPED, Style.PLUGIN_METHOD_SUCCESS)[installed]

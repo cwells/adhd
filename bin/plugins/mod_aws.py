@@ -82,8 +82,7 @@ class Plugin(BasePlugin):
 
         profile: str = config.get("profile", "default")
         tmpdir: Path = get_resolved_path(config.get("tmp", "/tmp"), env=env)
-        tmp: Path = Path(tmpdir).expanduser().resolve()
-        cache_file: Path = tmp / f"adhd-aws-{profile}.cache"
+        cache_file: Path = tmpdir / f"adhd-aws-{profile}.cache"
 
         return cache_file
 
@@ -119,6 +118,7 @@ class Plugin(BasePlugin):
             mfa_device if mfa_device.startswith(device_arn_prefix) else f"{device_arn_prefix}/{mfa_device}"
         )
         token: dict[str, Any] = self.cache_session(
+            profile=profile,
             session=session,
             device_arn=device_arn,
             expiry=mfa_expiry,
@@ -150,6 +150,7 @@ class Plugin(BasePlugin):
 
     def cache_session(
         self,
+        profile: str,
         session: boto3.Session,  # type: ignore
         device_arn: str,
         cache_file: Path,
@@ -171,7 +172,10 @@ class Plugin(BasePlugin):
             data: dict[str, Any] = yaml.load(cached_data, Loader=yaml.FullLoader)
 
             if not data or datetime.utcnow().replace(tzinfo=timezone.utc) > data["Credentials"]["Expiration"]:
-                while len(code := self.prompt(f"Enter MFA code")) != 6 or not code.isdigit():
+                while (
+                    len(code := self.prompt(f"Enter MFA code for [bold blue]{profile}[/]")) != 6
+                    or not code.isdigit()
+                ):
                     continue
 
                 data = sts.get_session_token(

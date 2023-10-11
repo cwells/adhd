@@ -131,7 +131,7 @@ class Plugin(BasePlugin):
         "We can't manage individual tunnels on free plan, so just kill the entire process."
 
         with console.status("Terminating ngrok tunnels") as status:
-            while any(t["up"] for t in self.list_tunnels(config.plugins.ngrok.config)):
+            while any(t["up"] for t in self.list_tunnels(config.config)):
                 processes: list[psutil.Process] = [
                     proc for proc in psutil.process_iter(attrs=["name"]) if proc.name() == "ngrok"
                 ]
@@ -148,6 +148,8 @@ class Plugin(BasePlugin):
                     proc.kill()
 
     def list_tunnels(self, config: dict[str, Any]) -> Generator[dict[str, Any], None, None]:
+        "We only get the actual ngrok config here, e.g. plugins.ngrok.config"
+
         client: ngrok.Client = ngrok.Client(config.api_key)  # type: ignore
         tunnels: dict = {t.forwards_to: t for t in client.tunnels.list()}
 

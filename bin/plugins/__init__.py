@@ -115,7 +115,18 @@ def load_plugin(
 def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: ConfigBox) -> None:
     "Unload plugin, if supported."
 
-    plugin.unload(project_config, process_env)
+    plugin_config: ConfigBox | None = project_config.get(f"plugins.{plugin.key}")
+
+    if not plugin_config:
+        return
+
+    if "tmp" not in plugin_config:
+        plugin_config["tmp"] = project_config.get("tmp", "/tmp")
+
+    for k, v in plugin_config.items():
+        plugin_config[k] = realize(v, workdir=Path("."))
+
+    plugin.unload(config=plugin_config, env=process_env)
 
     if env := plugin.metadata.get("env"):
         for k, v in env.items():
@@ -130,21 +141,6 @@ def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: Co
     plugin.has_run = False
 
     console.print(f"{Style.PLUGIN_UNLOAD}[cyan]{plugin.key}[/]")
-
-
-# ==============================================================================
-
-
-def notify_plugins(
-    event: str,
-    plugins: dict[str, BasePlugin],
-    project_config: ConfigBox,
-    process_env: ConfigBox,
-) -> None:
-    for key, plugin in plugins.items():
-        if plugin.has_run:
-            for fn in plugin.events.get(event, []):
-                fn()
 
 
 # ==============================================================================
@@ -194,6 +190,21 @@ def unload_plugins(plugins: dict[str, BasePlugin], project_config: ConfigBox, pr
     for key, plugin in plugins.items():
         if plugin.has_run:
             unload_plugin(plugin, project_config, process_env)
+
+
+# ==============================================================================
+
+
+def notify_plugins(
+    event: str,
+    plugins: dict[str, BasePlugin],
+    project_config: ConfigBox,
+    process_env: ConfigBox,
+) -> None:
+    for key, plugin in plugins.items():
+        if plugin.has_run:
+            for fn in plugin.events.get(event, []):
+                fn()
 
 
 # ==============================================================================
