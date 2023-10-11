@@ -29,6 +29,8 @@ MetadataType = dict[Literal["conf", "env", "vars"], dict[str, Any]]
 
 
 class BasePlugin:
+    "Base class for plugins."
+
     key: str | None = None
     enabled: bool = False
     metadata: MetadataType
@@ -153,6 +155,7 @@ def load_plugins(
     silent: bool = False,
     verbose: bool = False,
     debug: bool = False,
+    explain: bool = False,
 ) -> dict[str, BasePlugin]:
     "Locate plugins, import them, and run plugin.load() for each."
 
@@ -177,8 +180,11 @@ def load_plugins(
         ):
             continue
 
-        if not plugin.has_run:
-            load_plugin(plugin, project_config=project_config, process_env=process_env)
+        if explain:
+            explain_plugin(plugin, project_config=project_config, process_env=process_env)
+        else:
+            if not plugin.has_run:
+                load_plugin(plugin, project_config=project_config, process_env=process_env)
 
     return plugins
 
@@ -190,6 +196,14 @@ def unload_plugins(plugins: dict[str, BasePlugin], project_config: ConfigBox, pr
     for key, plugin in plugins.items():
         if plugin.has_run:
             unload_plugin(plugin, project_config, process_env)
+
+
+# ==============================================================================
+
+
+def explain_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: ConfigBox) -> None:
+    help: str = plugin.__doc__.split("\n")[0]
+    console.print(f"[cyan]{plugin.key}[/] {help}")
 
 
 # ==============================================================================
@@ -340,7 +354,7 @@ def load_or_unload_plugin(
     project_config: ConfigBox,
     process_env: ConfigBox,
     explain: bool = False,
-) -> bool:
+) -> BasePlugin | None:
     "If cmd is a plugin, attempt to load/unload or call one of its methods."
 
     plugin: BasePlugin | None = None
@@ -351,7 +365,8 @@ def load_or_unload_plugin(
         plugin_name = plugin_cmd["plugin"]
         if plugin := plugins.get(f"mod_{plugin_name}"):
             if explain:
-                return True
+                console.print(f"{Style.PLUGIN_INFO}[cyan]plugin:{plugin_name:<13}[/] {plugin.__doc__}")
+                return plugin
             if plugin_cmd["action"] == "plugin":
                 if method := plugin_cmd.get("method"):
                     if _method := getattr(plugin, method):
@@ -367,4 +382,4 @@ def load_or_unload_plugin(
             elif plugin_cmd["action"] == "unplug":
                 unload_plugin(plugin, project_config, process_env)
 
-    return bool(plugin)
+    return plugin

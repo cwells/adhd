@@ -30,6 +30,8 @@ from plugins import BasePlugin, MetadataType
 
 
 class Plugin(BasePlugin):
+    "Configure Python virtual environment."
+
     key: str = "python"
     enabled: bool = True
 

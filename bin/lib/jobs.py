@@ -111,6 +111,7 @@ def get_jobs(
         sys.exit(1)
 
     if load_or_unload_plugin(command, plugins, project_config, process_env, explain):
+        # the user invoked plugin at cli
         return
 
     elif _cmd in jobs:  # pre-defined jobs
@@ -121,10 +122,11 @@ def get_jobs(
                     raise SystemExit("Aborted by user request.\n")
 
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
+            job_config: ConfigBox = jobs.get(dep, {})
+
             if load_or_unload_plugin(tuple(dep.split()), plugins, project_config, process_env, explain):
                 continue
 
-            job_config: ConfigBox = jobs.get(dep, {})
             try:
                 yield get_job(dep, job_config, project_config, process_env, explain=explain)
             except Exception as e:

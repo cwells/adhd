@@ -143,16 +143,16 @@ def main(
 
     if explain:
         console.print("\n[bold]The following jobs would be run, in this order:[/]\n")
-        plugins = {}
-    else:
-        plugins = load_plugins(
-            project_config=project_config,
-            process_env=process_env,
-            enabled=plugins_enabled,
-            silent=silent,
-            verbose=verbose,
-            debug=debug,
-        )
+
+    plugins = load_plugins(
+        project_config=project_config,
+        process_env=process_env,
+        enabled=plugins_enabled,
+        silent=silent,
+        verbose=verbose,
+        debug=debug,
+        explain=explain,
+    )
 
     #
     # main loop - get_jobs() returns topologically-sorted list of jobs

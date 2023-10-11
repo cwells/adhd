@@ -74,6 +74,8 @@ else:
 
 
 class Plugin(BasePlugin):
+    "Configure AWS credentials."
+
     key: str = "aws"
     enabled: bool = boto3 is not None
 

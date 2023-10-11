@@ -71,6 +71,8 @@ if missing := missing_binaries(required_binaries):
 
 
 class Plugin(BasePlugin):
+    "Configure ngrok agent."
+
     key: str = "ngrok"
     enabled: bool = bool(ngrok)
 
