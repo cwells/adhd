@@ -172,7 +172,7 @@ def main(
 
         if explain:
             text: str = job.get("help", "No description.")
-            console.print(f"[green]:white_circle:[/][bold cyan]{job['name']:<20}[/] [white]{text}[/]")
+            console.print(f"[green]:white_circle:[/][bold cyan]{job['name']:<23}[/] [white]{text}[/]")
             if verbose:
                 for task in job.get("tasks", []):
                     for idx, line in enumerate(task.split("\n")):

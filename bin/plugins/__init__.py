@@ -56,6 +56,7 @@ class BasePlugin:
         raise NotImplementedError("You must override the load method.")
 
     def unload(self, config: ConfigBox, env: ConfigBox) -> None:
+        "Optional method to unload the plugin and cleanup."
         console.print(f"Plugin [bold blue]{self.key}[/] does not support unloading.")
 
     def prompt(self, msg: str) -> str:
@@ -81,12 +82,17 @@ def load_plugin(
     plugin: BasePlugin,
     project_config: ConfigBox,
     process_env: ConfigBox,
+    explain: bool = False,
 ) -> None:
     "Load a plugin, if enabled."
 
     plugin_config: ConfigBox | None = project_config.get(f"plugins.{plugin.key}")
 
     if not plugin_config:
+        return
+
+    if explain:
+        console.print(f"{Style.PLUGIN_INFO}[cyan]plugin:{plugin.key:<16}[/] {plugin.__doc__}")
         return
 
     console.print(f"{Style.PLUGIN_LOAD}[cyan]{plugin.key}[/]")
@@ -114,7 +120,12 @@ def load_plugin(
 # ==============================================================================
 
 
-def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: ConfigBox) -> None:
+def unload_plugin(
+    plugin: BasePlugin,
+    project_config: ConfigBox,
+    process_env: ConfigBox,
+    explain: bool = False,
+) -> None:
     "Unload plugin, if supported."
 
     plugin_config: ConfigBox | None = project_config.get(f"plugins.{plugin.key}")
@@ -127,6 +138,10 @@ def unload_plugin(plugin: BasePlugin, project_config: ConfigBox, process_env: Co
 
     for k, v in plugin_config.items():
         plugin_config[k] = realize(v, workdir=Path("."))
+
+    if explain:
+        console.print(f"{Style.PLUGIN_INFO}[cyan]unplug:{plugin.key:<16}[/] {plugin.unload.__doc__}")
+        return
 
     plugin.unload(config=plugin_config, env=process_env)
 
@@ -180,11 +195,8 @@ def load_plugins(
         ):
             continue
 
-        if explain:
-            explain_plugin(plugin, project_config=project_config, process_env=process_env)
-        else:
-            if not plugin.has_run:
-                load_plugin(plugin, project_config=project_config, process_env=process_env)
+        if not plugin.has_run:
+            load_plugin(plugin, project_config=project_config, process_env=process_env)
 
     return plugins
 
@@ -319,6 +331,7 @@ def call_plugin_method(
     args: tuple[str, ...],
     project_config: ConfigBox,
     process_env: ConfigBox,
+    explain: bool = False,
 ) -> Any:
     "If plugin has method and it's public, call it."
 
@@ -326,6 +339,11 @@ def call_plugin_method(
 
     if _method := getattr(plugin, method):
         if getattr(_method, "is_public", False):
+            if explain:
+                name: str = f"plugin:{plugin.key}.{method}"
+                console.print(f"{Style.PLUGIN_INFO}[cyan]{name:<23}[/] {_method.__doc__}")
+                return
+
             data = _method(args=args, config=project_config["plugins"][plugin.key], env=process_env)
             if data:  # plugins can update runtime environment
                 process_env.update(data.get("env", {}))
@@ -364,22 +382,19 @@ def load_or_unload_plugin(
     if plugin_cmd := get_plugin_cmd(cmd):
         plugin_name = plugin_cmd["plugin"]
         if plugin := plugins.get(f"mod_{plugin_name}"):
-            if explain:
-                console.print(f"{Style.PLUGIN_INFO}[cyan]plugin:{plugin_name:<13}[/] {plugin.__doc__}")
-                return plugin
             if plugin_cmd["action"] == "plugin":
                 if method := plugin_cmd.get("method"):
                     if _method := getattr(plugin, method):
                         if _method.autoload:
-                            load_plugin(plugin, project_config, process_env)
-                        call_plugin_method(plugin, method, args, project_config, process_env)
+                            load_plugin(plugin, project_config, process_env, explain=explain)
+                        call_plugin_method(plugin, method, args, project_config, process_env, explain=explain)
                     else:
                         console.print(f"Invalid method {plugin}.{method}")
                         sys.exit(2)
                 else:
-                    load_plugin(plugin, project_config, process_env)
+                    load_plugin(plugin, project_config, process_env, explain=explain)
 
             elif plugin_cmd["action"] == "unplug":
-                unload_plugin(plugin, project_config, process_env)
+                unload_plugin(plugin, project_config, process_env, explain=explain)
 
     return plugin

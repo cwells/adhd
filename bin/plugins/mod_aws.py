@@ -192,7 +192,7 @@ class Plugin(BasePlugin):
         return data
 
     def unload(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
-        "Remove cached credentials, unset environment."
+        "Remove cached AWS credentials, unset environment."
 
         cache_file: Path = self.__get_cache_path(config, env)
 

@@ -130,7 +130,7 @@ class Plugin(BasePlugin):
                 time.sleep(3)  # give ngrok time to read config before it's gone
 
     def unload(self, config: ConfigBox, env: ConfigBox) -> None:
-        "We can't manage individual tunnels on free plan, so just kill the entire process."
+        "Kill the ngrok agent, terminating all tunnels."
 
         with console.status("Terminating ngrok tunnels") as status:
             while any(t["up"] for t in self.list_tunnels(config.config)):
@@ -174,6 +174,8 @@ class Plugin(BasePlugin):
 
     @public()
     def status(self, args: tuple[str, ...], config: ConfigBox, env: ConfigBox) -> None:
+        "Print the status of configured ngrok tunnels."
+
         console.print(f"{Style.PLUGIN_INFO}[bold cyan]ngrok[/] public endpoints:")
 
         for t in self.list_tunnels(config.config):
