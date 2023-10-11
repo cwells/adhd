@@ -46,7 +46,7 @@ from tempfile import NamedTemporaryFile
 from typing import Any, Generator
 from types import ModuleType
 
-import yaml
+import ruamel.yaml as yaml
 from lib.boot import missing_binaries, missing_modules
 from lib.shell import shell
 from lib.util import ConfigBox, Style, console, ConfigBox

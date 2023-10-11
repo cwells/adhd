@@ -139,9 +139,19 @@ class Plugin(BasePlugin):
             with console.status(f"Installing requirements") as status:
                 for _req in requirements:
                     status.update(f"Installing requirements [yellow]{_req}[/]")
-                    installed: bool = self.install_requirements(venv, _req, env)
-                    if not self.silent or installed or self.verbose or self.debug:
-                        style: Style = (Style.PLUGIN_METHOD_SKIPPED, Style.PLUGIN_METHOD_SUCCESS)[installed]
+                    installed: bool | None = self.install_requirements(venv, _req, env)
+                    if installed is None:
+                        style = Style.PLUGIN_METHOD_SKIPPED
+                    elif installed is True:
+                        style = Style.PLUGIN_METHOD_SUCCESS
+                    elif installed is False:
+                        style = Style.PLUGIN_METHOD_FAILED
+                        pip_log: Path = venv / f"{_req.name}.log.tmp"
+                        self.print(f"installing requirements [yellow]{_req}[/]", style)
+                        console.print(f"\nAborting. See [bold]{pip_log}[/] for more details.")
+                        sys.exit(3)
+
+                    if not self.silent or self.verbose or self.debug or installed is True:
                         self.print(f"installing requirements [yellow]{_req}[/]", style)
 
         if packages:
@@ -163,17 +173,17 @@ class Plugin(BasePlugin):
             env=venv_env,
         ).returncode
 
-    def install_requirements(self, venv: Path, requirements: Path, venv_env: ConfigBox) -> bool:
+    def install_requirements(self, venv: Path, requirements: Path, venv_env: ConfigBox) -> bool | None:
         "Install requirements.txt into virtual env."
 
         pip_log: Path = venv / f"{requirements.name}.log"
 
         if not pip_log.exists() or (requirements.stat().st_mtime > pip_log.stat().st_mtime):
-            shell(
+            process = shell(
                 f"{self.exe} -m pip install -r {requirements} --upgrade > {pip_log}.tmp && mv {pip_log}.tmp {pip_log}",
                 workdir=venv,
                 env=venv_env,
             )
-            return True
+            return process.returncode == 0
 
-        return False
+        return

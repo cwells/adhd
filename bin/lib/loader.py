@@ -5,16 +5,9 @@ from functools import partial
 from pathlib import Path
 from typing import Any, Callable, cast
 
-try:
-    import ruamel.yaml as yaml
-    from ruamel.yaml import ScalarNode, SequenceNode
-    from ruamel.yaml.loader import SafeLoader
-except ImportError:
-    try:
-        import yaml
-        from yaml import SafeLoader, ScalarNode, SequenceNode
-    except ImportError:
-        raise SystemError("No YAML library found.")
+import ruamel.yaml as yaml
+from ruamel.yaml import ScalarNode, SequenceNode
+from ruamel.yaml.loader import SafeLoader
 
 from yarl import URL
 

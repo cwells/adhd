@@ -75,7 +75,7 @@ class Style(Enum):
     PLUGIN_SKIP = f"[dim]:electric_plug:[/]{'Skipped':<{state_len}}"
     PLUGIN_METHOD_SUCCESS = "[bold green]:arrow_right_hook:[/] Finished "
     PLUGIN_METHOD_SKIPPED = "[dim]:arrow_right_hook:[/] Skipped "
-    PLUGIN_METHOD_FAILED = "[dim]:arrow_right_hook:[/] [red]"
+    PLUGIN_METHOD_FAILED = "[dim]:arrow_right_hook:[/][red] Failed "
 
     EXPLAIN_RUN = f"{'[bold green]:black_circle:[/]Would [bold green]run[/]':<{state_len}}"
     EXPLAIN_SKIP = f"{':white_circle:Would [bold yellow]skip[/]':<{state_len}}"

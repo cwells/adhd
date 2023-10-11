@@ -17,7 +17,7 @@ required_modules: dict[str, str] = {}
 required_binaries: list[str] = []
 
 
-import yaml
+import ruamel.yaml as yaml
 from lib.util import ConfigBox, Style
 from plugins import BasePlugin, MetadataType
 
@@ -36,7 +36,7 @@ class Plugin(BasePlugin):
 
         for _include in config:
             with open(_include, "r") as f:
-                conf.update(yaml.load(f.read(), Loader=yaml.FullLoader))
+                conf.update(yaml.load(f.read(), Loader=yaml.SafeLoader))
             if verbose:
                 self.print(f"Included {_include}", Style.SUCCESS)
 

@@ -54,7 +54,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-import yaml
+import ruamel.yaml as yaml
 from lib.boot import missing_modules
 from lib.util import ConfigBox, Style, check_permissions, console, get_resolved_path
 
@@ -171,7 +171,7 @@ class Plugin(BasePlugin):
         with open(cache_file, "a+") as cached_data:
             cached_data.seek(0)
 
-            data: dict[str, Any] = yaml.load(cached_data, Loader=yaml.FullLoader)
+            data: dict[str, Any] = yaml.load(cached_data, Loader=yaml.SafeLoader)
 
             if not data or datetime.utcnow().replace(tzinfo=timezone.utc) > data["Credentials"]["Expiration"]:
                 while (

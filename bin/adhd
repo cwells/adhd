@@ -20,7 +20,6 @@ required_modules: dict[str, str] = {
     "rich": "rich",
     "ruamel.yaml": "ruamel.yaml",
     "toposort": "toposort",
-    # "yaml": "PyYAML",
     "yarl": "yarl",
 }
 
@@ -30,7 +29,7 @@ if missing := missing_modules(required_modules):
     sys.exit(1)
 
 import click
-import yaml
+import ruamel.yaml as yaml
 from lib.boot import missing_binaries
 from lib.jobs import get_job, get_jobs
 from lib.loader import get_loader
