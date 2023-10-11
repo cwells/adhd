@@ -25,7 +25,7 @@ def get_job(
     job_config: ConfigBox,
     project_config: ConfigBox,
     process_env: ConfigBox,
-    informational: bool = False,  # don't _eval values that we don't need
+    explain: bool = False,  # don't _eval values that we don't need
 ) -> ConfigBox:
     "Build a job structure from configuration."
 
@@ -46,32 +46,29 @@ def get_job(
         {
             "env": ConfigBox(realize({**env, **task_env}, workdir=workdir, env=env)),
             "help": realize(job_config.get("help", "No help available."), workdir=workdir, env=env),
+            "open": realize(job_config.get("open"), workdir=workdir, env=env),
             "name": command,
             "tasks": tasks,
             "tmp": str(tmpdir),
             "workdir": str(workdir),
             "after": after,
+            "skip": realize(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
+            "capture": realize(job_config.get("capture", False), workdir=workdir, env=env),
+            "confirm": realize(job_config.get("confirm"), workdir=workdir, env=env),
+            "interactive": realize(job_config.get("interactive", False), workdir=workdir, env=env),
+            "silent": realize(
+                job_config.get("silent", project_config.get("silent", False)), workdir=workdir, env=env
+            ),
+            "sleep": int(realize(job_config.get("sleep", 0), workdir=workdir, env=env)),
         }
     )
 
-    if not informational:
-        job.update(
-            {
-                "capture": realize(job_config.get("capture", False), workdir=workdir, env=env),
-                "confirm": realize(job_config.get("confirm"), workdir=workdir, env=env),
-                "interactive": realize(job_config.get("interactive", False), workdir=workdir, env=env),
-                "open": realize(job_config.get("open"), workdir=workdir, env=env),
-                "silent": realize(
-                    job_config.get("silent", project_config.get("silent", False)), workdir=workdir, env=env
-                ),
-                "skip": realize(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
-                "sleep": int(realize(job_config.get("sleep", 0), workdir=workdir, env=env)),
-            }
-        )
-
-    if not (job["tasks"] or job_config.get("after") or job_config.get("open")):
-        console.print(f"{Style.ERROR}{command}: must have at least one command, dependency, or open directive.")
-        sys.exit(1)
+    if not explain:
+        if not (job["tasks"] or job_config.get("after") or job_config.get("open")):
+            console.print(
+                f"{Style.ERROR}{command}: must have at least one command, dependency, or open directive."
+            )
+            sys.exit(1)
 
     return job
 
@@ -87,6 +84,7 @@ def get_jobs(
     silent: bool = False,
     verbose: bool = False,
     debug: bool = False,
+    explain: bool = False,
 ) -> Generator:
     """
     Determine whether we're going to use a pre-defined job from configuration, or
@@ -107,7 +105,7 @@ def get_jobs(
         console.print(f"No command given.")
         sys.exit(1)
 
-    if load_or_unload_plugin(command, plugins, project_config, process_env):
+    if load_or_unload_plugin(command, plugins, project_config, process_env, explain):
         return
 
     elif _cmd in jobs:  # pre-defined jobs
@@ -118,12 +116,12 @@ def get_jobs(
                     raise SystemExit("Aborted by user request.\n")
 
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
-            if load_or_unload_plugin(tuple(dep.split()), plugins, project_config, process_env):
+            if load_or_unload_plugin(tuple(dep.split()), plugins, project_config, process_env, explain):
                 continue
 
             job_config: ConfigBox = jobs.get(dep, {})
             try:
-                yield get_job(dep, job_config, project_config, process_env)
+                yield get_job(dep, job_config, project_config, process_env, explain=explain)
             except Exception as e:
                 console.print(f"{Style.ERROR} job [bold cyan]{_cmd}[/] failed: [bold white]{e}[/]")
                 if debug:

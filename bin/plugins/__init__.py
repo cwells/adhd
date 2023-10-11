@@ -339,6 +339,7 @@ def load_or_unload_plugin(
     plugins: dict[str, BasePlugin],
     project_config: ConfigBox,
     process_env: ConfigBox,
+    explain: bool = False,
 ) -> bool:
     "If cmd is a plugin, attempt to load/unload or call one of its methods."
 
@@ -349,6 +350,8 @@ def load_or_unload_plugin(
     if plugin_cmd := get_plugin_cmd(cmd):
         plugin_name = plugin_cmd["plugin"]
         if plugin := plugins.get(f"mod_{plugin_name}"):
+            if explain:
+                return True
             if plugin_cmd["action"] == "plugin":
                 if method := plugin_cmd.get("method"):
                     if _method := getattr(plugin, method):

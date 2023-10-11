@@ -165,13 +165,14 @@ def main(
         silent=silent,
         verbose=verbose,
         debug=debug,
+        explain=explain,
     ):
         if debug and verbose:
             console.print(job.to_dict())
 
         if explain:
             skip: bool = job.get("skip") and force is False
-            style = (Style.JOB_RUN, Style.JOB_SKIP)[skip]
+            style = (Style.EXPLAIN_RUN, Style.EXPLAIN_SKIP)[skip]
             text: str = job.get("help", "No description.")
             console.print(f"{style} [bold cyan]{job['name']}[/]: [cyan]{text}")
             if verbose:
@@ -181,7 +182,6 @@ def main(
                         if _l := line.rstrip():
                             _style = style if idx == 0 else f"     [{('white', 'grey50')[skip]}]"
                             console.print(f"{_style}{_l}", highlight=False)
-                console.print()
             continue
 
         capture: bool = job.get("capture", False)
@@ -267,7 +267,8 @@ def main(
     elif not silent:
         console.print(f"[bold white]Complete.[/]\n")
 
-    notify_plugins("exit", plugins, project_config, process_env)
+    if not explain:
+        notify_plugins("exit", plugins, project_config, process_env)
 
     sys.exit(returncode)
 

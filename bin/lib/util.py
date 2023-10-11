@@ -77,6 +77,9 @@ class Style(Enum):
     PLUGIN_METHOD_SKIPPED = "[dim]:arrow_right_hook:[/] Skipped "
     PLUGIN_METHOD_FAILED = "[dim]:arrow_right_hook:[/] [red]"
 
+    EXPLAIN_RUN = f"{'[bold green]:black_circle:[/]Would [bold green]run[/]':<{state_len}}"
+    EXPLAIN_SKIP = f"{':white_circle:Would [bold yellow]skip[/]':<{state_len}}"
+
     OPEN_FINISHED = "  [white]:arrow_right_hook:[/]  [green]Opened "
 
     ERROR = "[red]:black_circle:Error[/] "
