@@ -1,7 +1,7 @@
 """
 Check for updates to adhd.
 
-Queries Github repository for a new release of adhd, and notifies user.
+Queries Github repository for a new release of adhd and notifies user.
 """
 
 example = """
@@ -41,7 +41,7 @@ REPO = "cwells/adhd"
 class Plugin(BasePlugin):
     "Check Github for updates to [bold cyan]adhd[/]."
 
-    key: str = "adhd"
+    key: str = "adhd-update"
     enabled: bool = not (missing)
     has_run: bool = False
 
