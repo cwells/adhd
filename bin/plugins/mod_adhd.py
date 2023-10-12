@@ -5,9 +5,11 @@ Queries Github repository for a new release of [cyan]adhd[/] and notifies user.
 
 By default, the location of the [cyan]adhd[/] executable is presumed to be in the local repository.
 
-Optionally, you may override the [cyan]local[/] and [cyan]remote[/] repositories.
-
-If remote repo is private, you may provide an optional GitHub [cyan]token[/].
+Optional settings:
+- [cyan]remote[/] Override the remote repository.
+- [cyan]local[/] Override the local repository.
+- [cyan]token[/] Provide Github token for accessing private repository.
+- [cyan]ref[/] Git ref/tag to checkout.
 """
 
 example = """
@@ -16,7 +18,8 @@ plugins:
     autoload: true
     remote: cwells/adhd
     local: ~/.adhd
-    token: fake_token_q4r1fn4iqf432099lol053tqfqsdfAAfaBa
+    ref: "0.0.1"
+    token: q4Gir1fyourn4iwafflesqfhave432sickened099me053tqfetchqsmefAAthefabucket!Ba
 """
 
 required_modules: dict[str, str] = {
