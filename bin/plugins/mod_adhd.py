@@ -1,7 +1,9 @@
 """
 Check for updates to adhd.
 
-Queries Github repository for a new release of adhd and notifies user.
+Queries Github repository for a new release of [cyan]adhd[/] and notifies user.
+
+By default, the location of the [cyan]adhd[/] executable is presumed to be in the local repository.
 
 Optionally, you may override the [cyan]local[/] and [cyan]remote[/] repositories.
 
