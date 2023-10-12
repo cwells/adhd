@@ -52,19 +52,17 @@ from lib.shell import shell
 from lib.util import ConfigBox, Style, console, ConfigBox
 from plugins import BasePlugin, MetadataType, public
 
-missing: list[str]
-ngrok: ModuleType | None
+missing_mods: list[str]
+missing_bins: list[str]
 
-if missing := missing_modules(required_modules):
-    console.print(f"Plugin [bold blue]ngrok[/] disabled, missing modules: {', '.join(missing)}\n")
-    ngrok = None
+if missing_mods := missing_modules(required_modules):
+    console.print(f"Plugin [bold blue]ngrok[/] disabled, missing modules: {', '.join(missing_mods)}\n")
 else:
-    import ngrok  # type: ignore
+    import ngrok
     import psutil
 
-if missing := missing_binaries(required_binaries):
-    console.print(f"Plugin [bold blue]ngrok[/] disabled, missing binaries: {', '.join(missing)}\n")
-    ngrok = None
+if missing_bins := missing_binaries(required_binaries):
+    console.print(f"Plugin [bold blue]ngrok[/] disabled, missing binaries: {', '.join(missing_bins)}\n")
 
 
 # ==============================================================================
@@ -74,7 +72,7 @@ class Plugin(BasePlugin):
     "Configure ngrok agent."
 
     key: str = "ngrok"
-    enabled: bool = bool(ngrok)
+    enabled: bool = not (missing_mods or missing_bins)
 
     def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         "Start the ngrok agent."

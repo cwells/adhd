@@ -62,11 +62,9 @@ from lib.util import ConfigBox, Style, check_permissions, console, get_resolved_
 from plugins import BasePlugin, MetadataType, public
 
 missing: list[str]
-boto3: ModuleType | None
 
 if missing := missing_modules(required_modules):
     console.print(f"Plugin [bold blue]AWS[/] disabled, missing modules: {', '.join(missing)}\n")
-    boto3 = None
 else:
     import boto3
 
@@ -78,7 +76,7 @@ class Plugin(BasePlugin):
     "Configure AWS credentials."
 
     key: str = "aws"
-    enabled: bool = boto3 is not None
+    enabled: bool = not missing
 
     def __get_cache_path(self, config: ConfigBox, env: ConfigBox) -> Path:
         "Return path to cached credentials."

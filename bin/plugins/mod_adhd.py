@@ -42,7 +42,7 @@ class Plugin(BasePlugin):
     "Check Github for updates to [bold cyan]adhd[/]."
 
     key: str = "adhd-update"
-    enabled: bool = not (missing)
+    enabled: bool = not missing
     has_run: bool = False
 
     def load(self, config: ConfigBox, env: ConfigBox, verbose: bool = False) -> MetadataType:
@@ -73,8 +73,8 @@ class Plugin(BasePlugin):
 
     def get_remote_tag(self) -> str:
         gh: GitHub = Github()  # type: ignore
-        repo: Repository = gh.get_repo(REPO)
-        tags: list[str] = sorted(t.name for t in repo.get_tags())
+        repo: Repository = gh.get_repo(REPO)  # type: ignore
+        tags: list[str] = sorted(t.name for t in repo.get_tags())  # type: ignore
         latest_tag: str = tags[-1]
 
         return latest_tag
