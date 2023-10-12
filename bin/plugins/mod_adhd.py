@@ -2,12 +2,19 @@
 Check for updates to adhd.
 
 Queries Github repository for a new release of adhd and notifies user.
+
+Optionally, you may override the [cyan]local[/] and [cyan]remote[/] repositories.
+
+If remote repo is private, you may provide an optional GitHub [cyan]token[/].
 """
 
 example = """
 plugins:
   adhd:
     autoload: true
+    remote: cwells/adhd
+    local: ~/.adhd
+    token: fake_token_q4r1fn4iqf432099lol053tqfqsdfAAfaBa
 """
 
 required_modules: dict[str, str] = {
@@ -33,7 +40,9 @@ else:
     from git import Repo  # type: ignore
     import semver
 
-REPO = "cwells/adhd"
+REMOTE_REPO = "cwells/adhd"
+LOCAL_REPO = get_program_bin().parent
+
 
 # ==============================================================================
 
@@ -52,29 +61,31 @@ class Plugin(BasePlugin):
             self.print("support is disabled.", Style.ERROR)
             sys.exit(1)
 
-        repo_path: Path = get_program_bin().parent
-        local_tag: str = self.get_local_tag(repo_path)
-        remote_tag: str = self.get_remote_tag()
+        remote: str = config.get("remote", REMOTE_REPO)
+        local: str = config.get("local", LOCAL_REPO)
+        token: str = config.get("token")
 
-        if semver.compare(remote_tag, local_tag) > 0:
+        local_tag: str | None = self.get_local_tag(local)
+        remote_tag: str | None = self.get_remote_tag(remote, token=token)
+
+        if not remote_tag:
+            return self.metadata
+
+        if not local_tag or semver.compare(remote_tag, local_tag) > 0:
             self.print(
                 f"An update to [bold cyan]adhd[/] is available ({local_tag} -> {remote_tag}). "
-                f"Run [bold white]git pull[/] from [bold blue]{repo_path}[/].\n"
+                f"Run [bold white]git pull[/] from [bold blue]{local}[/].\n"
             )
 
         return self.metadata
 
-    def get_local_tag(self, repo_path: Path) -> str:
-        repo: Repo = Repo(repo_path)
+    def get_local_tag(self, local: str) -> str | None:
+        repo: Repo = Repo(Path(local).expanduser().resolve())
         tags: list[str] = sorted(t.name for t in repo.tags)
-        latest_tag: str = tags[-1]
+        return tags[-1] if tags else None
 
-        return latest_tag
-
-    def get_remote_tag(self) -> str:
-        gh: GitHub = Github()  # type: ignore
-        repo: Repository = gh.get_repo(REPO)  # type: ignore
+    def get_remote_tag(self, remote: str, token: str | None) -> str | None:
+        gh: GitHub = Github(token)  # type: ignore
+        repo: Repository = gh.get_repo(remote)  # type: ignore
         tags: list[str] = sorted(t.name for t in repo.get_tags())  # type: ignore
-        latest_tag: str = tags[-1]
-
-        return latest_tag
+        return tags[-1] if tags else None
