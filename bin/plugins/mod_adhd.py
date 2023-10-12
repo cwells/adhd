@@ -39,7 +39,7 @@ if missing := missing_modules(required_modules):
     console.print(f"Plugin [bold blue]adhd[/] updater disabled, missing modules: {', '.join(missing)}\n")
 else:
     from github import Github, Repository
-    from git import Repo  # type: ignore
+    from git import Git, Repo  # type: ignore
     import semver
 
 REMOTE_REPO = "cwells/adhd"
@@ -59,14 +59,14 @@ class Plugin(BasePlugin):
     def load(self, config: ConfigBox, env: ConfigBox, verbose: bool = False) -> MetadataType:
         "Check Github for new release tag for adhd."
 
-        if not self.enabled or Github is None:
+        if not self.enabled:
             self.print("support is disabled.", Style.ERROR)
             sys.exit(1)
 
         remote: str = config.get("remote", REMOTE_REPO)
         local: str = config.get("local", LOCAL_REPO)
-        token: str = config.get("token")
-
+        token: str | None = config.get("token")
+        tag: str | None = config.get("tag")
         local_tag: str | None = self.get_local_tag(local)
         remote_tag: str | None = self.get_remote_tag(remote, token=token)
 
@@ -79,10 +79,14 @@ class Plugin(BasePlugin):
                 f"Run [bold white]git pull[/] from [bold blue]{local}[/].\n"
             )
 
+        if _tag := tag or local_tag:
+            self.checkout_tag(local, _tag)
+
         return self.metadata
 
     def get_local_tag(self, local: str) -> str | None:
-        repo: Repo = Repo(Path(local).expanduser().resolve())
+        path: Path = Path(local).expanduser().resolve()
+        repo: Repo = Repo(path)
         tags: list[str] = sorted(t.name for t in repo.tags)
         return tags[-1] if tags else None
 
@@ -91,3 +95,7 @@ class Plugin(BasePlugin):
         repo: Repository = gh.get_repo(remote)  # type: ignore
         tags: list[str] = sorted(t.name for t in repo.get_tags())  # type: ignore
         return tags[-1] if tags else None
+
+    def checkout_tag(self, local: str, tag: str):
+        git: Git = Git(local)
+        git.checkout(tag)
