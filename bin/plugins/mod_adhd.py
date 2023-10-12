@@ -86,7 +86,7 @@ class Plugin(BasePlugin):
             if update:
                 self.update_local(local, ref or remote_tag)
                 self.print(
-                    f"updating to {ref or remote_tag} [bold blue]{local}[/]. Please restart your jobs.",
+                    f"updating [bold blue]{local}[/] to {ref or remote_tag}. Please restart your jobs.",
                     style=Style.PLUGIN_METHOD_SUCCESS,
                 )
                 raise SystemExit
