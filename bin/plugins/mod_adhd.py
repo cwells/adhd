@@ -1,5 +1,5 @@
 """
-Check for updates to adhd.
+Check for updates to [cyan]adhd[/].
 
 Queries Github repository for a new release of [cyan]adhd[/] and notifies user.
 
@@ -12,7 +12,7 @@ If remote repo is private, you may provide an optional GitHub [cyan]token[/].
 
 example = """
 plugins:
-  adhd:
+  adhd-update:
     autoload: true
     remote: cwells/adhd
     local: ~/.adhd
