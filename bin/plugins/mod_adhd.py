@@ -86,9 +86,10 @@ class Plugin(BasePlugin):
             if update:
                 self.update_local(local, ref or remote_tag)
                 self.print(
-                    f"Updated [bold white]git pull[/] from [bold blue]{local}[/].",
+                    f"Updated [bold white]git pull[/] from [bold blue]{local}[/]. Please restart your jobs.",
                     style=Style.PLUGIN_METHOD_SUCCESS,
                 )
+                raise SystemExit
             else:
                 self.print(f"Run [bold white]git pull[/] from [bold blue]{local}[/].", style=Style.PLUGIN_STATUS)
 
