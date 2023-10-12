@@ -8,7 +8,6 @@ example = """
 plugins:
   adhd:
     autoload: true
-    notify: true
 """
 
 required_modules: dict[str, str] = {
@@ -20,7 +19,6 @@ required_binaries: list[str] = []
 
 import sys
 from pathlib import Path
-from typing import Type
 
 from lib.boot import missing_modules
 from lib.util import ConfigBox, Style, console, get_program_bin
