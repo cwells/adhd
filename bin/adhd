@@ -97,7 +97,7 @@ def main(
     task: str
     style: Style | str
     returncode: int = 0
-    job_name_len: int = 16
+    job_name_len: int = 20
 
     if not check_project(project, fix_perms=fix_perms):
         sys.exit(1)
@@ -180,7 +180,6 @@ def main(
                             console.print(f"{style}{_l}", highlight=False)
             continue
 
-        capture: bool = job.get("capture", False)
         interactive: bool = job.get("interactive", False)
         silent = job.get("silent", False)
         workdir: Path = Path(job.get("workdir", ".")).expanduser().resolve()
@@ -210,6 +209,7 @@ def main(
         with ctx as status:
             if debug or verbose:
                 console.print(f"{Style.JOB_RUN}[bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]")
+
             # each job can be composed of multiple tasks
             for task in job.tasks:
                 process: subprocess.CompletedProcess | None = None

@@ -143,6 +143,7 @@ home: str                     # path to project directory
 venv: Optional[str]           # path to virtual environment
 tmp: Optional[str]            # path to store temporary files
 requirements: Optional[list[str]]  # list of required binaries
+pager: Literal["color"]|bool    # type of pager: bool == enable/disable, "color" enable with color support.
 
 plugins:  # dictionary of plugin configurations. see "adhd example help plugins --verbose"
   <identifier>: { <plugin configuration> }

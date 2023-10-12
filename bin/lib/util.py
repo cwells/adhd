@@ -55,7 +55,7 @@ class LazyValue:
 
 # ==============================================================================
 
-state_len: int = 10
+state_len: int = 9
 
 
 class Style(Enum):

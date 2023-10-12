@@ -92,12 +92,13 @@ def load_plugin(
         return
 
     plugin_name: str = f"plugin:{plugin.key}"
+    pad: int = 20
 
     if explain:
-        console.print(f"{Style.PLUGIN_INFO}[cyan]{plugin_name:<16}[/] {plugin.__doc__}")
+        console.print(f"{Style.PLUGIN_INFO}[cyan]{plugin_name:<{pad}}[/] {plugin.__doc__}")
         return
 
-    console.print(f"{Style.PLUGIN_LOAD}[cyan]{plugin_name:<16}[/] [dim]{plugin.__doc__}")
+    console.print(f"{Style.PLUGIN_LOAD}[cyan]{plugin_name:<{pad}}[/] [dim]{plugin.__doc__}")
 
     if "tmp" not in plugin_config:
         plugin_config["tmp"] = project_config.get("tmp", "/tmp")
@@ -131,6 +132,7 @@ def unload_plugin(
     "Unload plugin, if supported."
 
     plugin_config: ConfigBox | None = project_config.get(f"plugins.{plugin.key}")
+    pad: int = 20
 
     if not plugin_config:
         return
@@ -142,7 +144,7 @@ def unload_plugin(
         plugin_config[k] = realize(v, workdir=Path("."))
 
     if explain:
-        console.print(f"{Style.PLUGIN_INFO}[cyan]unplug:{plugin.key:<16}[/] {plugin.unload.__doc__}")
+        console.print(f"{Style.PLUGIN_INFO}[cyan]unplug:{plugin.key:<{pad}}[/] {plugin.unload.__doc__}")
         return
 
     plugin.unload(config=plugin_config, env=process_env)
@@ -160,7 +162,7 @@ def unload_plugin(
     plugin.has_run = False
 
     plugin_name: str = f"unplug:{plugin.key}"
-    console.print(f"{Style.PLUGIN_UNLOAD}[cyan]{plugin_name:<16}[/] [dim]{plugin.unload.__doc__}")
+    console.print(f"{Style.PLUGIN_UNLOAD}[cyan]{plugin_name:<{pad}}[/] [dim]{plugin.unload.__doc__}")
 
 
 # ==============================================================================
