@@ -9,7 +9,8 @@ Optional settings:
 - [cyan]remote[/] Override the remote repository.
 - [cyan]local[/] Override the local repository.
 - [cyan]token[/] Provide Github token for accessing private repository.
-- [cyan]ref[/] Git ref/tag to checkout.
+- [cyan]ref[/] Git ref/tag to checkout (use HEAD to follow development).
+- [cyan]update[/] Automatically perform a [blue]git pull[/] and checkout [cyan]ref[/] or latest tag.
 """
 
 example = """
@@ -19,6 +20,7 @@ plugins:
     remote: cwells/adhd
     local: ~/.adhd
     ref: "0.0.1"
+    update: false
     token: q4Gir1fyourn4iwafflesqfhave432sickened099me053tqfetchqsmefAAthefabucket!Ba
 """
 
