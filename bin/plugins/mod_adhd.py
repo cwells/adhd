@@ -66,7 +66,7 @@ class Plugin(BasePlugin):
         remote: str = config.get("remote", REMOTE_REPO)
         local: str = config.get("local", LOCAL_REPO)
         token: str | None = config.get("token")
-        tag: str | None = config.get("tag")
+        ref: str | None = config.get("ref")
         local_tag: str | None = self.get_local_tag(local)
         remote_tag: str | None = self.get_remote_tag(remote, token=token)
 
@@ -79,8 +79,8 @@ class Plugin(BasePlugin):
                 f"Run [bold white]git pull[/] from [bold blue]{local}[/].\n"
             )
 
-        if _tag := tag or local_tag:
-            self.checkout_tag(local, _tag)
+        if _ref := ref or local_tag:
+            self.checkout_tag(local, _ref)
 
         return self.metadata
 
