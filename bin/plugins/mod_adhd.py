@@ -67,9 +67,11 @@ class Plugin(BasePlugin):
             sys.exit(1)
 
         remote: str = config.get("remote", REMOTE_REPO)
-        local: str = config.get("local", LOCAL_REPO)
+        local: Path = Path(config.get("local", LOCAL_REPO)).expanduser().resolve()
         token: str | None = config.get("token")
         ref: str | None = config.get("ref")
+        update: bool | None = config.get("update", False)
+
         local_tag: str | None = self.get_local_tag(local)
         remote_tag: str | None = self.get_remote_tag(remote, token=token)
 
@@ -78,19 +80,22 @@ class Plugin(BasePlugin):
 
         if not local_tag or semver.compare(remote_tag, local_tag) > 0:
             self.print(
-                f"An update to [bold cyan]adhd[/] is available ({local_tag} -> {remote_tag}). "
-                f"Run [bold white]git pull[/] from [bold blue]{local}[/].",
+                f"An update to [bold cyan]adhd[/] is available ({local_tag} -> {remote_tag}). ",
                 style=Style.PLUGIN_STATUS,
             )
-
-        if _ref := ref or local_tag:
-            self.checkout_tag(local, _ref)
+            if update:
+                self.update_local(local, ref or remote_tag)
+                self.print(
+                    f"Updated [bold white]git pull[/] from [bold blue]{local}[/].",
+                    style=Style.PLUGIN_METHOD_SUCCESS,
+                )
+            else:
+                self.print(f"Run [bold white]git pull[/] from [bold blue]{local}[/].", style=Style.PLUGIN_STATUS)
 
         return self.metadata
 
-    def get_local_tag(self, local: str) -> str | None:
-        path: Path = Path(local).expanduser().resolve()
-        repo: Repo = Repo(path)
+    def get_local_tag(self, local: Path) -> str | None:
+        repo: Repo = Repo(local)
         tags: list[str] = sorted(t.name for t in repo.tags)
         return tags[-1] if tags else None
 
@@ -100,6 +105,9 @@ class Plugin(BasePlugin):
         tags: list[str] = sorted(t.name for t in repo.get_tags())  # type: ignore
         return tags[-1] if tags else None
 
-    def checkout_tag(self, local: str, tag: str):
+    def update_local(self, local: Path, ref: str | None):
         git: Git = Git(local)
-        git.checkout(tag)
+        repo: Repo = Repo(local)
+        repo.remotes.origin.pull()
+        if ref:
+            git.checkout(ref)
