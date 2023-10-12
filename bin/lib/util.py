@@ -73,6 +73,7 @@ class Style(Enum):
     PLUGIN_UNLOAD = f"[dim yellow]:electric_plug:[/]{'Unload':<{state_len}}"
     PLUGIN_INFO = "[bold cyan]:electric_plug:[/]"
     PLUGIN_SKIP = f"[dim]:electric_plug:[/]{'Skipped':<{state_len}}"
+    PLUGIN_STATUS = "[white]:arrow_right_hook:[/] "
     PLUGIN_METHOD_SUCCESS = "[bold green]:arrow_right_hook:[/] Finished "
     PLUGIN_METHOD_SKIPPED = "[dim]:arrow_right_hook:[/] Skipped "
     PLUGIN_METHOD_FAILED = "[dim]:arrow_right_hook:[/][red] Failed "
@@ -259,7 +260,6 @@ def check_permissions(paths: dict[Path, int], fix_perms: bool = False) -> bool:
                 path.chmod(mode)
                 console.print(f"- fixed {path} ({mode:04o})")
             else:
-                print(mode, path)
                 console.print(f"- chmod {mode:04o} {path}")
 
         console.print()

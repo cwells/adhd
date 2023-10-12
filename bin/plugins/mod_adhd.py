@@ -79,7 +79,8 @@ class Plugin(BasePlugin):
         if not local_tag or semver.compare(remote_tag, local_tag) > 0:
             self.print(
                 f"An update to [bold cyan]adhd[/] is available ({local_tag} -> {remote_tag}). "
-                f"Run [bold white]git pull[/] from [bold blue]{local}[/].\n"
+                f"Run [bold white]git pull[/] from [bold blue]{local}[/].\n",
+                style=Style.PLUGIN_STATUS,
             )
 
         if _ref := ref or local_tag:
