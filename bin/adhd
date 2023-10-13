@@ -17,6 +17,7 @@ from lib.boot import missing_modules
 required_modules: dict[str, str] = {
     "box": "python-box",
     "click": "click",
+    "filelock": "filelock",
     "rich": "rich",
     "ruamel.yaml": "ruamel.yaml",
     "toposort": "toposort",
@@ -29,6 +30,7 @@ if missing := missing_modules(required_modules):
     sys.exit(1)
 
 import click
+import filelock
 import ruamel.yaml as yaml
 from lib.boot import missing_binaries
 from lib.jobs import get_job, get_jobs
@@ -44,12 +46,13 @@ from lib.util import (
     check_project,
     console,
     get_local_env,
+    get_project_home,
     print_job_help,
 )
-from plugins import BasePlugin, load_plugins, print_plugin_help, notify_plugins
-
+from plugins import BasePlugin, load_plugins, notify_plugins, print_plugin_help
 
 logging.getLogger("requests").setLevel(logging.WARNING)
+lock = filelock.FileLock(get_project_home() / ".lockfile", timeout=2)
 
 
 # ==============================================================================
@@ -63,6 +66,7 @@ def read_project_config(project: str, debug: bool = False) -> dict[str, Any]:
 # ==============================================================================
 
 
+@lock
 @click.command()
 @click.option("--home/--no-home", default=True, help="Change to project HOME directory")
 @click.option("-e", "--env", type=EnvParamType(), multiple=True, help="Define env var(s) from CLI")
@@ -272,4 +276,7 @@ def main(
 # ==============================================================================
 
 if __name__ == "__main__":
-    main()  # type: ignore
+    try:
+        main()
+    except filelock.Timeout:
+        console.print(f"Another instance of this program is currently running.")
