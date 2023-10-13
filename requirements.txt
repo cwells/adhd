@@ -1,14 +1,2 @@
-click==8.1.3
-python-box==7.1.1
-ruamel.yaml==0.17.32
-rich==13.5.2
-toposort==1.10
-yarl==1.9.2
-
-# plugin requirements - optional
-boto3==1.28.43
-GitPython==3.1.37
-python-dotenv==0.21.1
-ngrok-api==0.10.0
-PyGithub==2.1.1
-semver==3.0.2
+-r requirements/base.txt
+-r requirements/plugins.txt
