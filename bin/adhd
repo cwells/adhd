@@ -46,13 +46,16 @@ from lib.util import (
     check_project,
     console,
     get_local_env,
+    get_lockfile,
     get_project_home,
     print_job_help,
 )
 from plugins import BasePlugin, load_plugins, notify_plugins, print_plugin_help
 
 logging.getLogger("requests").setLevel(logging.WARNING)
-lock = filelock.FileLock(get_project_home() / ".lockfile", timeout=2)
+lockfile: Path | None = get_lockfile()
+if lockfile:
+    lock = filelock.FileLock(lockfile, timeout=2)
 
 
 # ==============================================================================

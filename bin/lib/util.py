@@ -310,10 +310,24 @@ def get_program_bin() -> Path:
     return program.parent
 
 
-def get_project_home() -> Path:
+def get_project_home() -> Path | None:
     program: Path = Path(sys.argv[0])
     config_dir: Path = Path(f"~/.{program.name}").expanduser().resolve()
-    return config_dir
+
+    return config_dir if config_dir.exists() else None
+
+
+def get_lockfile() -> Path | None:
+    if len(sys.argv) < 2:
+        return None
+
+    project: str = sys.argv[1]
+    home: Path | None = get_project_home()
+
+    if not home:
+        return None
+
+    return home / f"{project}.lock"
 
 
 # ==============================================================================
