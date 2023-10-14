@@ -144,18 +144,19 @@ def get_jobs(
 
         yield ConfigBox(
             {
-                "name": cmd,
-                "env": process_env,
-                "workdir": str(workdir),
-                "tmp": str(tmpdir),
-                "tasks": [cmd],
-                "sleep": 0,
                 "capture": False,
-                "interactive": True,
-                "silent": silent,
-                "verbose": verbose,
                 "debug": debug,
-                "skip": False,
+                "env": process_env,
                 "help": "I can't explain this.",
+                "interactive": True,
+                "lock": False,
+                "name": cmd,
+                "silent": silent,
+                "skip": False,
+                "sleep": 0,
+                "tasks": [cmd],
+                "tmp": str(tmpdir),
+                "verbose": verbose,
+                "workdir": str(workdir),
             }
         )
