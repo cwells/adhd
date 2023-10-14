@@ -198,6 +198,7 @@ class Plugin(BasePlugin):
                 )
 
                 cached_data.seek(0)
+                cached_data.truncate()
                 yaml.dump(data, cached_data)
 
         return data
