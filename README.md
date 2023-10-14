@@ -150,22 +150,26 @@ plugins:  # dictionary of plugin configurations. see "adhd example help plugins 
 
 jobs:
   <identifier>:
-      run: str | list[str]               # the command(s) to be run
       after: Optional[str | list[str]]   # jobs or plugins that this job depends upon
+      confirm: Optional[str]             # Ask user a y/n question and abort if no
       env: Optional[dict[str, Any]]      # define job-specific env vars
       help: Optional[str]                # help text for this job
       home: Optional[str]                # ff not set defaults to global value
       interactive: Optional[bool]        # let output go to the console
+      lock: Optional[bool]               # Whether to acquire lock while running job. Useful if job doesn't exit.
       open: Optional[str | list[str]]    # URI(s) to open after command
+      run: str | list[str]               # the command(s) to be run
       skip: Optional[bool]               # skip dependency if value is True
       sleep: Optional[int]               # seconds to sleep after executing command
-      confirm: Optional[str]             # Ask user a y/n question and abort if no
-
 <identifier>:
   env: Optional[dict[str, Any]]  # define global environment variables
 ```
 
 > The `confirm` directive allows for the use of colors and emoji as described in the [Rich documentation](https://rich.readthedocs.io/en/stable/appendix/colors.html).
+
+# Lock file
+
+`adhd` acquires a lock when entering "critical" sections, e.g. sections that may alter the filesystem. This includes both loading plugins as well as tasks. Sometimes this behavior isn't desired, specifically when a task may not terminate (e.g. opening an interactive shell) as this will prevent you from running `adhd` for that same project in another terminal. If you know a job doesn't alter the system in a way that will interfere with another instance of `adhd`, then you can set `lock: false` and the lock will not be acquired.
 
 # Custom YAML tags
 

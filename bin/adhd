@@ -12,7 +12,7 @@ import webbrowser
 from pathlib import Path
 from typing import Any, cast
 
-from lib.boot import missing_modules
+from lib.boot import missing_binaries, missing_modules
 
 required_modules: dict[str, str] = {
     "box": "python-box",
@@ -32,7 +32,6 @@ if missing := missing_modules(required_modules):
 import click
 import filelock
 import ruamel.yaml as yaml
-from lib.boot import missing_binaries
 from lib.jobs import get_job, get_jobs
 from lib.loader import get_loader
 from lib.shell import shell
@@ -47,15 +46,13 @@ from lib.util import (
     console,
     get_local_env,
     get_lockfile,
-    get_project_home,
     print_job_help,
 )
 from plugins import BasePlugin, load_plugins, notify_plugins, print_plugin_help
 
 logging.getLogger("requests").setLevel(logging.WARNING)
-lockfile: Path | None = get_lockfile()
-if lockfile:
-    lock = filelock.FileLock(lockfile, timeout=2)
+lockfile: Path = get_lockfile()
+lock = filelock.FileLock(lockfile, timeout=5)
 
 
 # ==============================================================================
@@ -69,7 +66,6 @@ def read_project_config(project: str, debug: bool = False) -> dict[str, Any]:
 # ==============================================================================
 
 
-@lock
 @click.command()
 @click.option("--home/--no-home", default=True, help="Change to project HOME directory")
 @click.option("-e", "--env", type=EnvParamType(), multiple=True, help="Define env var(s) from CLI")
@@ -134,11 +130,11 @@ def main(
             name: get_job(
                 command,
                 job,
-                project_config["jobs"],
+                project_config.jobs,
                 process_env,
                 explain=True,
             )
-            for name, job in project_config["jobs"].items()
+            for name, job in project_config.jobs.items()
         }
         print_job_help(jobs, pager=pager, verbose=verbose)
         raise SystemExit
@@ -150,15 +146,16 @@ def main(
     if explain:
         console.print("\n[bold]The following jobs would be run, in this order:[/]\n")
 
-    plugins = load_plugins(
-        project_config=project_config,
-        process_env=process_env,
-        enabled=plugins_enabled,
-        silent=silent,
-        verbose=verbose,
-        debug=debug,
-        explain=explain,
-    )
+    with lock:
+        plugins = load_plugins(
+            project_config=project_config,
+            process_env=process_env,
+            enabled=plugins_enabled,
+            silent=silent,
+            verbose=verbose,
+            debug=debug,
+            explain=explain,
+        )
 
     #
     # main loop - get_jobs() returns topologically-sorted list of jobs
@@ -168,6 +165,7 @@ def main(
         project_config,
         process_env,
         plugins,
+        lock=lock,
         silent=silent,
         verbose=verbose,
         debug=debug,
@@ -178,7 +176,7 @@ def main(
 
         if explain:
             text: str = job.get("help", "No description.")
-            console.print(f"[dim white]:black_circle:[/][bold cyan]{job['name']:<23}[/] [white]{text}[/]")
+            console.print(f"[dim white]:black_circle:[/][bold cyan]{job.name:<23}[/] [white]{text}[/]")
             if verbose:
                 for task in job.get("tasks", []):
                     for idx, line in enumerate(task.split("\n")):
@@ -201,7 +199,7 @@ def main(
                 _exit(e, verbose=verbose, debug=debug)
 
         # skip / confirm
-        if job.get("skip") and force is False:
+        if job.skip and force is False:
             if not silent:
                 console.print(f"{Style.JOB_SKIP}[bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]")
             continue
@@ -222,18 +220,20 @@ def main(
                 process: subprocess.CompletedProcess | None = None
                 returncode = 0
 
-                try:
-                    process = shell(
-                        command=task,
-                        workdir=workdir,
-                        env=job.env,
-                        interactive=interactive or debug,
-                    )
-                except Exception as e:
-                    console.print(f"{Style.ERROR}loading executing {task}:\n")
-                    _exit(e, verbose=verbose, debug=debug)
-                else:
-                    returncode = process.returncode
+                with lock if job.lock else contextlib.nullcontext():  # type: ignore
+                    try:
+                        process = shell(
+                            command=task,
+                            workdir=workdir,
+                            env=job.env,
+                            interactive=interactive or debug,
+                        )
+                    except Exception as e:
+                        console.print(f"{Style.ERROR}loading executing {task}:\n")
+                        _exit(e, verbose=verbose, debug=debug)
+                    else:
+                        if process is not None:
+                            returncode = process.returncode
 
                 if verbose:
                     console.print(f"{Style.JOB_UP}[white]task(s)[/]", highlight=False)
@@ -281,5 +281,7 @@ def main(
 if __name__ == "__main__":
     try:
         main()
-    except filelock.Timeout:
-        console.print(f"Another instance of this program is currently running.")
+    except filelock.Timeout as e:
+        console.print(
+            f"Failed to acquire lock on {e.lock_file}: another instance of this program is currently running."
+        )

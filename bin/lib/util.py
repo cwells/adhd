@@ -310,6 +310,10 @@ def get_program_bin() -> Path:
     return program.parent
 
 
+def get_program_home() -> Path:
+    return get_program_bin().parent.parent
+
+
 def get_project_home() -> Path | None:
     program: Path = Path(sys.argv[0])
     config_dir: Path = Path(f"~/.{program.name}").expanduser().resolve()
@@ -317,15 +321,17 @@ def get_project_home() -> Path | None:
     return config_dir if config_dir.exists() else None
 
 
-def get_lockfile() -> Path | None:
+def get_lockfile() -> Path:
+    fallback: Path = get_program_home() / "adhd.lock"
+
     if len(sys.argv) < 2:
-        return None
+        return fallback
 
     project: str = sys.argv[1]
     home: Path | None = get_project_home()
 
     if not home:
-        return None
+        return fallback
 
     return home / f"{project}.lock"
 

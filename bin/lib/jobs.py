@@ -1,8 +1,8 @@
-import re
 import sys
 from pathlib import Path
-from typing import Any, Generator, Literal
+from typing import Any, Generator
 
+import filelock
 import rich.prompt
 from plugins import BasePlugin, load_or_unload_plugin
 
@@ -47,6 +47,7 @@ def get_job(
             "after": after,
             "env": ConfigBox(realize({**env, **task_env}, workdir=workdir, env=env)),
             "help": realize(job_config.get("help", "No help available."), workdir=workdir, env=env),
+            "lock": job_config.get("lock", True),
             "name": command,
             "open": realize(job_config.get("open"), workdir=workdir, env=env),
             "tasks": tasks,
@@ -86,6 +87,7 @@ def get_jobs(
     project_config: ConfigBox,
     process_env: ConfigBox,
     plugins: dict[str, BasePlugin],
+    lock: filelock.FileLock,
     silent: bool = False,
     verbose: bool = False,
     debug: bool = False,
@@ -110,11 +112,12 @@ def get_jobs(
         console.print(f"No command given.")
         sys.exit(1)
 
-    if load_or_unload_plugin(command, plugins, project_config, process_env, explain):
-        # the user invoked plugin at cli
-        return
+    with lock:
+        if load_or_unload_plugin(command, plugins, project_config, process_env, explain):
+            # the user invoked plugin at cli
+            return
 
-    elif _cmd in jobs:  # pre-defined jobs
+    if _cmd in jobs:  # pre-defined jobs
         if confirm := jobs[_cmd].get("confirm"):
             _confirm = realize(confirm, workdir=workdir, env=process_env)
             if not rich.prompt.Confirm.ask(_confirm, default=False, console=console):
@@ -124,8 +127,9 @@ def get_jobs(
         for dep in get_sorted_deps(_cmd, jobs, workdir=workdir, env=process_env):
             job_config: ConfigBox = jobs.get(dep, {})
 
-            if load_or_unload_plugin(tuple(dep.split()), plugins, project_config, process_env, explain):
-                continue
+            with lock:
+                if load_or_unload_plugin(tuple(dep.split()), plugins, project_config, process_env, explain):
+                    continue
 
             try:
                 yield get_job(dep, job_config, project_config, process_env, explain=explain)
@@ -137,6 +141,7 @@ def get_jobs(
 
     else:  # cli command
         cmd: str = " ".join(command)
+
         yield ConfigBox(
             {
                 "name": cmd,
