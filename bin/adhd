@@ -9,9 +9,9 @@ import subprocess
 import sys
 import time
 import webbrowser
+from contextlib import AbstractContextManager
 from pathlib import Path
 from typing import Any, cast
-
 from lib.boot import missing_binaries, missing_modules
 
 required_modules: dict[str, str] = {
@@ -31,6 +31,7 @@ if missing := missing_modules(required_modules):
 
 import click
 import filelock
+import rich.status
 import ruamel.yaml as yaml
 from lib.jobs import get_job, get_jobs
 from lib.loader import get_loader
@@ -181,7 +182,7 @@ def main(
                 for task in job.get("tasks", []):
                     for idx, line in enumerate(task.split("\n")):
                         if _l := line.rstrip():
-                            style = ["     [dim white]", Style.TASK_SKIP][idx == 0]
+                            style = ["     [dim white]", Style.TASK_SKIP][idx == 0]  # type: ignore
                             console.print(f"{style}{_l}", highlight=False)
             continue
 
@@ -204,14 +205,14 @@ def main(
                 console.print(f"{Style.JOB_SKIP}[bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]")
             continue
 
-        ctx: contextlib.AbstractContextManager = (
+        ctx: rich.status.Status | AbstractContextManager = (
             contextlib.nullcontext()
             if debug or verbose or interactive
             else console.status(
                 f"{Style.JOB_RUN_STATUS}[bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]"
             )
         )
-        with ctx as status:
+        with ctx:
             if debug or verbose:
                 console.print(f"{Style.JOB_RUN}[bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]")
 
@@ -267,8 +268,6 @@ def main(
 
     if explain:
         console.print()
-    elif not silent:
-        console.print(f"[bold white]Complete.[/]\n")
 
     if not explain:
         notify_plugins("exit", plugins, project_config, process_env)
