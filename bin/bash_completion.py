@@ -3,11 +3,11 @@
 #
 # Add the following to your ~/.bashrc:
 #
-#     complete -C ~/.adhd/bin/completion.py adhd
+#     complete -C ~/.adhd/bin/bash_completion.py adhd
 #
 # or, if you've symlinked to a different name, say "~/.local/bin/foo",
 #
-#     complete -C ~/.adhd/bin/completion.py foo
+#     complete -C ~/.adhd/bin/bash_completion.py foo
 #
 
 import json
@@ -19,38 +19,34 @@ import ruamel.yaml as yaml
 from lib.loader import get_loader
 
 
-def get_project_data(project: Path) -> Any:
-    "returns cached project data unless project yaml is newer than cache."
+def get_project_jobs(project: Path) -> list[str]:
+    conf: dict[str, Any] = {}
 
-    cache: Path = Path(f"{project.parent}") / Path(f".{project.stem}.completions")
-    projects: dict[str, list[str]] = {}
+    try:
+        conf = yaml.load(open(project, "r"), Loader=get_loader())
+    except:
+        pass
 
-    if not cache.exists() or project.stat().st_mtime > cache.stat().st_mtime:
-        _conf: dict[str, Any] = yaml.load(open(project, "r"), Loader=get_loader())
-        projects[project.stem] = list(str(key) for key in _conf["jobs"])
-        cache.open("w").write(json.dumps(projects))
-        return projects
-
-    return json.loads(cache.open("r").read())
-
-
-def get_project_paths(project_home: Path) -> list[Path]:
-    "return list of Paths to project files, e.g. ~/.adhd/projects/*.yaml"
-
-    project_dir: Path = project_home / "projects"
-
-    return list(project_dir.glob("*.yaml"))
+    return list(str(key) for key in conf.get("jobs", []))
 
 
 def load_projects(home: str) -> dict[str, list[str]]:
-    project_home = Path(f"~/.{home}").expanduser().resolve()
+    install_home = Path(f"~/.{home}").expanduser().resolve()
+    projects_home = install_home / "projects"
+    cache: Path = projects_home / ".completion.cache"
+    cache_dirty: bool = False
     projects: dict[str, list[str]] = {}
 
-    for project in get_project_paths(project_home):
-        try:
-            projects = get_project_data(project)
-        except Exception as e:
-            continue
+    if cache.exists():
+        projects = json.load(cache.open("r"))
+
+    for project in projects_home.glob("*.yaml"):
+        if not project.stem in projects or project.stat().st_mtime > cache.stat().st_mtime:
+            projects[project.stem] = get_project_jobs(project)
+            cache_dirty = True
+
+    if cache_dirty:
+        cache.open("w").write(json.dumps(projects))
 
     return projects
 
@@ -69,8 +65,7 @@ def completion_hook(cmd: str, curr_word: str, prev_word: str) -> list[str]:
 
 
 def main():
-    results = completion_hook(*sys.argv[1:])
-    if len(results):
+    if results := completion_hook(*sys.argv[1:]):
         print("\n".join(results))
 
 
