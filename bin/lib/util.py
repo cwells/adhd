@@ -123,7 +123,11 @@ class ProjectParamType(click.ParamType):
         param: click.Parameter | None,
         ctx: click.Context | None,
     ) -> Path:
-        home: Path = get_project_home()
+        home: Path | None = get_project_home()
+
+        if not home:
+            self.fail(f"Could not determine project home.", param, ctx)
+
         config: Path = home / "projects" / f"{value}.yaml"
 
         if not config.is_file():
@@ -238,11 +242,14 @@ def check_permissions(paths: dict[Path, int], fix_perms: bool = False) -> bool:
 
     def perm(p: Path) -> int | None:
         "Return POSIX file permissions."
+        _perm: int = 0
 
         try:
-            return p.stat().st_mode & 0o000777
+            _perm = p.stat().st_mode & 0o000777
         except Exception as e:
             _exit(e)
+
+        return _perm
 
     # fmt: off
     insecure: list[tuple[Path, int]] = [
@@ -303,25 +310,45 @@ def get_local_env(project_config: dict[str, Any], vars: dict[str, str]) -> Confi
 
 
 # ==============================================================================
+def get_program_name() -> str:
+    "return name of program, e.g. adhd"
+    program: Path = Path(sys.argv[0])
+    return program.stem
 
 
 def get_program_bin() -> Path:
+    "return path to installation bin dir, e.g. ~/.adhd/bin"
     program: Path = Path(sys.argv[0]).resolve()
     return program.parent
 
 
 def get_program_home() -> Path:
-    return get_program_bin().parent.parent
+    "return path to installation, e.g. ~/.adhd"
+    return get_program_bin().parent
 
 
 def get_project_home() -> Path | None:
-    program: Path = Path(sys.argv[0])
-    config_dir: Path = Path(f"~/.{program.name}").expanduser().resolve()
+    "return path to project"
+    home: Path = Path(f"~/.{get_program_name()}").expanduser()
+    return home if home.exists() else None
 
-    return config_dir if config_dir.exists() else None
+
+def get_project_paths() -> list[Path]:
+    "return list of Paths to project files, e.g. ~/.adhd/projects/*.yaml"
+
+    project_home: Path | None = get_project_home()
+
+    if not project_home:
+        return []
+
+    project_dir: Path = project_home / "projects"
+
+    return list(project_dir.glob("*.yaml"))
 
 
 def get_lockfile() -> Path:
+    "return Path to lockfile."
+
     fallback: Path = get_program_home() / "adhd.lock"
 
     if len(sys.argv) < 2:
@@ -412,7 +439,12 @@ def check_project(project: str, fix_perms: bool = False) -> bool:
     "Check for path permissions and general sanity."
 
     program: Path = Path(sys.argv[0])
-    home: Path = get_project_home()
+    home: Path | None = get_project_home()
+
+    if home is None:
+        console.print("Unable to determine project home")
+        sys.exit(2)
+
     config: Path = home / "projects" / project
 
     # fmt: off
