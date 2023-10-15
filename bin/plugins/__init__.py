@@ -21,7 +21,7 @@ import rich.style
 from rich.syntax import Syntax
 from rich.table import Table
 
-from lib.util import ConfigBox, Style, console, get_program_bin, realize
+from lib.util import ConfigBox, Style, console, get_program_bin, realize, _exit
 
 # ==============================================================================
 
@@ -55,9 +55,10 @@ class BasePlugin:
     def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         raise NotImplementedError("You must override the load method.")
 
-    def unload(self, config: ConfigBox, env: ConfigBox) -> None:
+    def unload(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         "Optional method to unload the plugin and cleanup."
         console.print(f"Plugin [bold blue]{self.key}[/] does not support unloading.")
+        return self.metadata
 
     def prompt(self, msg: str) -> str:
         "Prompt the user with a y/n question."
@@ -86,9 +87,7 @@ def load_plugin(
 ) -> None:
     "Load a plugin, if enabled."
 
-    plugin_config: ConfigBox | None = project_config.get(f"plugins.{plugin.key}")
-
-    if not plugin_config:
+    if not project_config.get(f"plugins.{plugin.key}"):
         return
 
     plugin_name: str = f"plugin:{plugin.key}"
@@ -98,15 +97,19 @@ def load_plugin(
         console.print(f"{Style.PLUGIN_INFO}[cyan]{plugin_name:<{pad}}[/] {plugin.__doc__}")
         return
 
-    console.print(f"{Style.PLUGIN_LOAD}[cyan]{plugin_name:<{pad}}[/] [dim]{plugin.__doc__}")
+    if plugin.has_run:
+        return
 
-    if "tmp" not in plugin_config:
-        plugin_config["tmp"] = project_config.get("tmp", "/tmp")
+    if not plugin.silent:
+        console.print(f"{Style.PLUGIN_LOAD}[cyan]{plugin_name:<{pad}}[/] [dim]{plugin.__doc__}")
 
-    for k, v in plugin_config.items():
-        plugin_config[k] = realize(v, workdir=Path("."))
+    if "tmp" not in project_config.plugins[plugin.key]:
+        project_config.plugins[plugin.key].tmp = project_config.get("tmp", "/tmp")
 
-    data = plugin.load(config=plugin_config, env=process_env)
+    for k, v in project_config.plugins[plugin.key].items():
+        project_config.plugins[plugin.key][k] = realize(v, workdir=Path("."))
+
+    data = plugin.load(config=project_config, env=process_env)
 
     if data:  # plugins can update runtime environment
         process_env.update(data.get("env", {}))
@@ -342,6 +345,9 @@ def call_plugin_method(
 
     _method: Callable | None
 
+    if not plugin.key or not plugin.enabled:
+        raise NotImplementedError(f"Plugin '{plugin.key}' is either unknown or disabled ({plugin.enabled})")
+
     if _method := getattr(plugin, method):
         if getattr(_method, "is_public", False):
             if explain:
@@ -357,7 +363,7 @@ def call_plugin_method(
                 project_config.plugins[plugin.key]["__vars__"].update(data.get("vars", {}))
             return
 
-    raise NotImplementedError(f"Unknown plugin function: {method}")
+    raise NotImplementedError(f"Unknown plugin function '{plugin.key}.{method}'")
 
 
 # ==============================================================================
@@ -389,12 +395,15 @@ def load_or_unload_plugin(
         if plugin := plugins.get(f"mod_{plugin_name}"):
             if plugin_cmd["action"] == "plugin":
                 if method := plugin_cmd.get("method"):
-                    if _method := getattr(plugin, method):
-                        if _method.autoload:
+                    if (_method := getattr(plugin, method)) and getattr(_method, "is_public", False):
+                        if getattr(_method, "autoload", False):
                             load_plugin(plugin, project_config, process_env, explain=explain)
-                        call_plugin_method(plugin, method, args, project_config, process_env, explain=explain)
+                        try:
+                            call_plugin_method(plugin, method, args, project_config, process_env, explain=explain)
+                        except NotImplementedError as e:
+                            _exit(e, 2)
                     else:
-                        console.print(f"Invalid method {plugin}.{method}")
+                        console.print(f"Unknown or private method: [bold red]{plugin_name}.{method}[/]")
                         sys.exit(2)
                 else:
                     load_plugin(plugin, project_config, process_env, explain=explain)
