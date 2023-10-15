@@ -1,4 +1,15 @@
 #!/usr/bin/env python3
+
+#
+# Add the following to your /bashrc:
+#
+#     complete -C ~/.adhd/bin/completion.py adhd
+#
+# or, if you've symlinked to a different name, say "~/.local/bin/foo",
+#
+#     complete -C ~/.adhd/bin/completion.py foo
+#
+
 import sys
 from pathlib import Path
 
