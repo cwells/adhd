@@ -15,23 +15,21 @@ required_binaries: list[str] = ["git"]
 
 import sys
 from pathlib import Path
-from typing import Any
 
 from lib.boot import missing_binaries, missing_modules
 from lib.util import ConfigBox, console, Style, _exit
 from plugins import BasePlugin, MetadataType
 
-missing: list[str]
+missing_mods: list[str]
+missing_bins: list[str]
 
-if missing := missing_modules(required_modules):
-    console.print(f"Plugin [bold blue]git[/] disabled, missing modules: {', '.join(missing)}\n")
-    git = None
+if missing_mods := missing_modules(required_modules):
+    console.print(f"Plugin [bold blue]git[/] disabled, missing modules: {', '.join(missing_mods)}\n")
 else:
     import git
 
-if missing := missing_binaries(required_binaries):
-    console.print(f"Plugin [bold blue]git[/] disabled, missing binaries: {', '.join(missing)}\n")
-    git = None
+if missing_bins := missing_binaries(required_binaries):
+    console.print(f"Plugin [bold blue]git[/] disabled, missing binaries: {', '.join(missing_bins)}\n")
 
 
 # ==============================================================================
@@ -39,7 +37,7 @@ if missing := missing_binaries(required_binaries):
 
 class Plugin(BasePlugin):
     key: str = "git"
-    enabled: bool = bool(git)
+    enabled: bool = not (missing_mods or missing_bins)
     has_run: bool = False
 
     def load(self, config: ConfigBox, env: ConfigBox, verbose: bool = False) -> MetadataType:
@@ -49,20 +47,20 @@ class Plugin(BasePlugin):
             self.print(f"support is disabled. Please install plugin requirements.", Style.ERROR)
             sys.exit(1)
 
-        repo: git.Repo  # type: ignore
+        plugin_config: ConfigBox = config.plugins[self.key]
         remote: str | None
         local: Path
         branch: str | None
 
-        if not (remote := config.get("remote")):
+        if not (remote := plugin_config.get("remote")):
             self.print(f"missing key: [bold cyan]plugins.git.remote[/]", Style.ERROR)
             sys.exit(2)
 
-        if not (branch := config.get("branch")):
+        if not (branch := plugin_config.get("branch")):
             self.print(f"missing key: [bold cyan]plugins.git.branch[/]", Style.ERROR)
             sys.exit(2)
 
-        if _local := config.get("local"):
+        if _local := plugin_config.get("local"):
             local = Path(_local).expanduser().resolve()
         else:
             self.print(f"missing key: [bold cyan]plugins.git.local[/]", Style.ERROR)
@@ -82,7 +80,7 @@ class Plugin(BasePlugin):
             sys.exit(2)
         else:
             with console.status(f"Cloning git repository {remote} into {local}"):
-                self.clone(config, env)
+                self.clone(plugin_config, env)
             self.print(f"cloning git repository into {remote}", Style.SUCCESS)
         return self.metadata
 

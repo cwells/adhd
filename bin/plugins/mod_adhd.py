@@ -68,11 +68,12 @@ class Plugin(BasePlugin):
             self.print("support is disabled.", Style.ERROR)
             sys.exit(1)
 
-        remote: str = config.get("remote", REMOTE_REPO)
-        local: Path = Path(config.get("local", LOCAL_REPO)).expanduser().resolve()
-        token: str | None = config.get("token")
-        ref: str | None = config.get("ref")
-        update: bool | None = config.get("update", False)
+        plugin_config: ConfigBox = config.plugins[self.key]
+        remote: str = plugin_config.get("remote", REMOTE_REPO)
+        local: Path = Path(plugin_config.get("local", LOCAL_REPO)).expanduser().resolve()
+        token: str | None = plugin_config.get("token")
+        ref: str | None = plugin_config.get("ref")
+        update: bool | None = plugin_config.get("update", False)
 
         local_tag: str | None = self.get_local_tag(local)
         remote_tag: str | None = self.get_remote_tag(remote, token=token)

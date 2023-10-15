@@ -61,10 +61,11 @@ class Plugin(BasePlugin):
     def load(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         "Activate Python virtualenv."
 
+        plugin_config: ConfigBox = config.plugins[self.key]
         requirements: list[Path] = []
         exe: Path | None = None
 
-        if _exe := config.get("exe"):
+        if _exe := plugin_config.get("exe"):
             exe = get_resolved_path(str(_exe), env=env)
         else:
             if _exe := shutil.which("python"):
@@ -76,15 +77,15 @@ class Plugin(BasePlugin):
 
         self.exe = exe
 
-        if _venv := config.get("venv"):
+        if _venv := plugin_config.get("venv"):
             venv: Path = get_resolved_path(_venv, env=env)
 
-            if _req := config.get("requirements"):
+            if _req := plugin_config.get("requirements"):
                 if isinstance(_req, str):
                     _req = [_req]
                 for _r in _req:
                     requirements.append(get_resolved_path(_r, env=env))
-            packages: list[str] | None = config.get("packages")
+            packages: list[str] | None = plugin_config.get("packages")
 
             env.pop("PYTHONHOME", None)
 
@@ -186,4 +187,4 @@ class Plugin(BasePlugin):
             )
             return process.returncode == 0
 
-        return
+        return None

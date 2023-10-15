@@ -28,7 +28,6 @@ missing: list[str]
 
 if missing := missing_modules(required_modules):
     console.print(f"Plugin [bold blue]dotenv[/] disabled, missing modules: {', '.join(missing)}\n")
-    dotenv_values = None
 else:
     from dotenv import dotenv_values
 
@@ -38,7 +37,7 @@ else:
 
 class Plugin(BasePlugin):
     key: str = "dotenv"
-    enabled: bool = dotenv_values is not None
+    enabled: bool = not missing
     has_run: bool = False
 
     def load(self, config: ConfigBox, env: ConfigBox, verbose: bool = False) -> MetadataType:
@@ -48,8 +47,9 @@ class Plugin(BasePlugin):
             self.print("support is disabled. Please install python-dotenv package.", Style.ERROR)
             sys.exit(1)
 
+        plugin_config: ConfigBox = config.plugins[self.key]
         conf: ConfigBox = ConfigBox()
-        files: list[str] = config.get("files", [])
+        files: list[str] = plugin_config.get("files", [])
         secure_paths: dict[Path, int] = {
             Path(f).expanduser().resolve(): 0o0600 for f in files
         }  # FIXME: too strict - should allow o+r ?

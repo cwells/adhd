@@ -81,21 +81,22 @@ class Plugin(BasePlugin):
             self.print(f"support is disabled. Please install plugin requirements.", Style.ERROR)
             sys.exit(1)
 
-        subscribed: bool = config.get("subscribed", False)
-        active_tunnels: list[dict] = [t for t in self.list_tunnels(config.config)]
+        plugin_config: ConfigBox = config.plugins[self.key]
+        subscribed: bool = plugin_config.get("subscribed", False)
+        active_tunnels: list[dict] = [t for t in self.list_tunnels(plugin_config.config)]
 
         if not any(t for t in active_tunnels if t["up"]) or subscribed:
             for tunnel in active_tunnels:
                 if tunnel["up"] and (not self.silent or self.verbose):
                     self.print(f"tunnel {tunnel['name']}.", Style.PLUGIN_SKIP)
                 else:
-                    self.start_tunnel(tunnel["name"], config, env)
+                    self.start_tunnel(tunnel["name"], plugin_config, env)
 
                 if not subscribed:  # free tier only allows one active tunnel
                     break
 
-        self.events.exit.append(partial(self.status, tuple(), config, env))
-        self.metadata["vars"].update({"tunnels": self.list_tunnels(config)})
+        self.events.exit.append(partial(self.status, tuple(), plugin_config, env))
+        self.metadata["vars"].update({"tunnels": self.list_tunnels(plugin_config)})
 
         return self.metadata
 
@@ -127,7 +128,7 @@ class Plugin(BasePlugin):
                 shell(f"ngrok --config {tmpfile.name} start {tunnel} &", env=env, interactive=True)
                 time.sleep(3)  # give ngrok time to read config before it's gone
 
-    def unload(self, config: ConfigBox, env: ConfigBox) -> None:
+    def unload(self, config: ConfigBox, env: ConfigBox) -> MetadataType:
         "Kill the ngrok agent, terminating all tunnels."
 
         with console.status("Terminating ngrok tunnels") as status:
@@ -146,6 +147,8 @@ class Plugin(BasePlugin):
                 _, alive = psutil.wait_procs(processes, timeout=3)
                 for proc in alive:
                     proc.kill()
+
+        return self.metadata
 
     def list_tunnels(self, config: dict[str, Any]) -> Generator[dict[str, Any], None, None]:
         "We only get the actual ngrok config here, e.g. plugins.ngrok.config"

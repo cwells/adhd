@@ -97,13 +97,14 @@ class Plugin(BasePlugin):
             self.print(f"support is disabled. Please install boto3 package.", Style.ERROR)
             sys.exit(1)
 
-        profile: str = config.get("profile", "default")
-        region: str = config.get("region", "us-east-1")
-        mfa: dict[str, Any] = config.get("mfa", {})
+        plugin_config: ConfigBox = config.plugins[self.key]
+        profile: str = plugin_config.get("profile", "default")
+        region: str = plugin_config.get("region", "us-east-1")
+        mfa: dict[str, Any] = plugin_config.get("mfa", {})
         mfa_device: str | None = mfa.get("device")
         mfa_expiry: int = min(int(mfa.get("expiry", 86400)), 86400)
-        cache_file: Path = self.__get_cache_path(config, env)
-        tmpdir: Path = get_resolved_path(config.get("tmp", "/tmp"), env=env)
+        cache_file: Path = self.__get_cache_path(plugin_config, env)
+        tmpdir: Path = get_resolved_path(plugin_config.get("tmp", "/tmp"), env=env)
         secure_paths: dict[Path, int] = {tmpdir: 0o0700}
 
         if not check_permissions(secure_paths):
@@ -114,7 +115,7 @@ class Plugin(BasePlugin):
             sys.exit(2)
 
         session: boto3.Session = boto3.Session(profile_name=profile)  # type: ignore
-        device_arn_prefix: str = f"arn:aws:iam::{config['account']}:mfa"
+        device_arn_prefix: str = f"arn:aws:iam::{plugin_config['account']}:mfa"
         device_arn: str = (
             mfa_device if mfa_device.startswith(device_arn_prefix) else f"{device_arn_prefix}/{mfa_device}"
         )
@@ -143,7 +144,7 @@ class Plugin(BasePlugin):
             }
         )
 
-        self.config = config
+        self.config = plugin_config
         self.profile = profile
         self.region = region
 
