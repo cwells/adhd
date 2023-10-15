@@ -510,3 +510,19 @@ You may also call plugins and their methods from the cli:
 
 Some plugin methods may require the plugin to be loaded first. If so, they will
 automatically load the plugin. This is noted in the plugin's help.
+
+# Shell completion
+
+Currently bash completions are supported by the file `~/.adhd/bin/bash_completion.py`.
+
+To enable completions, add the following to your `~/.bashrc``:
+
+    complete -C ~/.adhd/bin/bash_completion.py adhd
+
+or, if you've symlinked `adhd` to a different name, say `~/.local/bin/foo`,
+
+    complete -C ~/.adhd/bin/bash_completion.py foo
+
+To help speed up completion, completions are cached alongside their project YAML with the same basename as the YAML, but with as a hidden file with the extension `.completions`.
+
+For example, given a project file of `foo.yaml`, the completion cache will be named `.foo.completions` in the same directory.
