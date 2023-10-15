@@ -20,7 +20,8 @@ from lib.loader import get_loader
 
 
 def get_project_data(project: Path) -> Any:
-    "caches project data"
+    "returns cached project data unless project yaml is newer than cache."
+
     cache: Path = Path(f"{project.parent}") / Path(f".{project.stem}.completions")
     projects: dict[str, list[str]] = {}
 
