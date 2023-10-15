@@ -10,11 +10,27 @@
 #     complete -C ~/.adhd/bin/completion.py foo
 #
 
+import json
 import sys
 from pathlib import Path
+from typing import Any
 
 import ruamel.yaml as yaml
 from lib.loader import get_loader
+
+
+def get_project_data(project: Path) -> Any:
+    "caches project data"
+    cache: Path = Path(f"{project.parent}") / Path(f".{project.stem}.completions")
+    projects: dict[str, list[str]] = {}
+
+    if not cache.exists() or project.stat().st_mtime > cache.stat().st_mtime:
+        _conf: dict[str, Any] = yaml.load(open(project, "r"), Loader=get_loader())
+        projects[project.stem] = list(str(key) for key in _conf["jobs"])
+        cache.open("w").write(json.dumps(projects))
+        return projects
+
+    return json.loads(cache.open("r").read())
 
 
 def get_project_paths(project_home: Path) -> list[Path]:
@@ -26,16 +42,14 @@ def get_project_paths(project_home: Path) -> list[Path]:
 
 
 def load_projects(home: str) -> dict[str, list[str]]:
-    projects: dict[str, list[str]] = {}
     project_home = Path(f"~/.{home}").expanduser().resolve()
+    projects: dict[str, list[str]] = {}
 
     for project in get_project_paths(project_home):
         try:
-            _conf = yaml.load(open(project, "r"), Loader=get_loader())
+            projects = get_project_data(project)
         except Exception as e:
             continue
-
-        projects[project.stem] = list(str(key) for key in _conf["jobs"])
 
     return projects
 
