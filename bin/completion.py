@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #
-# Add the following to your /bashrc:
+# Add the following to your ~/.bashrc:
 #
 #     complete -C ~/.adhd/bin/completion.py adhd
 #
