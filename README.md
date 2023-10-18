@@ -515,7 +515,7 @@ automatically load the plugin. This is noted in the plugin's help.
 
 Currently bash completions are supported by the file `~/.adhd/bin/bash_completion.py`.
 
-To enable completions, add the following to your `~/.bashrc``:
+To enable completions, add the following to your `~/.bashrc`:
 
     complete -C ~/.adhd/bin/bash_completion.py adhd
 

@@ -36,6 +36,8 @@ if missing_bins := missing_binaries(required_binaries):
 
 
 class Plugin(BasePlugin):
+    "Clone a git repo."
+
     key: str = "git"
     enabled: bool = not (missing_mods or missing_bins)
     has_run: bool = False
