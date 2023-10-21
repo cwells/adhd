@@ -404,7 +404,6 @@ Alternately, you can just add another command to make this automatic:
         help: Enter the Python virtual environment for this project.
         run: !env ${SHELL}
         interactive: true
-        silent: true
         after: plugin:python
   ```
 

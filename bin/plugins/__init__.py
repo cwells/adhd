@@ -37,8 +37,7 @@ class BasePlugin:
     has_run: bool = False
     events: ConfigBox
 
-    def __init__(self, silent=False, verbose=False, debug=False) -> None:
-        self.silent = silent
+    def __init__(self, verbose=False, debug=False) -> None:
         self.debug = debug
         self.verbose = verbose
         self.metadata = {"conf": {}, "env": {}, "vars": {}}
@@ -174,7 +173,6 @@ def load_plugins(
     project_config: ConfigBox,
     process_env: ConfigBox,
     enabled: dict[str, bool],  # passed from cli
-    silent: bool = False,
     verbose: bool = False,
     debug: bool = False,
     explain: bool = False,
@@ -189,7 +187,6 @@ def load_plugins(
         module: ModuleType = importlib.import_module(f"plugins.{mod.stem}")
         importlib.reload(module)
         plugins[mod.stem] = module.Plugin(
-            silent=silent or project_config.get(f"plugins.{module.Plugin.key}.silent", False),
             verbose=verbose or project_config.get(f"plugins.{module.Plugin.key}.verbose", False),
             debug=debug or project_config.get(f"plugins.{module.Plugin.key}.debug", False),
         )

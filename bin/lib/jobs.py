@@ -35,8 +35,8 @@ def get_job(
     workdir: Path = get_resolved_path(home, env=env)
     tmpdir: Path = get_resolved_path(tmp, env=env)
     cmd: Any = realize(job_config.get("run", []), workdir=workdir, env=env)
-    tasks: list = cmd if isinstance(cmd, list) else [cmd]
-    task_env: dict[str, str] = resolve_dependencies(
+    run: list = cmd if isinstance(cmd, list) else [cmd]
+    run_env: dict[str, str] = resolve_dependencies(
         ConfigBox({**process_env, **job_config.get("env", {})}),
         workdir=workdir,
     )
@@ -45,12 +45,12 @@ def get_job(
     job: ConfigBox = ConfigBox(
         {
             "after": after,
-            "env": ConfigBox(realize({**env, **task_env}, workdir=workdir, env=env)),
+            "env": ConfigBox(realize({**env, **run_env}, workdir=workdir, env=env)),
             "help": realize(job_config.get("help", "No help available."), workdir=workdir, env=env),
             "lock": job_config.get("lock", True),
             "name": command,
             "open": realize(job_config.get("open"), workdir=workdir, env=env),
-            "tasks": tasks,
+            "run": run,
             "tmp": str(tmpdir),
             "workdir": str(workdir),
         }
@@ -62,17 +62,18 @@ def get_job(
                 "capture": realize(job_config.get("capture", False), workdir=workdir, env=env),
                 "confirm": realize(job_config.get("confirm"), workdir=workdir, env=env),
                 "interactive": realize(job_config.get("interactive", False), workdir=workdir, env=env),
-                "silent": realize(
-                    job_config.get("silent", project_config.get("silent", False)), workdir=workdir, env=env
-                ),
                 "skip": realize(job_config.get("skip", lambda *_, **__: False), workdir=workdir, env=env),
                 "sleep": int(realize(job_config.get("sleep", 0), workdir=workdir, env=env)),
             }
         )
 
-        if not (job["tasks"] or job_config.get("after") or job_config.get("open")):
+        required: set[str] = {"run", "after", "open"}
+        configured: set[str] = set(k for k, v in job.items() if v)
+
+        if not configured & required:
             console.print(
-                f"{Style.ERROR}{command}: must have at least one command, dependency, or open directive."
+                f"{Style.ERROR}Job configuration error: [bold]{command}[/] must have "
+                f"at least one of [yellow]{'[/], [yellow]'.join(required)}[/]"
             )
             sys.exit(1)
 
@@ -88,7 +89,6 @@ def get_jobs(
     process_env: ConfigBox,
     plugins: dict[str, BasePlugin],
     lock: filelock.FileLock,
-    silent: bool = False,
     verbose: bool = False,
     debug: bool = False,
     explain: bool = False,
@@ -151,10 +151,9 @@ def get_jobs(
                 "interactive": True,
                 "lock": False,
                 "name": cmd,
-                "silent": silent,
                 "skip": False,
                 "sleep": 0,
-                "tasks": [cmd],
+                "run": [cmd],
                 "tmp": str(tmpdir),
                 "verbose": verbose,
                 "workdir": str(workdir),

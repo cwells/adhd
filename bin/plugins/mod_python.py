@@ -131,7 +131,7 @@ class Plugin(BasePlugin):
             self.print(f"building virtual environment [yellow]{venv}[/]", Style.PLUGIN_METHOD_SUCCESS)
 
         else:
-            if not self.silent or self.verbose:
+            if self.verbose:
                 self.print(f"building virtual environment [yellow]{venv}[/]", Style.PLUGIN_METHOD_SKIPPED)
 
         self.exe = bin_dir / "python"
@@ -152,13 +152,13 @@ class Plugin(BasePlugin):
                         console.print(f"\nAborting. See [bold]{pip_log}[/] for more details.")
                         sys.exit(3)
 
-                    if not self.silent or self.verbose or self.debug or installed is True:
+                    if self.verbose or self.debug or installed is True:
                         self.print(f"installing requirements [yellow]{_req}[/]", style)
 
         if packages:
             with console.status(f"Installing additional packages"):
                 self.install_packages(venv, packages, env)
-            if not self.silent or self.verbose or self.debug:
+            if self.verbose or self.debug:
                 self.print("installing packages", Style.PLUGIN_METHOD_SUCCESS)
 
         return env

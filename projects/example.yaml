@@ -23,7 +23,6 @@ jobs:
     help: Open a shell with the Python virtual environment activated.
     run: !env ${SHELL}
     interactive: true
-    silent: true
     after: plugin:python
 
   django/up:
@@ -41,7 +40,6 @@ jobs:
     help: Start an interactive Django Python REPL.
     run: ./manage.py shell
     interactive: true
-    silent: true
     after:
     - plugin:python
     - django/bootstrap

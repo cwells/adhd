@@ -408,8 +408,8 @@ def print_job_help_verbose(jobs: dict, pager: bool | str = False) -> None:
 
         row.append("\n".join(text))
 
-        for task in config.get("tasks", []):
-            row.append(Syntax(task, "bash", background_color=row_styles[idx % 2]))
+        for run in config.get("run", []):
+            row.append(Syntax(run, "bash", background_color=row_styles[idx % 2]))
 
         table.add_row(*row, style=f"white on {row_styles[idx % 2]}")
 

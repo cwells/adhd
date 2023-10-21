@@ -39,7 +39,6 @@ jobs:
     help: Enter a shell and assume admin role
     run: ${SHELL}
     interactive: true
-    silent: true
     after:
     - plugin:aws.assume_role admin
 """
