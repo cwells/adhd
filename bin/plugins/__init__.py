@@ -93,15 +93,14 @@ def load_plugin(
     plugin_name: str = f"plugin:{plugin.key}"
     pad: int = 20
 
+    if plugin.has_run:
+        return
+
     if explain:
         console.print(f"{Style.PLUGIN_INFO}[cyan]{plugin_name:<{pad}}[/] {plugin.__doc__}")
         return
 
-    if plugin.has_run:
-        return
-
-    if not plugin.silent:
-        console.print(f"{Style.PLUGIN_LOAD}[cyan]{plugin_name:<{pad}}[/] [dim]{plugin.__doc__}")
+    console.print(f"{Style.PLUGIN_LOAD}[cyan]{plugin_name:<{pad}}[/] [dim]{plugin.__doc__}")
 
     if "tmp" not in project_config.plugins[plugin.key]:
         project_config.plugins[plugin.key].tmp = project_config.get("tmp", "/tmp")
