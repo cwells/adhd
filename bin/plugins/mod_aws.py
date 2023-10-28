@@ -23,6 +23,8 @@ If a name is specified in [cyan]rename[/], no additional transformation will be 
 
 Note that if you specify more than one [cyan]path[/], name collisions will result in earlier values being overwritten with later ones. Further, values from this plugin will overwrite values specified in [cyan]env[/] section of your config file.
 
+[cyan]decrypt[/] specifies whether to apply decryption when reading values.
+
 [bold]Public methods:[/]
 :white_circle:[cyan]plugin:aws.assume_role[/] [bold cyan]role[/]: Assume a role defined in the plugin config. The credentials for assumed roles are not cached and will not be available in other sessions. The plugin must be loaded prior to calling this method.
 """
@@ -45,6 +47,7 @@ plugins:
     ssm:
       path:
       - /project/dev/
+      decrypt: true
       mask:
       - MARKETO_CLIENT_ID
       - MARKETO_CLIENT_SECRET
