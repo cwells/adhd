@@ -69,10 +69,8 @@ import os
 import re
 import sys
 from datetime import datetime, timezone
-from functools import partial
-from itertools import accumulate
 from pathlib import Path
-from typing import Any, Callable, Union, Iterable
+from typing import Any, Callable
 
 import ruamel.yaml as yaml
 
@@ -301,9 +299,6 @@ class Plugin(BasePlugin):
 
     def get_ssm_values(self) -> ConfigBox:
         "Get key/value pairs from SSM Parameter Store and adds them to the environment."
-
-        def compose(f, g):
-            return lambda x: f(g(x))
 
         def sanitize(name: str):
             return re.sub(r"[^a-zA-Z_0-9]", "_", name)
