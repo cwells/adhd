@@ -19,6 +19,7 @@ This plugin can also inject values from SSM Parameter Store into the runtime env
 
 You may use the [cyan]path[/] parameter to specify a list of keys to search for within SSM. Use the [cyan]mask[/] parameter to further filter those results.
 The optional [cyan]transform[/] parameter specifies a text transformation (currently "uppercase" or "lowercase") to be applied to the name (not the value) before it is injected into the environment. In addition, you may specify a mapping of names to environment variables using the [cyan]rename[/] parameter.
+If a name is specified in [cyan]rename[/], no additional transformation will be applied, the name will be used as-is.
 
 Note that if you specify more than one [cyan]path[/], name collisions will result in earlier values being overwritten with later ones. Further, values from this plugin will overwrite values specified in [cyan]env[/] section of your config file.
 
