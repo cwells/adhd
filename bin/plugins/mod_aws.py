@@ -12,7 +12,10 @@ For example, given the ARN:
 
     "arn:aws:iam::123456789012:mfa/MyDevice"
 
-You can use either "MyDevice" or "arn:aws:iam::123456789012:mfa/MyDevice" as the value for [cyan]mfa.device[/].
+You may use either "MyDevice" or "arn:aws:iam::123456789012:mfa/MyDevice" as the value for [cyan]mfa.device[/].
+
+[bold]SSM[/]
+You may specify a mapping of SSM Parameter Store keys to enviroment variables that will be fetched from SSM and loaded into the environment. You may also specify whether to use decryption when fetching the values.
 
 [bold]Public methods:[/]
 :white_circle:[cyan]plugin:aws.assume_role[/] [bold cyan]role[/]: Assume a role defined in the plugin config. The credentials for assumed roles are not cached and will not be available in other sessions. The plugin must be loaded prior to calling this method.
@@ -33,6 +36,11 @@ plugins:
       admin:
         arn: arn:aws:iam::098765432109:role/admin
         expiry: 3600
+    ssm:
+      decrypt: true
+      env:
+        SERVICE_API_KEY: /project/testing/service_api_key
+        SERVICE_API_TOKEN: /project/testing/service_api_token
 
 jobs:
   infra/admin:
@@ -147,6 +155,8 @@ class Plugin(BasePlugin):
         self.profile = profile
         self.region = region
 
+        self.metadata["env"].update(self.get_ssm_values())
+
         return self.metadata
 
     def cache_session(
@@ -226,6 +236,8 @@ class Plugin(BasePlugin):
 
     @public(autoload=True)
     def assume_role(self, args: tuple[str, ...], config: ConfigBox, env: ConfigBox) -> MetadataType:
+        "Assume a different role."
+
         session_name: str = args[0]
         roles: dict[str, dict[str, str]] = self.config.get("roles", {})
         role_arn_prefix: str = f"arn:aws:iam::{config['account']}:role"
@@ -273,3 +285,38 @@ class Plugin(BasePlugin):
         )
 
         return self.metadata
+
+    def get_ssm_values(self) -> ConfigBox:
+        "Get values from SSM and populate environment."
+
+        ssm_config: ConfigBox | None = self.config.get("ssm")
+
+        if not ssm_config:
+            return ConfigBox()
+
+        env: ConfigBox = ConfigBox()
+        keys: dict[str, str] = ssm_config.get("env", {})
+        decrypt: bool = ssm_config.get("decrypt", False)
+
+        session: boto3.Session = boto3.Session(
+            profile_name=self.profile,
+            region_name=self.metadata["env"]["AWS_DEFAULT_REGION"],
+            aws_access_key_id=self.metadata["env"]["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=self.metadata["env"]["AWS_SECRET_ACCESS_KEY"],
+            aws_session_token=self.metadata["env"]["AWS_SESSION_TOKEN"],
+        )
+        ssm: boto3.client.SSM = session.client("ssm")
+
+        for var, key in keys.items():
+            try:
+                parameter = ssm.get_parameter(Name=key, WithDecryption=decrypt)
+            except ssm.exceptions.ParameterNotFound:
+                console.print(f"[bold red]SSM key [bold white]{key}[/] not found[/]")
+                continue
+            except ssm.exceptions.ClientError as e:
+                console.print(f"[bold red]Invalid SSM key: {e}[/]")
+                continue
+
+            env[var] = parameter["Parameter"]["Value"]
+
+        return env

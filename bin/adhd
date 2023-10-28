@@ -195,7 +195,7 @@ def main(
                 _exit(e, verbose=verbose, debug=debug)
 
         # skip / confirm
-        if job.skip and force is False:
+        if job.skip and not force:
             console.print(f"{Style.JOB_SKIP}[bold blue]{job.name:<{job_name_len}}[/] [dim]{job.help}[/]")
             continue
 
