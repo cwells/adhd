@@ -15,7 +15,12 @@ For example, given the ARN:
 You may use either "MyDevice" or "arn:aws:iam::123456789012:mfa/MyDevice" as the value for [cyan]mfa.device[/].
 
 [bold]SSM[/]
-You may specify a mapping of SSM Parameter Store keys to enviroment variables that will be fetched from SSM and loaded into the environment. You may also specify whether to use decryption when fetching the values.
+This plugin can also inject values from SSM Parameter Store into the runtime environment.
+
+You may use the [cyan]path[/] parameter to specify a list of keys to search for within SSM. Use the [cyan]mask[/] parameter to further filter those results.
+The optional [cyan]transform[/] parameter specifies a text transformation (currently "uppercase" or "lowercase") to be applied to the name (not the value) before it is injected into the environment. In addition, you may specify a mapping of names to environment variables using the [cyan]rename[/] parameter.
+
+Note that if you specify more than one [cyan]path[/], name collisions will result in earlier values being overwritten with later ones. Further, values from this plugin will overwrite values specified in [cyan]env[/] section of your config file.
 
 [bold]Public methods:[/]
 :white_circle:[cyan]plugin:aws.assume_role[/] [bold cyan]role[/]: Assume a role defined in the plugin config. The credentials for assumed roles are not cached and will not be available in other sessions. The plugin must be loaded prior to calling this method.
@@ -37,10 +42,15 @@ plugins:
         arn: arn:aws:iam::098765432109:role/admin
         expiry: 3600
     ssm:
-      decrypt: true
-      env:
-        SERVICE_API_KEY: /project/testing/service_api_key
-        SERVICE_API_TOKEN: /project/testing/service_api_token
+      path:
+      - /project/dev/
+      mask:
+      - MARKETO_CLIENT_ID
+      - MARKETO_CLIENT_SECRET
+      rename:
+        DATABASE_USER: DBUSER
+        DATABASE_PASSWORD: DBPASS
+      transform: uppercase
 
 jobs:
   infra/admin:
@@ -58,8 +68,7 @@ import os
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-from types import ModuleType
-from typing import Any
+from typing import Any, Callable
 
 import ruamel.yaml as yaml
 
@@ -294,9 +303,8 @@ class Plugin(BasePlugin):
         if not ssm_config:
             return ConfigBox()
 
+        keys: list[dict[str, Any]] = self.ssm_list_keys()
         env: ConfigBox = ConfigBox()
-        keys: dict[str, str] = ssm_config.get("env", {})
-        decrypt: bool = ssm_config.get("decrypt", False)
 
         session: boto3.Session = boto3.Session(
             profile_name=self.profile,
@@ -307,16 +315,77 @@ class Plugin(BasePlugin):
         )
         ssm: boto3.client.SSM = session.client("ssm")
 
-        for var, key in keys.items():
+        for key in keys:
             try:
-                parameter = ssm.get_parameter(Name=key, WithDecryption=decrypt)
+                parameter = ssm.get_parameter(Name=key["key"], WithDecryption=key["decrypt"])
             except ssm.exceptions.ParameterNotFound:
-                console.print(f"[bold red]SSM key [bold white]{key}[/] not found[/]")
+                self.print(f"SSM key [bold white]{key}[/] not found.", Style.PLUGIN_METHOD_FAILED)
                 continue
             except ssm.exceptions.ClientError as e:
-                console.print(f"[bold red]Invalid SSM key: {e}[/]")
+                self.print(f"Invalid SSM key: {e}", Style.PLUGIN_METHOD_FAILED)
                 continue
 
-            env[var] = parameter["Parameter"]["Value"]
+            env[key["name"]] = parameter["Parameter"]["Value"]
 
         return env
+
+    def ssm_list_keys(self) -> list[dict[str, Any]]:
+        def transform(string: str, transformer: str | None = None) -> str:
+            if transformer is None:
+                return string
+
+            _transform: Callable = {
+                "uppercase": str.upper,
+                "lowercase": str.lower,
+            }.get(transformer, lambda s: s)
+
+            return _transform(string)
+
+        ssm_config: ConfigBox | None = self.config.get("ssm")
+
+        if not ssm_config:
+            return []
+
+        paths: list[str] = ssm_config.get("path", {})
+        masked = ssm_config.get("mask", [])
+        transformer: str = ssm_config.get("transform")
+        rename: dict = ssm_config.get("rename", {})
+        params: list[dict[str, Any]] = []
+
+        session: boto3.Session = boto3.Session(
+            profile_name=self.profile,
+            region_name=self.metadata["env"]["AWS_DEFAULT_REGION"],
+            aws_access_key_id=self.metadata["env"]["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key=self.metadata["env"]["AWS_SECRET_ACCESS_KEY"],
+            aws_session_token=self.metadata["env"]["AWS_SESSION_TOKEN"],
+        )
+        ssm: boto3.client.SSM = session.client("ssm")
+
+        response = ssm.describe_parameters(
+            ParameterFilters=[{"Key": "Name", "Option": "BeginsWith", "Values": paths}],
+            MaxResults=50,
+            # NextToken="string",
+        )
+
+        for param in response["Parameters"]:
+            name: str = param["Name"].split("/")[-1]
+
+            if name in masked:
+                continue
+
+            name = rename.get(name, transform(name, transformer))
+
+            params.append(
+                {
+                    "key": param["Name"],
+                    "name": name,
+                    "decrypt": param["Type"] == "SecureString",
+                }
+            )
+
+        if self.debug:
+            self.print("importing SSM params:", Style.PLUGIN_METHOD_SUCCESS)
+            for param in params:
+                console.print(f"    [yellow]{param['key']}[/] -> [green]${param['name']}[/]")
+
+        return params
