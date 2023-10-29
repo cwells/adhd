@@ -18,8 +18,11 @@ You may use either "MyDevice" or "arn:aws:iam::123456789012:mfa/MyDevice" as the
 This plugin can also inject values from SSM Parameter Store into the runtime environment.
 
 You may use the [cyan]path[/] parameter to specify a list of paths to search for within SSM. Use the [cyan]mask[/] parameter to further filter those results.
-The optional [cyan]transform[/] parameter specifies a list of text transformations (currently "uppercase", "lowercase", "sanitize") to be applied to the name (not the value) before it is injected into the environment. In addition, you may specify a mapping of names to environment variables using the [cyan]rename[/] parameter.
-If a name is specified in [cyan]rename[/], no additional transformation will be applied; the name will be used as-is.
+The optional [cyan]transform[/] parameter specifies a list of text transformations (currently "uppercase", "lowercase", "normalize") to be applied to the name (not the value) before it is injected into the environment. In addition, you may specify a mapping of names to environment variables using the [cyan]rename[/] parameter.
+
+The "normalize" transform replaces non-alphanumeric characters with an underscore. Further, if the first character is numeric, it will be prepended with an underscore. Finally, if the normalized name is empty, a single underscore will be returned.
+
+If a name is specified in [cyan]rename[/], no transformation will be applied; the name will be used as-is.
 
 Note that if you specify more than one [cyan]path[/], name collisions will result in earlier values being overwritten with later ones. Further, values from this plugin will overwrite values specified in [cyan]env[/] section of your config file.
 
@@ -54,7 +57,7 @@ plugins:
       rename:
         DATABASE_USER: DBUSER
         DATABASE_PASSWORD: DBPASS
-      transform: [ uppercase, sanitize ]
+      transform: [ uppercase, normalize ]
 
 jobs:
   infra/admin:
@@ -303,8 +306,10 @@ class Plugin(BasePlugin):
     def get_ssm_values(self) -> ConfigBox:
         "Get key/value pairs from SSM Parameter Store and adds them to the environment."
 
-        def sanitize(name: str):
-            return re.sub(r"[^a-zA-Z_0-9]", "_", name)
+        def normalize(name: str) -> str:
+            if name := re.sub(r"[^a-zA-Z_0-9]", "_", name):
+                return "_" * name[0].isdigit() + name
+            return "_"
 
         def transform(name: str, transformer: str | None = None) -> str:
             if transformer is None:
@@ -313,7 +318,7 @@ class Plugin(BasePlugin):
             _transform: Callable = {
                 "uppercase": str.upper,
                 "lowercase": str.lower,
-                "sanitize": sanitize,
+                "normalize": normalize,
             }.get(transformer, lambda s: s)
 
             return _transform(name)
@@ -337,9 +342,6 @@ class Plugin(BasePlugin):
             aws_session_token=self.metadata["env"]["AWS_SESSION_TOKEN"],
         )
         ssm: boto3.client.SSM = session.client("ssm")
-
-        if self.debug:
-            self.print("importing SSM params:", Style.PLUGIN_METHOD_SUCCESS)
 
         for path in paths:
             parameters_page = ssm.get_parameters_by_path(Path=path, Recursive=True, WithDecryption=decrypt)
@@ -367,7 +369,12 @@ class Plugin(BasePlugin):
 
                 env[name] = parameters_ps[key]
 
-                if self.debug:
-                    console.print(f"    [yellow]{key}[/] -> [green]${name}[/]")
+            if self.debug:
+                if not env:
+                    self.print("No matching SSM keys found.", Style.PLUGIN_METHOD_SKIPPED)
+                else:
+                    self.print("importing SSM params:", Style.PLUGIN_METHOD_SUCCESS)
+                    for k, v in env.items():
+                        console.print(f"    [green]{k}[/]: [white]${v}[/]", highlight=False)
 
         return env
