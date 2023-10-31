@@ -17,7 +17,8 @@ You may use either "MyDevice" or "arn:aws:iam::123456789012:mfa/MyDevice" as the
 [bold]SSM[/]
 This plugin can also inject values from SSM Parameter Store into the runtime environment.
 
-You may use the [cyan]path[/] parameter to specify a list of paths to search for within SSM. Use the [cyan]mask[/] parameter to further filter those results.
+You may use the [cyan]path[/] parameter to specify a list of paths to search for within SSM. Use the [cyan]filter[/] parameter to further filter those results. Possible filters are "startswith", "endswith", and "contains".
+
 The optional [cyan]transform[/] parameter specifies a list of text transformations (currently "uppercase", "lowercase", "normalize") to be applied to the name (not the value) before it is injected into the environment. In addition, you may specify a mapping of names to environment variables using the [cyan]rename[/] parameter.
 
 The "normalize" transform replaces non-alphanumeric characters with an underscore. Further, if the first character is numeric, it will be prepended with an underscore. Finally, if the normalized name is empty, a single underscore will be returned.
@@ -48,12 +49,11 @@ plugins:
         arn: arn:aws:iam::098765432109:role/admin
         expiry: 3600
     ssm:
+      decrypt: true
       path:
       - /project/dev/
-      decrypt: true
-      mask:
-      - MARKETO_CLIENT_ID
-      - MARKETO_CLIENT_SECRET
+      filter:
+      - startswith: MARKETO_
       rename:
         DATABASE_USER: DBUSER
         DATABASE_PASSWORD: DBPASS
@@ -311,17 +311,31 @@ class Plugin(BasePlugin):
                 return "_" * name[0].isdigit() + name
             return "_"
 
-        def transform(name: str, transformer: str | None = None) -> str:
-            if transformer is None:
-                return name
-
-            _transform: Callable = {
+        def transform(name: str, transformer: str) -> str:
+            _transformers: dict[str, Callable] = {
                 "uppercase": str.upper,
                 "lowercase": str.lower,
                 "normalize": normalize,
-            }.get(transformer, lambda s: s)
+            }
+            _default: Callable = lambda s: s
 
-            return _transform(name)
+            return _transformers.get(transformer, _default)(name)
+
+        def filtered(name: str, filters: dict[str, str]) -> bool:
+            "return True if name matches filter"
+
+            _filters: dict[str, Callable] = {
+                "startswith": str.startswith,
+                "endswith": str.endswith,
+                "contains": lambda name, value: str.find(name, value) >= 0,
+            }
+            _default: Callable = lambda name, value: False
+
+            for _filterer, _value in filters.items():
+                if not _filters.get(_filterer, _default)(name, _value):
+                    return True
+
+            return False
 
         ssm_config: ConfigBox | None = self.config.get("ssm")
 
@@ -331,7 +345,7 @@ class Plugin(BasePlugin):
         env: ConfigBox = ConfigBox()
         paths: list[str] = ssm_config.get("path", [])
         rename: dict = ssm_config.get("rename", {})
-        masked = ssm_config.get("mask", [])
+        filters = ssm_config.get("filter", [])
         transformers: list[str] = ssm_config.get("transform", [])
         decrypt: bool = ssm_config.get("decrypt", False)
         session: boto3.Session = boto3.Session(
@@ -357,8 +371,12 @@ class Plugin(BasePlugin):
 
             for key in parameters_ps:
                 name: str = key.split("/")[-1].strip()
+                _filtered: bool = False
 
-                if name in masked:
+                for _filter in filters:
+                    if _filtered := filtered(name, _filter):
+                        break
+                if _filtered:
                     continue
 
                 if name in rename:
