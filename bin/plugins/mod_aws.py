@@ -265,6 +265,7 @@ class Plugin(BasePlugin):
         role_arn_prefix: str = f"arn:aws:iam::{config['account']}:role"
         role: str | None = roles.get(session_name, {}).get("arn")
         expiry: int = min(int(roles.get(session_name, {}).get("expiry", 43200)), 43200)
+        region: str | None = roles.get(session_name, {}).get("region")
 
         if not self.has_run:
             self.print(" plugin has not been loaded.", Style.ERROR)
@@ -276,6 +277,7 @@ class Plugin(BasePlugin):
 
         session: boto3.Session = boto3.Session(  # type: ignore
             profile_name=self.profile,
+            region_name=region,
             aws_access_key_id=self.metadata["env"]["AWS_ACCESS_KEY_ID"],
             aws_secret_access_key=self.metadata["env"]["AWS_SECRET_ACCESS_KEY"],
             aws_session_token=self.metadata["env"]["AWS_SESSION_TOKEN"],
@@ -356,9 +358,10 @@ class Plugin(BasePlugin):
         filters = ssm_config.get("filter", [])
         transformers: list[str] = ssm_config.get("transform", [])
         decrypt: bool = ssm_config.get("decrypt", False)
+        region: str = ssm_config.get("region", self.metadata["env"]["AWS_DEFAULT_REGION"])
         session: boto3.Session = boto3.Session(
             profile_name=self.profile,
-            region_name=self.metadata["env"]["AWS_DEFAULT_REGION"],
+            region_name=region,
             aws_access_key_id=self.metadata["env"]["AWS_ACCESS_KEY_ID"],
             aws_secret_access_key=self.metadata["env"]["AWS_SECRET_ACCESS_KEY"],
             aws_session_token=self.metadata["env"]["AWS_SESSION_TOKEN"],
@@ -380,7 +383,7 @@ class Plugin(BasePlugin):
             for key in parameters_ps:
                 name: str = key.split("/")[-1].strip()
 
-                if not any([filtered(name, f) for f in filters]):
+                if filters and not any([filtered(name, f) for f in filters]):
                     continue
 
                 if name in rename:
