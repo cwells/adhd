@@ -19,7 +19,7 @@ This plugin can also inject values from SSM Parameter Store into the runtime env
 
 You may use the [cyan]path[/] parameter to specify a list of paths to search for within SSM.
 
-Use the [cyan]filter[/] parameter to further filter those results. Possible filters are "startswith", "endswith", and "contains". Prefix the filter with "not" to invert the meaning of the filter.
+Use the [cyan]filter[/] parameter to further filter those results. Possible filters are "startswith", "endswith", "equals", and "contains". Prefix the filter with "not" to invert the meaning of the filter.
 
 The optional [cyan]transform[/] parameter specifies a list of text transformations (currently "uppercase", "lowercase", "normalize") to be applied to the name (not the value) before it is injected into the environment. In addition, you may specify a mapping of names to environment variables using the [cyan]rename[/] parameter.
 
@@ -338,6 +338,8 @@ class Plugin(BasePlugin):
                 "not endswith": lambda name, value: not str.endswith(name, value),
                 "contains": lambda name, value: str.find(name, value) >= 0,
                 "not contains": lambda name, value: str.find(name, value) < 0,
+                "equals": str.__eq__,
+                "not equals": str.__ne__,
             }
             _default: Callable = lambda name, value: False
 
