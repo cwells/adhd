@@ -17,7 +17,9 @@ You may use either "MyDevice" or "arn:aws:iam::123456789012:mfa/MyDevice" as the
 [bold]SSM[/]
 This plugin can also inject values from SSM Parameter Store into the runtime environment.
 
-You may use the [cyan]path[/] parameter to specify a list of paths to search for within SSM. Use the [cyan]filter[/] parameter to further filter those results. Possible filters are "startswith", "endswith", and "contains".
+You may use the [cyan]path[/] parameter to specify a list of paths to search for within SSM.
+
+Use the [cyan]filter[/] parameter to further filter those results. Possible filters are "startswith", "endswith", and "contains". Prefix the filter with "not" to invert the meaning of the filter.
 
 The optional [cyan]transform[/] parameter specifies a list of text transformations (currently "uppercase", "lowercase", "normalize") to be applied to the name (not the value) before it is injected into the environment. In addition, you may specify a mapping of names to environment variables using the [cyan]rename[/] parameter.
 
@@ -51,9 +53,10 @@ plugins:
     ssm:
       decrypt: true
       path:
-      - /project/dev/
+      - /myproject/dev/
       filter:
-      - startswith: MARKETO_
+      - startswith: DATABASE_
+      - not endswith: _URI
       rename:
         DATABASE_USER: DBUSER
         DATABASE_PASSWORD: DBPASS
@@ -326,13 +329,16 @@ class Plugin(BasePlugin):
 
             _filters: dict[str, Callable] = {
                 "startswith": str.startswith,
+                "not startswith": lambda name, value: not str.startswith(name, value),
                 "endswith": str.endswith,
+                "not endswith": lambda name, value: not str.endswith(name, value),
                 "contains": lambda name, value: str.find(name, value) >= 0,
+                "not contains": lambda name, value: str.find(name, value) < 0,
             }
             _default: Callable = lambda name, value: False
 
             for _filterer, _value in filters.items():
-                if not _filters.get(_filterer, _default)(name, _value):
+                if _filters.get(_filterer, _default)(name, _value):
                     return True
 
             return False
@@ -371,12 +377,8 @@ class Plugin(BasePlugin):
 
             for key in parameters_ps:
                 name: str = key.split("/")[-1].strip()
-                _filtered: bool = False
 
-                for _filter in filters:
-                    if _filtered := filtered(name, _filter):
-                        break
-                if _filtered:
+                if not any([filtered(name, f) for f in filters]):
                     continue
 
                 if name in rename:
