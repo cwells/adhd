@@ -110,7 +110,7 @@ def load_plugin(
     data = plugin.load(config=project_config, env=process_env)
 
     if data:  # plugins can update runtime environment
-        process_env.update(data.get("env", {}))
+        process_env.update(data.get("env", {}) | process_env)
         project_config.update(data.get("conf", {}))
         project_config.plugins[plugin.key].setdefault("__vars__", {})
         project_config.plugins[plugin.key]["__vars__"].update(data.get("vars", {}))
