@@ -109,7 +109,6 @@ def main(
     # read configuration
     try:
         project_config.update(read_project_config(project, debug=debug))
-        process_env.update(get_local_env(project_config, options_env))
     except Exception as e:
         console.print(f"{Style.ERROR}loading configuration {project}:\n")
         _exit(e, verbose=verbose, debug=debug)
@@ -125,6 +124,7 @@ def main(
     # display list of possible jobs
     pager: str | bool = project_config.get("pager", False)
     if set(command) == set(("help", "jobs")):
+        process_env.update(get_local_env(project_config, options_env))
         jobs = {
             name: get_job(
                 command,
@@ -154,6 +154,8 @@ def main(
             debug=debug,
             explain=explain,
         )
+
+    process_env.update(get_local_env(project_config, options_env))
 
     #
     # main loop - get_jobs() returns topologically-sorted list of jobs
